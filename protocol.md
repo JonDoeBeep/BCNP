@@ -7,7 +7,7 @@ The robot networking system has been upgraded to support **batched movement comm
 **Version History:**
 - **v2.0.1** (Bugfix): Optimize O(n^2) parser to O(m), fix queueing to be more efficient.
 - **v2.0.0** (Major): Complete rewrite, BNCP lives in it's own seperate library
-- **v1.1.0** (Breaking, deprecated): All fields now use big-endian. Header format changed to major.minor.flags.count
+- **v1.1.0** (Minor, deprecated): All fields now use big-endian. Header format changed to major.minor.flags.count
 - **v1.0.0**: Initial release with mixed endianness (deprecated)
 
 ## Protocol Specification
@@ -77,6 +77,22 @@ BCNP intentionally keeps all wire-level values as **32-bit floats/integers**. Al
 math inside the BCNP core library uses these raw types before any robot-side unit
 wrapper is applied, which keeps serialization symmetric and avoids silent
 precision changes.
+
+### Controller Limits & Safety
+
+- Robots may choose tighter limits than the wire specification by supplying a
+  `ControllerConfig::CommandLimits` struct when constructing `bcnp::Controller`.
+- Limits are enforced centrally (before commands enter the execution queue), so
+  even legacy senders are bounded to robot-approved velocity and duration
+  ranges.
+
+### Parser Diagnostics
+
+- `bcnp::StreamParser` emits an `ErrorInfo` payload to its error callback that
+  includes the `PacketError` code, the byte offset (from the start of the stream)
+  where parsing failed, and a monotonically increasing consecutive-error count.
+- Transports can log these details to correlate bursty link noise, sync loss, or
+  malformed traffic back to specific timestamps and offsets.
 
 ## Transport Layer Guidance
 

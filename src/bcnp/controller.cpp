@@ -2,12 +2,12 @@
 
 namespace bcnp {
 
-Controller::Controller(QueueConfig config)
-    : m_config(config),
-      m_queue(config),
-      m_parser(
-          [this](const Packet& packet) { HandlePacket(packet); },
-          [this](PacketError error) { ++m_queue.Metrics().parseErrors; }) {}
+Controller::Controller(ControllerConfig config)
+        : m_config(config),
+            m_queue(m_config.queue),
+            m_parser(
+                    [this](const Packet& packet) { HandlePacket(packet); },
+                    [this](const StreamParser::ErrorInfo&) { ++m_queue.Metrics().parseErrors; }) {}
 
 void Controller::PushBytes(const uint8_t* data, std::size_t length) {
     m_parser.Push(data, length);
@@ -21,7 +21,8 @@ void Controller::HandlePacket(const Packet& packet) {
     }
 
     for (const auto& cmd : packet.commands) {
-        if (!m_queue.Push(cmd)) {
+        const auto clamped = ClampCommand(cmd);
+        if (!m_queue.Push(clamped)) {
             break;
         }
     }
@@ -34,6 +35,31 @@ std::optional<Command> Controller::CurrentCommand(CommandQueue::Clock::time_poin
 
 bool Controller::IsConnected(CommandQueue::Clock::time_point now) const {
     return m_queue.IsConnected(now);
+}
+
+Command Controller::ClampCommand(const Command& cmd) const {
+    Command clamped = cmd;
+    const auto& limits = m_config.limits;
+
+    if (clamped.vx < limits.vxMin) {
+        clamped.vx = limits.vxMin;
+    } else if (clamped.vx > limits.vxMax) {
+        clamped.vx = limits.vxMax;
+    }
+
+    if (clamped.omega < limits.omegaMin) {
+        clamped.omega = limits.omegaMin;
+    } else if (clamped.omega > limits.omegaMax) {
+        clamped.omega = limits.omegaMax;
+    }
+
+    if (clamped.durationMs < limits.durationMin) {
+        clamped.durationMs = limits.durationMin;
+    } else if (clamped.durationMs > limits.durationMax) {
+        clamped.durationMs = limits.durationMax;
+    }
+
+    return clamped;
 }
 
 } // namespace bcnp

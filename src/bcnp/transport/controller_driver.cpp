@@ -7,7 +7,9 @@
 namespace bcnp {
 
 ControllerDriver::ControllerDriver(Controller& controller, DuplexAdapter& adapter)
-    : m_controller(controller), m_adapter(adapter) {}
+    : m_controller(controller), m_adapter(adapter) {
+    m_txBuffer.reserve(kMaxPacketSize);
+}
 
 void ControllerDriver::PollOnce() {
     while (true) {
@@ -20,11 +22,11 @@ void ControllerDriver::PollOnce() {
 }
 
 bool ControllerDriver::SendPacket(const Packet& packet) {
-    std::vector<uint8_t> buffer;
-    if (!EncodePacket(packet, buffer)) {
+    m_txBuffer.clear();
+    if (!EncodePacket(packet, m_txBuffer)) {
         return false;
     }
-    return m_adapter.SendBytes(buffer.data(), buffer.size());
+    return m_adapter.SendBytes(m_txBuffer.data(), m_txBuffer.size());
 }
 
 } // namespace bcnp

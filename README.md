@@ -22,10 +22,20 @@ and chunked stream parsing.
 
 ## Using BCNP Core
 
-1. Create a `bcnp::Controller` with your desired queue limits/timeouts.
+1. Create a `bcnp::Controller` with a `ControllerConfig` that sets queue
+	timeouts and `CommandLimits` for vx/omega/duration clamping.
 2. Feed raw bytes into `Controller::PushBytes` (or use `bcnp::ControllerDriver`
 	 plus a transport adapter).
 3. Poll `Controller::CurrentCommand` to retrieve active commands as
 	 wire-accurate `float` + `uint16_t` data.
-4. Perform unit conversions/clamping in your robot code before applying motion
-	 commands.
+4. Unit conversions can still happen at the robot layer, but wire values are
+	 clamped inside the controller using the provided limits to guarantee safe
+	 bounds even if upstream clients misbehave.
+
+### Diagnostics
+
+- `bcnp::StreamParser` surfaces rich `ErrorInfo` (error code, absolute stream
+	offset, and consecutive error count) through its error callback so transports
+	can log flaky links with context.
+- `ControllerDriver` reuses persistent RX/TX buffers to avoid per-cycle
+	allocations when feeding data between transports and the controller.

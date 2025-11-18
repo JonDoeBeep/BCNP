@@ -2,12 +2,27 @@
 
 #include "bcnp/command_queue.h"
 #include "bcnp/stream_parser.h"
+#include <cstdint>
 
 namespace bcnp {
 
+struct CommandLimits {
+    float vxMin{-1.5f};
+    float vxMax{1.5f};
+    float omegaMin{-2.5f};
+    float omegaMax{2.5f};
+    uint16_t durationMin{0};
+    uint16_t durationMax{65535};
+};
+
+struct ControllerConfig {
+    QueueConfig queue{};
+    CommandLimits limits{};
+};
+
 class Controller {
 public:
-    explicit Controller(QueueConfig config = {});
+    explicit Controller(ControllerConfig config = {});
 
     void PushBytes(const uint8_t* data, std::size_t length);
 
@@ -24,7 +39,9 @@ public:
     const StreamParser& Parser() const { return m_parser; }
 
 private:
-    QueueConfig m_config;
+    Command ClampCommand(const Command& cmd) const;
+
+    ControllerConfig m_config;
     CommandQueue m_queue;
     StreamParser m_parser;
 };

@@ -4,6 +4,7 @@
 #include "bcnp/stream_parser.h"
 
 #include <algorithm>
+#include <array>
 #include <cassert>
 #include <chrono>
 #include <iostream>
@@ -63,7 +64,7 @@ void TestStreamParserChunking() {
             packetSeen = true;
             assert(parsed.commands.size() == 1);
         },
-        [&](bcnp::PacketError) {
+        [&](const bcnp::StreamParser::ErrorInfo&) {
             assert(false && "Unexpected parse error");
         });
 
@@ -73,12 +74,64 @@ void TestStreamParserChunking() {
     assert(packetSeen);
 }
 
+void TestStreamParserErrors() {
+    std::vector<bcnp::StreamParser::ErrorInfo> errors;
+    bcnp::StreamParser parser(
+        [](const bcnp::Packet&) {},
+        [&](const bcnp::StreamParser::ErrorInfo& info) { errors.push_back(info); });
+
+    std::array<uint8_t, bcnp::kHeaderSize> badHeader{};
+    badHeader[bcnp::kHeaderMajorIndex] = bcnp::kProtocolMajor;
+    badHeader[bcnp::kHeaderMinorIndex] = bcnp::kProtocolMinor;
+    badHeader[bcnp::kHeaderCountIndex] = static_cast<uint8_t>(bcnp::kMaxCommandsPerPacket + 1);
+
+    parser.Push(badHeader.data(), badHeader.size());
+    parser.Push(badHeader.data(), badHeader.size());
+
+    assert(errors.size() == 2);
+    assert(errors[0].code == bcnp::PacketError::TooManyCommands);
+    assert(errors[0].offset == 0);
+    assert(errors[0].consecutiveErrors == 1);
+    assert(errors[1].consecutiveErrors == 2);
+    assert(errors[1].offset == bcnp::kHeaderSize);
+
+    parser.Reset();
+    parser.Push(badHeader.data(), badHeader.size());
+    assert(errors.size() == 3);
+    assert(errors.back().consecutiveErrors == 1);
+}
+
+void TestControllerClamping() {
+    bcnp::ControllerConfig config{};
+    config.limits.vxMin = -0.25f;
+    config.limits.vxMax = 0.25f;
+    config.limits.omegaMin = -0.5f;
+    config.limits.omegaMax = 0.5f;
+    config.limits.durationMin = 50;
+    config.limits.durationMax = 5000;
+
+    bcnp::Controller controller(config);
+
+    bcnp::Packet packet{};
+    packet.header.commandCount = 1;
+    packet.commands.push_back({1.0f, -2.0f, 6000});
+    controller.HandlePacket(packet);
+
+    auto cmd = controller.CurrentCommand(bcnp::CommandQueue::Clock::now());
+    assert(cmd.has_value());
+    assert(cmd->vx == config.limits.vxMax);
+    assert(cmd->omega == config.limits.omegaMin);
+    assert(cmd->durationMs == config.limits.durationMax);
+}
+
 } // namespace
 
 int main() {
     TestEncodeDecode();
     TestCommandQueue();
     TestStreamParserChunking();
+    TestStreamParserErrors();
+    TestControllerClamping();
     std::cout << "BCNP tests passed" << std::endl;
     return 0;
 }

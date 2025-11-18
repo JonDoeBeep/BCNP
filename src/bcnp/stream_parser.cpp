@@ -23,15 +23,19 @@ void StreamParser::Push(const uint8_t* data, std::size_t length) {
         const uint8_t* headPtr = m_buffer.data() + m_head;
         const uint8_t commandCount = headPtr[kHeaderCountIndex];
         if (commandCount > kMaxCommandsPerPacket) {
-            EmitError(PacketError::TooManyCommands);
-            Reset();
+            const auto offset = m_streamOffset + m_head;
+            EmitError(PacketError::TooManyCommands, offset);
+            m_streamOffset += (m_buffer.size() - m_head);
+            Reset(false);
             return;
         }
 
         const std::size_t expected = kHeaderSize + (commandCount * kCommandSize);
         if (expected > kMaxPacketSize) {
-            EmitError(PacketError::TooManyCommands);
-            Reset();
+            const auto offset = m_streamOffset + m_head;
+            EmitError(PacketError::TooManyCommands, offset);
+            m_streamOffset += (m_buffer.size() - m_head);
+            Reset(false);
             return;
         }
 
@@ -41,13 +45,16 @@ void StreamParser::Push(const uint8_t* data, std::size_t length) {
 
         auto result = DecodePacket(headPtr, expected);
         if (!result.packet) {
-            EmitError(result.error);
+            const auto offset = m_streamOffset + m_head;
+            EmitError(result.error, offset);
         } else {
             EmitPacket(*result.packet);
+            m_consecutiveErrors = 0;
         }
 
         const std::size_t consumed = result.bytesConsumed ? result.bytesConsumed : expected;
         m_head += consumed;
+        m_streamOffset += consumed;
     }
 
     if (m_head == m_buffer.size()) {
@@ -61,9 +68,13 @@ void StreamParser::Push(const uint8_t* data, std::size_t length) {
     }
 }
 
-void StreamParser::Reset() {
+void StreamParser::Reset(bool resetErrorState) {
     m_buffer.clear();
     m_head = 0;
+    if (resetErrorState) {
+        m_consecutiveErrors = 0;
+        m_streamOffset = 0;
+    }
 }
 
 void StreamParser::EmitPacket(const Packet& packet) {
@@ -72,9 +83,10 @@ void StreamParser::EmitPacket(const Packet& packet) {
     }
 }
 
-void StreamParser::EmitError(PacketError error) {
+void StreamParser::EmitError(PacketError error, std::size_t offset) {
     if (m_onError) {
-        m_onError(error);
+        ErrorInfo info{error, offset, ++m_consecutiveErrors};
+        m_onError(info);
     }
 }
 
