@@ -1,4 +1,4 @@
-# BCNP: Batched Command Network Protocol v2.0.2
+# BCNP: Batched Command Network Protocol v2.0.3
 
 ## Overview
 
