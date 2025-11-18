@@ -114,7 +114,7 @@ framing layer), so transports should behave like streaming byte pipes:
 2. **Sequential Execution**: Commands are executed one at a time, in the order received
 3. **Timing**: Each command runs for its specified duration before the next command starts
 4. **Connection Timeout**: If no packets are received for 200ms, the robot considers itself disconnected
-5. **Safety**: When disconnected, the robot stops automatically
+5. **Safety**: When disconnected, the BCNP controller clears its queue (including the active command) so the robot stops immediately, even if long-duration commands were pending
 
 ## SmartDashboard Keys
 

@@ -2,14 +2,10 @@
 
 #include "bcnp/packet.h"
 
-#include <vector>
-
 namespace bcnp {
 
 ControllerDriver::ControllerDriver(Controller& controller, DuplexAdapter& adapter)
-    : m_controller(controller), m_adapter(adapter) {
-    m_txBuffer.reserve(kMaxPacketSize);
-}
+    : m_controller(controller), m_adapter(adapter) {}
 
 void ControllerDriver::PollOnce() {
     while (true) {
@@ -22,11 +18,11 @@ void ControllerDriver::PollOnce() {
 }
 
 bool ControllerDriver::SendPacket(const Packet& packet) {
-    m_txBuffer.clear();
-    if (!EncodePacket(packet, m_txBuffer)) {
+    std::size_t length = 0;
+    if (!EncodePacket(packet, m_txBuffer.data(), m_txBuffer.size(), length)) {
         return false;
     }
-    return m_adapter.SendBytes(m_txBuffer.data(), m_txBuffer.size());
+    return m_adapter.SendBytes(m_txBuffer.data(), length);
 }
 
 } // namespace bcnp

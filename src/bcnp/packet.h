@@ -55,6 +55,8 @@ struct DecodeResult {
 
 bool EncodePacket(const Packet& packet, std::vector<uint8_t>& output);
 
+bool EncodePacket(const Packet& packet, uint8_t* output, std::size_t capacity, std::size_t& bytesWritten);
+
 DecodeResult DecodePacket(const uint8_t* data, std::size_t length);
 
 } // namespace bcnp

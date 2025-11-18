@@ -31,12 +31,17 @@ void StoreU16(uint16_t value, uint8_t* out) {
 }
 } // namespace
 
-bool EncodePacket(const Packet& packet, std::vector<uint8_t>& output) {
-    if (packet.commands.size() > kMaxCommandsPerPacket) {
+bool EncodePacket(const Packet& packet, uint8_t* output, std::size_t capacity, std::size_t& bytesWritten) {
+    bytesWritten = 0;
+    if (packet.commands.size() > kMaxCommandsPerPacket || !output) {
         return false;
     }
 
-    output.resize(kHeaderSize + packet.commands.size() * kCommandSize);
+    const std::size_t required = kHeaderSize + packet.commands.size() * kCommandSize;
+    if (capacity < required) {
+        return false;
+    }
+
     output[kHeaderMajorIndex] = packet.header.major;
     output[kHeaderMinorIndex] = packet.header.minor;
     output[kHeaderFlagsIndex] = packet.header.flags;
@@ -54,6 +59,21 @@ bool EncodePacket(const Packet& packet, std::vector<uint8_t>& output) {
         offset += kCommandSize;
     }
 
+    bytesWritten = required;
+    return true;
+}
+
+bool EncodePacket(const Packet& packet, std::vector<uint8_t>& output) {
+    if (packet.commands.size() > kMaxCommandsPerPacket) {
+        return false;
+    }
+    const std::size_t required = kHeaderSize + packet.commands.size() * kCommandSize;
+    output.resize(required);
+    std::size_t bytesWritten = 0;
+    if (!EncodePacket(packet, output.data(), output.size(), bytesWritten)) {
+        return false;
+    }
+    output.resize(bytesWritten);
     return true;
 }
 

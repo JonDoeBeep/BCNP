@@ -30,7 +30,9 @@ and chunked stream parsing.
 	 wire-accurate `float` + `uint16_t` data.
 4. Unit conversions can still happen at the robot layer, but wire values are
 	 clamped inside the controller using the provided limits to guarantee safe
-	 bounds even if upstream clients misbehave.
+	 bounds even if upstream clients misbehave. When `connectionTimeout` elapses
+	 without fresh packets, the controller immediately clears the active queue to
+	 avoid runaway motion.
 
 ### Diagnostics
 

@@ -27,6 +27,13 @@ void CommandQueue::NotifyPacketReceived(Clock::time_point now) {
 }
 
 void CommandQueue::Update(Clock::time_point now) {
+    if (!IsConnected(now)) {
+        if (m_active || !m_queue.empty()) {
+            Clear();
+        }
+        return;
+    }
+
     if (m_active) {
         const auto elapsed = now - m_active->start;
         const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed);

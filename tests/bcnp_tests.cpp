@@ -35,6 +35,7 @@ void TestCommandQueue() {
     queue.Push({2.0f, 0.5f, 50});
 
     const auto start = bcnp::CommandQueue::Clock::now();
+    queue.NotifyPacketReceived(start);
     queue.Update(start);
     auto cmd = queue.ActiveCommand();
     assert(cmd.has_value());
@@ -124,6 +125,23 @@ void TestControllerClamping() {
     assert(cmd->durationMs == config.limits.durationMax);
 }
 
+void TestQueueDisconnectStopsCommands() {
+    bcnp::QueueConfig config{};
+    config.connectionTimeout = std::chrono::milliseconds(50);
+    bcnp::CommandQueue queue(config);
+
+    const auto now = bcnp::CommandQueue::Clock::now();
+    queue.NotifyPacketReceived(now);
+    queue.Push({0.0f, 0.0f, 60000});
+    queue.Update(now);
+    assert(queue.ActiveCommand().has_value());
+
+    const auto later = now + config.connectionTimeout + std::chrono::milliseconds(1);
+    queue.Update(later);
+    assert(!queue.ActiveCommand().has_value());
+    assert(queue.Size() == 0);
+}
+
 } // namespace
 
 int main() {
@@ -132,6 +150,7 @@ int main() {
     TestStreamParserChunking();
     TestStreamParserErrors();
     TestControllerClamping();
+    TestQueueDisconnectStopsCommands();
     std::cout << "BCNP tests passed" << std::endl;
     return 0;
 }
