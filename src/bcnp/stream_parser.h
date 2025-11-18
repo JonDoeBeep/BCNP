@@ -28,6 +28,7 @@ private:
     PacketCallback m_onPacket;
     ErrorCallback m_onError;
     std::vector<uint8_t> m_buffer;
+    std::size_t m_head{0};
 };
 
 } // namespace bcnp

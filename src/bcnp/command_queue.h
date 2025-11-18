@@ -32,7 +32,9 @@ public:
 
     void NotifyPacketReceived(Clock::time_point now);
 
-    std::optional<Command> CurrentCommand(Clock::time_point now);
+    void Update(Clock::time_point now);
+
+    std::optional<Command> ActiveCommand() const;
 
     bool IsConnected(Clock::time_point now) const;
 
@@ -44,7 +46,7 @@ public:
     const QueueConfig& Config() const { return m_config; }
 
 private:
-    struct ActiveCommand {
+    struct ActiveSlot {
         Command command;
         Clock::time_point start;
     };
@@ -54,7 +56,7 @@ private:
     QueueConfig m_config{};
     QueueMetrics m_metrics{};
     std::queue<Command> m_queue;
-    std::optional<ActiveCommand> m_active;
+    std::optional<ActiveSlot> m_active;
     Clock::time_point m_lastRx{Clock::time_point::min()};
 };
 

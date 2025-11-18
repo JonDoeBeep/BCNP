@@ -34,15 +34,18 @@ void TestCommandQueue() {
     queue.Push({2.0f, 0.5f, 50});
 
     const auto start = bcnp::CommandQueue::Clock::now();
-    auto cmd = queue.CurrentCommand(start);
+    queue.Update(start);
+    auto cmd = queue.ActiveCommand();
     assert(cmd.has_value());
     assert(cmd->vx == 1.0f);
 
-    cmd = queue.CurrentCommand(start + std::chrono::milliseconds(110));
+    queue.Update(start + std::chrono::milliseconds(110));
+    cmd = queue.ActiveCommand();
     assert(cmd.has_value());
     assert(cmd->vx == 2.0f);
 
-    cmd = queue.CurrentCommand(start + std::chrono::milliseconds(200));
+    queue.Update(start + std::chrono::milliseconds(200));
+    cmd = queue.ActiveCommand();
     assert(!cmd.has_value());
 }
 

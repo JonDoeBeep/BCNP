@@ -26,7 +26,7 @@ void CommandQueue::NotifyPacketReceived(Clock::time_point now) {
     ++m_metrics.packetsReceived;
 }
 
-std::optional<Command> CommandQueue::CurrentCommand(Clock::time_point now) {
+void CommandQueue::Update(Clock::time_point now) {
     if (m_active) {
         const auto elapsed = now - m_active->start;
         const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed);
@@ -38,7 +38,9 @@ std::optional<Command> CommandQueue::CurrentCommand(Clock::time_point now) {
     if (!m_active) {
         PromoteNext(now);
     }
+}
 
+std::optional<Command> CommandQueue::ActiveCommand() const {
     if (m_active) {
         return m_active->command;
     }
@@ -57,7 +59,7 @@ void CommandQueue::PromoteNext(Clock::time_point now) {
     if (m_queue.empty()) {
         return;
     }
-    m_active = ActiveCommand{m_queue.front(), now};
+    m_active = ActiveSlot{m_queue.front(), now};
     m_queue.pop();
 }
 

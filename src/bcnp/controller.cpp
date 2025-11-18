@@ -28,7 +28,8 @@ void Controller::HandlePacket(const Packet& packet) {
 }
 
 std::optional<Command> Controller::CurrentCommand(CommandQueue::Clock::time_point now) {
-    return m_queue.CurrentCommand(now);
+    m_queue.Update(now);
+    return m_queue.ActiveCommand();
 }
 
 bool Controller::IsConnected(CommandQueue::Clock::time_point now) const {

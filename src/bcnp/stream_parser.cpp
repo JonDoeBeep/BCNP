@@ -1,6 +1,7 @@
 #include "bcnp/stream_parser.h"
 
 #include <algorithm>
+#include <cstring>
 
 namespace bcnp {
 
@@ -16,28 +17,29 @@ void StreamParser::Push(const uint8_t* data, std::size_t length) {
 
     const auto insertionBegin = m_buffer.size();
     m_buffer.resize(m_buffer.size() + length);
-    std::copy(data, data + length, m_buffer.begin() + insertionBegin);
+    std::memcpy(m_buffer.data() + insertionBegin, data, length);
 
-    while (m_buffer.size() >= kHeaderSize) {
-        const uint8_t commandCount = m_buffer[kHeaderCountIndex];
+    while ((m_buffer.size() - m_head) >= kHeaderSize) {
+        const uint8_t* headPtr = m_buffer.data() + m_head;
+        const uint8_t commandCount = headPtr[kHeaderCountIndex];
         if (commandCount > kMaxCommandsPerPacket) {
             EmitError(PacketError::TooManyCommands);
-            m_buffer.clear();
+            Reset();
             return;
         }
 
         const std::size_t expected = kHeaderSize + (commandCount * kCommandSize);
         if (expected > kMaxPacketSize) {
             EmitError(PacketError::TooManyCommands);
-            m_buffer.clear();
+            Reset();
             return;
         }
 
-        if (m_buffer.size() < expected) {
+        if ((m_buffer.size() - m_head) < expected) {
             break;
         }
 
-        auto result = DecodePacket(m_buffer.data(), expected);
+        auto result = DecodePacket(headPtr, expected);
         if (!result.packet) {
             EmitError(result.error);
         } else {
@@ -45,12 +47,23 @@ void StreamParser::Push(const uint8_t* data, std::size_t length) {
         }
 
         const std::size_t consumed = result.bytesConsumed ? result.bytesConsumed : expected;
-        m_buffer.erase(m_buffer.begin(), m_buffer.begin() + static_cast<std::ptrdiff_t>(consumed));
+        m_head += consumed;
+    }
+
+    if (m_head == m_buffer.size()) {
+        m_buffer.clear();
+        m_head = 0;
+    } else if (m_head > 0 && (m_head > m_buffer.size() / 2 || m_head > kMaxPacketSize)) {
+        const std::size_t remaining = m_buffer.size() - m_head;
+        std::memmove(m_buffer.data(), m_buffer.data() + m_head, remaining);
+        m_buffer.resize(remaining);
+        m_head = 0;
     }
 }
 
 void StreamParser::Reset() {
     m_buffer.clear();
+    m_head = 0;
 }
 
 void StreamParser::EmitPacket(const Packet& packet) {
