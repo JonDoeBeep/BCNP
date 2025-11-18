@@ -19,7 +19,8 @@ private:
     Controller& m_controller;
     DuplexAdapter& m_adapter;
     std::array<uint8_t, kMaxPacketSize> m_txBuffer{};
-    std::array<uint8_t, 256> m_rxScratch{};
+    // Use a full-packet scratch buffer so UDP datagrams are never truncated mid-packet.
+    std::array<uint8_t, kMaxPacketSize> m_rxScratch{};
 };
 
 } // namespace bcnp

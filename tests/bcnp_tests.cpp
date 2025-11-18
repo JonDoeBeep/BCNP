@@ -5,10 +5,35 @@
 
 #include <algorithm>
 #include <array>
-#include <cassert>
 #include <chrono>
+#include <cstdlib>
 #include <iostream>
 #include <vector>
+
+namespace testutil {
+[[noreturn]] void Fail(const char* expr, const char* file, int line, const char* message = nullptr) {
+    std::cerr << "Test failure: " << expr << " at " << file << ':' << line;
+    if (message) {
+        std::cerr << " - " << message;
+    }
+    std::cerr << std::endl;
+    std::exit(EXIT_FAILURE);
+}
+} // namespace testutil
+
+#define REQUIRE(expr)                                                                    \
+    do {                                                                                 \
+        if (!(expr)) {                                                                   \
+            testutil::Fail(#expr, __FILE__, __LINE__);                                   \
+        }                                                                                \
+    } while (false)
+
+#define REQUIRE_MSG(expr, msg)                                                           \
+    do {                                                                                 \
+        if (!(expr)) {                                                                   \
+            testutil::Fail(#expr, __FILE__, __LINE__, msg);                              \
+        }                                                                                \
+    } while (false)
 
 namespace {
 
@@ -20,13 +45,13 @@ void TestEncodeDecode() {
 
     std::vector<uint8_t> buffer;
     const bool encoded = bcnp::EncodePacket(packet, buffer);
-    assert(encoded);
+    REQUIRE(encoded);
 
     const auto decode = bcnp::DecodePacket(buffer.data(), buffer.size());
-    assert(decode.packet.has_value());
-    assert(decode.packet->commands.size() == 2);
-    assert(decode.packet->commands[0].vx == 0.5f);
-    assert(decode.packet->commands[1].omega == 0.25f);
+    REQUIRE(decode.packet.has_value());
+    REQUIRE(decode.packet->commands.size() == 2);
+    REQUIRE(decode.packet->commands[0].vx == 0.5f);
+    REQUIRE(decode.packet->commands[1].omega == 0.25f);
 }
 
 void TestCommandQueue() {
@@ -38,17 +63,17 @@ void TestCommandQueue() {
     queue.NotifyPacketReceived(start);
     queue.Update(start);
     auto cmd = queue.ActiveCommand();
-    assert(cmd.has_value());
-    assert(cmd->vx == 1.0f);
+    REQUIRE(cmd.has_value());
+    REQUIRE(cmd->vx == 1.0f);
 
     queue.Update(start + std::chrono::milliseconds(110));
     cmd = queue.ActiveCommand();
-    assert(cmd.has_value());
-    assert(cmd->vx == 2.0f);
+    REQUIRE(cmd.has_value());
+    REQUIRE(cmd->vx == 2.0f);
 
     queue.Update(start + std::chrono::milliseconds(200));
     cmd = queue.ActiveCommand();
-    assert(!cmd.has_value());
+    REQUIRE(!cmd.has_value());
 }
 
 void TestStreamParserChunking() {
@@ -57,22 +82,22 @@ void TestStreamParserChunking() {
     packet.header.commandCount = 1;
 
     std::vector<uint8_t> encoded;
-    assert(bcnp::EncodePacket(packet, encoded));
+    REQUIRE(bcnp::EncodePacket(packet, encoded));
 
     bool packetSeen = false;
     bcnp::StreamParser parser(
         [&](const bcnp::Packet& parsed) {
             packetSeen = true;
-            assert(parsed.commands.size() == 1);
+            REQUIRE(parsed.commands.size() == 1);
         },
         [&](const bcnp::StreamParser::ErrorInfo&) {
-            assert(false && "Unexpected parse error");
+            REQUIRE_MSG(false, "Unexpected parse error");
         });
 
     parser.Push(encoded.data(), 3);
-    assert(!packetSeen);
+    REQUIRE(!packetSeen);
     parser.Push(encoded.data() + 3, encoded.size() - 3);
-    assert(packetSeen);
+    REQUIRE(packetSeen);
 }
 
 void TestStreamParserTruncatedWaits() {
@@ -81,7 +106,7 @@ void TestStreamParserTruncatedWaits() {
     packet.commands.push_back({0.5f, 0.1f, 100});
 
     std::vector<uint8_t> encoded;
-    assert(bcnp::EncodePacket(packet, encoded));
+    REQUIRE(bcnp::EncodePacket(packet, encoded));
 
     bool packetSeen = false;
     std::size_t errors = 0;
@@ -90,12 +115,12 @@ void TestStreamParserTruncatedWaits() {
         [&](const bcnp::StreamParser::ErrorInfo&) { ++errors; });
 
     parser.Push(encoded.data(), encoded.size() - 1);
-    assert(!packetSeen);
-    assert(errors == 0);
+    REQUIRE(!packetSeen);
+    REQUIRE(errors == 0);
 
     parser.Push(encoded.data() + encoded.size() - 1, 1);
-    assert(packetSeen);
-    assert(errors == 0);
+    REQUIRE(packetSeen);
+    REQUIRE(errors == 0);
 }
 
 void TestStreamParserSkipsBadHeader() {
@@ -110,7 +135,7 @@ void TestStreamParserSkipsBadHeader() {
     std::vector<uint8_t> combined;
     std::vector<uint8_t> encoded;
 
-    assert(bcnp::EncodePacket(first, encoded));
+    REQUIRE(bcnp::EncodePacket(first, encoded));
     combined.insert(combined.end(), encoded.begin(), encoded.end());
 
     // Append a malformed header (commandCount > kMaxCommandsPerPacket).
@@ -121,7 +146,7 @@ void TestStreamParserSkipsBadHeader() {
     combined.push_back(0xAA);
     combined.push_back(0x55);
 
-    assert(bcnp::EncodePacket(second, encoded));
+    REQUIRE(bcnp::EncodePacket(second, encoded));
     combined.insert(combined.end(), encoded.begin(), encoded.end());
 
     std::vector<bcnp::Packet> seen;
@@ -132,10 +157,10 @@ void TestStreamParserSkipsBadHeader() {
 
     parser.Push(combined.data(), combined.size());
 
-    assert(errorCount >= 1);
-    assert(seen.size() == 2);
-    assert(seen.front().commands.front().vx == first.commands.front().vx);
-    assert(seen.back().commands.front().omega == second.commands.front().omega);
+    REQUIRE(errorCount >= 1);
+    REQUIRE(seen.size() == 2);
+    REQUIRE(seen.front().commands.front().vx == first.commands.front().vx);
+    REQUIRE(seen.back().commands.front().omega == second.commands.front().omega);
 }
 
 void TestStreamParserErrors() {
@@ -152,17 +177,17 @@ void TestStreamParserErrors() {
     parser.Push(badHeader.data(), badHeader.size());
     parser.Push(badHeader.data(), badHeader.size());
 
-    assert(errors.size() == 2);
-    assert(errors[0].code == bcnp::PacketError::TooManyCommands);
-    assert(errors[0].offset == 0);
-    assert(errors[0].consecutiveErrors == 1);
-    assert(errors[1].consecutiveErrors == 2);
-    assert(errors[1].offset > errors[0].offset);
+    REQUIRE(errors.size() == 2);
+    REQUIRE(errors[0].code == bcnp::PacketError::TooManyCommands);
+    REQUIRE(errors[0].offset == 0);
+    REQUIRE(errors[0].consecutiveErrors == 1);
+    REQUIRE(errors[1].consecutiveErrors == 2);
+    REQUIRE(errors[1].offset > errors[0].offset);
 
     parser.Reset();
     parser.Push(badHeader.data(), badHeader.size());
-    assert(errors.size() == 3);
-    assert(errors.back().consecutiveErrors == 1);
+    REQUIRE(errors.size() == 3);
+    REQUIRE(errors.back().consecutiveErrors == 1);
 }
 
 void TestControllerClamping() {
@@ -182,10 +207,10 @@ void TestControllerClamping() {
     controller.HandlePacket(packet);
 
     auto cmd = controller.CurrentCommand(bcnp::CommandQueue::Clock::now());
-    assert(cmd.has_value());
-    assert(cmd->vx == config.limits.vxMax);
-    assert(cmd->omega == config.limits.omegaMin);
-    assert(cmd->durationMs == config.limits.durationMax);
+    REQUIRE(cmd.has_value());
+    REQUIRE(cmd->vx == config.limits.vxMax);
+    REQUIRE(cmd->omega == config.limits.omegaMin);
+    REQUIRE(cmd->durationMs == config.limits.durationMax);
 }
 
 void TestQueueDisconnectStopsCommands() {
@@ -197,12 +222,12 @@ void TestQueueDisconnectStopsCommands() {
     queue.NotifyPacketReceived(now);
     queue.Push({0.0f, 0.0f, 60000});
     queue.Update(now);
-    assert(queue.ActiveCommand().has_value());
+    REQUIRE(queue.ActiveCommand().has_value());
 
     const auto later = now + config.connectionTimeout + std::chrono::milliseconds(1);
     queue.Update(later);
-    assert(!queue.ActiveCommand().has_value());
-    assert(queue.Size() == 0);
+    REQUIRE(!queue.ActiveCommand().has_value());
+    REQUIRE(queue.Size() == 0);
 }
 
 } // namespace
