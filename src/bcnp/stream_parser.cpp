@@ -15,6 +15,25 @@ void StreamParser::Push(const uint8_t* data, std::size_t length) {
         return;
     }
 
+    // Prevent infinite buffer growth
+    if (m_buffer.size() + length > kMaxBufferSize) {
+        // Try to compact first
+        if (m_head > 0) {
+            const std::size_t remaining = m_buffer.size() - m_head;
+            std::memmove(m_buffer.data(), m_buffer.data() + m_head, remaining);
+            m_buffer.resize(remaining);
+            m_head = 0;
+        }
+
+        // If still too big, we must drop data to protect memory
+        if (m_buffer.size() + length > kMaxBufferSize) {
+            // Clear buffer to recover from DoS/OOM state
+            m_buffer.clear();
+            m_head = 0;
+            // We could emit an error here, but we just reset for safety
+        }
+    }
+
     const auto insertionBegin = m_buffer.size();
     m_buffer.resize(m_buffer.size() + length);
     std::memcpy(m_buffer.data() + insertionBegin, data, length);
@@ -26,7 +45,6 @@ void StreamParser::Push(const uint8_t* data, std::size_t length) {
             const auto offset = m_streamOffset + m_head;
             EmitError(PacketError::TooManyCommands, offset);
             ++m_head;
-            ++m_streamOffset;
             continue;
         }
 
@@ -35,7 +53,6 @@ void StreamParser::Push(const uint8_t* data, std::size_t length) {
             const auto offset = m_streamOffset + m_head;
             EmitError(PacketError::TooManyCommands, offset);
             ++m_head;
-            ++m_streamOffset;
             continue;
         }
 
@@ -60,13 +77,14 @@ void StreamParser::Push(const uint8_t* data, std::size_t length) {
             consumed = remaining;
         }
         m_head += consumed;
-        m_streamOffset += consumed;
     }
 
     if (m_head == m_buffer.size()) {
+        m_streamOffset += m_head;
         m_buffer.clear();
         m_head = 0;
     } else if (m_head > 0 && (m_head > m_buffer.size() / 2 || m_head > kMaxPacketSize)) {
+        m_streamOffset += m_head;
         const std::size_t remaining = m_buffer.size() - m_head;
         std::memmove(m_buffer.data(), m_buffer.data() + m_head, remaining);
         m_buffer.resize(remaining);

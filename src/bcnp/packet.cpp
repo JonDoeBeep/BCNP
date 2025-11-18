@@ -93,13 +93,13 @@ DecodeResult DecodePacket(const uint8_t* data, std::size_t length) {
 
     if (packet.header.major != kProtocolMajor || packet.header.minor != kProtocolMinor) {
         result.error = PacketError::UnsupportedVersion;
-        result.bytesConsumed = kHeaderSize;
+        result.bytesConsumed = 1;
         return result;
     }
 
     if (packet.header.commandCount > kMaxCommandsPerPacket) {
         result.error = PacketError::TooManyCommands;
-        result.bytesConsumed = kHeaderSize;
+        result.bytesConsumed = 1;
         return result;
     }
 

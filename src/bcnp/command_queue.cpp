@@ -38,7 +38,10 @@ void CommandQueue::Update(Clock::time_point now) {
         const auto elapsed = now - m_active->start;
         const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed);
         if (duration.count() >= m_active->command.durationMs) {
+            // Calculate the virtual end time of the current command to prevent drift
+            const auto endTime = m_active->start + std::chrono::milliseconds(m_active->command.durationMs);
             m_active.reset();
+            PromoteNext(endTime);
         }
     }
 
@@ -62,11 +65,14 @@ bool CommandQueue::IsConnected(Clock::time_point now) const {
     return elapsed <= m_config.connectionTimeout;
 }
 
-void CommandQueue::PromoteNext(Clock::time_point now) {
+void CommandQueue::PromoteNext(Clock::time_point startTime) {
     if (m_queue.empty()) {
         return;
     }
-    m_active = ActiveSlot{m_queue.front(), now};
+    // If we are promoting a command, but the startTime is in the past (due to lag),
+    // we should probably respect it to maintain average velocity, unless it's too old?
+    // For now, we trust the virtual time to keep sync.
+    m_active = ActiveSlot{m_queue.front(), startTime};
     m_queue.pop();
 }
 

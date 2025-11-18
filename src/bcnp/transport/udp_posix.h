@@ -8,7 +8,7 @@ namespace bcnp {
 
 class UdpPosixAdapter : public DuplexAdapter {
 public:
-    explicit UdpPosixAdapter(uint16_t listenPort);
+    explicit UdpPosixAdapter(uint16_t listenPort, const char* targetIp = nullptr, uint16_t targetPort = 0);
     ~UdpPosixAdapter() override;
 
     bool SendBytes(const uint8_t* data, std::size_t length) override;

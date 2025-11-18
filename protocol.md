@@ -5,6 +5,7 @@
 The robot networking system has been upgraded to support **batched movement commands**. This allows a client to send multiple sequential movement commands in a single UDP packet, which the robot will execute in order.
 
 **Version History:**
+- **v2.0.3** (Bugfix): Packet loss code revamps, DOS prevention.
 - **v2.0.2** (Bugfix): Prevent UDP datagram truncation, keep POSIX transport optional on non-UNIX builds, and ensure unit tests run even in Release builds.
 - **v2.0.1** (Bugfix): Optimize O(n^2) parser to O(m), fix queueing to be more efficient.
 - **v2.0.0** (Major): Complete rewrite, BNCP lives in it's own seperate library

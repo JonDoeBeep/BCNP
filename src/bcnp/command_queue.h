@@ -51,7 +51,7 @@ private:
         Clock::time_point start;
     };
 
-    void PromoteNext(Clock::time_point now);
+    void PromoteNext(Clock::time_point startTime);
 
     QueueConfig m_config{};
     QueueMetrics m_metrics{};

@@ -177,17 +177,46 @@ void TestStreamParserErrors() {
     parser.Push(badHeader.data(), badHeader.size());
     parser.Push(badHeader.data(), badHeader.size());
 
-    REQUIRE(errors.size() == 2);
+    // With byte-by-byte scanning (O(m) fix), we will get an error for every byte offset
+    // that doesn't look like a valid header.
+    // 1. Offset 0: TooManyCommands (consumes 1 byte)
+    // 2. Offset 1: UnsupportedVersion (consumes 1 byte)
+    // ... and so on.
+    
+    REQUIRE(errors.size() >= 2);
     REQUIRE(errors[0].code == bcnp::PacketError::TooManyCommands);
     REQUIRE(errors[0].offset == 0);
     REQUIRE(errors[0].consecutiveErrors == 1);
+    
+    // The next error should be at offset 1
+    REQUIRE(errors[1].offset == 1);
     REQUIRE(errors[1].consecutiveErrors == 2);
-    REQUIRE(errors[1].offset > errors[0].offset);
 
     parser.Reset();
     parser.Push(badHeader.data(), badHeader.size());
-    REQUIRE(errors.size() == 3);
-    REQUIRE(errors.back().consecutiveErrors == 1);
+    REQUIRE(errors.size() > 2); // Should have added more errors
+    REQUIRE(errors.back().consecutiveErrors == 1); // Reset cleared the counter
+}
+
+void TestStreamParserDoS() {
+    bool packetSeen = false;
+    bcnp::StreamParser parser(
+        [&](const bcnp::Packet&) { packetSeen = true; },
+        [](const bcnp::StreamParser::ErrorInfo&) {});
+
+    // 1. Fill buffer with garbage beyond limit
+    std::vector<uint8_t> garbage(bcnp::StreamParser::kMaxBufferSize + 100, 0xFF);
+    parser.Push(garbage.data(), garbage.size());
+
+    // 2. Verify parser is still alive and can accept a valid packet
+    // (The garbage should have been cleared or handled)
+    bcnp::Packet packet{};
+    packet.commands.push_back({0.1f, 0.1f, 100});
+    std::vector<uint8_t> encoded;
+    bcnp::EncodePacket(packet, encoded);
+
+    parser.Push(encoded.data(), encoded.size());
+    REQUIRE(packetSeen);
 }
 
 void TestControllerClamping() {
@@ -239,6 +268,7 @@ int main() {
     TestStreamParserTruncatedWaits();
     TestStreamParserErrors();
     TestStreamParserSkipsBadHeader();
+    TestStreamParserDoS();
     TestControllerClamping();
     TestQueueDisconnectStopsCommands();
     std::cout << "BCNP tests passed" << std::endl;

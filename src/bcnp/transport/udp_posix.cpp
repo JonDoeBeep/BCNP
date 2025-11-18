@@ -15,7 +15,7 @@ void LogErr(const char* message) {
 }
 }
 
-UdpPosixAdapter::UdpPosixAdapter(uint16_t listenPort) {
+UdpPosixAdapter::UdpPosixAdapter(uint16_t listenPort, const char* targetIp, uint16_t targetPort) {
     m_socket = ::socket(AF_INET, SOCK_DGRAM, 0);
     if (m_socket < 0) {
         LogErr("socket");
@@ -44,6 +44,17 @@ UdpPosixAdapter::UdpPosixAdapter(uint16_t listenPort) {
         ::close(m_socket);
         m_socket = -1;
         return;
+    }
+
+    if (targetIp && targetPort > 0) {
+        m_lastPeer = {};
+        m_lastPeer.sin_family = AF_INET;
+        m_lastPeer.sin_port = htons(targetPort);
+        if (inet_pton(AF_INET, targetIp, &m_lastPeer.sin_addr) > 0) {
+            m_hasPeer = true;
+        } else {
+            LogErr("inet_pton (invalid target IP)");
+        }
     }
 }
 

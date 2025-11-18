@@ -26,6 +26,8 @@ public:
 
     void Reset(bool resetErrorState = true);
 
+    static constexpr std::size_t kMaxBufferSize = 4096;
+
 private:
     void EmitPacket(const Packet& packet);
     void EmitError(PacketError error, std::size_t offset);
