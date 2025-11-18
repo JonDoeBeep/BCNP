@@ -1,6 +1,6 @@
 #include "bcnp/controller.h"
 
-#include "../SPI-EAK/src/link_layer.h"
+#include "SPI-EAK/link_layer.h"
 
 #include <chrono>
 #include <cstdint>
