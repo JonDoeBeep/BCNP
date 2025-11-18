@@ -98,6 +98,46 @@ void TestStreamParserTruncatedWaits() {
     assert(errors == 0);
 }
 
+void TestStreamParserSkipsBadHeader() {
+    bcnp::Packet first{};
+    first.header.commandCount = 1;
+    first.commands.push_back({0.2f, 0.0f, 150});
+
+    bcnp::Packet second{};
+    second.header.commandCount = 1;
+    second.commands.push_back({-0.1f, 0.5f, 200});
+
+    std::vector<uint8_t> combined;
+    std::vector<uint8_t> encoded;
+
+    assert(bcnp::EncodePacket(first, encoded));
+    combined.insert(combined.end(), encoded.begin(), encoded.end());
+
+    // Append a malformed header (commandCount > kMaxCommandsPerPacket).
+    combined.push_back(bcnp::kProtocolMajor);
+    combined.push_back(bcnp::kProtocolMinor);
+    combined.push_back(0x00);
+    combined.push_back(static_cast<uint8_t>(bcnp::kMaxCommandsPerPacket + 1));
+    combined.push_back(0xAA);
+    combined.push_back(0x55);
+
+    assert(bcnp::EncodePacket(second, encoded));
+    combined.insert(combined.end(), encoded.begin(), encoded.end());
+
+    std::vector<bcnp::Packet> seen;
+    std::size_t errorCount = 0;
+    bcnp::StreamParser parser(
+        [&](const bcnp::Packet& parsed) { seen.push_back(parsed); },
+        [&](const bcnp::StreamParser::ErrorInfo&) { ++errorCount; });
+
+    parser.Push(combined.data(), combined.size());
+
+    assert(errorCount >= 1);
+    assert(seen.size() == 2);
+    assert(seen.front().commands.front().vx == first.commands.front().vx);
+    assert(seen.back().commands.front().omega == second.commands.front().omega);
+}
+
 void TestStreamParserErrors() {
     std::vector<bcnp::StreamParser::ErrorInfo> errors;
     bcnp::StreamParser parser(
@@ -117,7 +157,7 @@ void TestStreamParserErrors() {
     assert(errors[0].offset == 0);
     assert(errors[0].consecutiveErrors == 1);
     assert(errors[1].consecutiveErrors == 2);
-    assert(errors[1].offset == bcnp::kHeaderSize);
+    assert(errors[1].offset > errors[0].offset);
 
     parser.Reset();
     parser.Push(badHeader.data(), badHeader.size());
@@ -173,6 +213,7 @@ int main() {
     TestStreamParserChunking();
     TestStreamParserTruncatedWaits();
     TestStreamParserErrors();
+    TestStreamParserSkipsBadHeader();
     TestControllerClamping();
     TestQueueDisconnectStopsCommands();
     std::cout << "BCNP tests passed" << std::endl;

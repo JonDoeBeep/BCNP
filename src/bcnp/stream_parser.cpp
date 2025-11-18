@@ -25,18 +25,18 @@ void StreamParser::Push(const uint8_t* data, std::size_t length) {
         if (commandCount > kMaxCommandsPerPacket) {
             const auto offset = m_streamOffset + m_head;
             EmitError(PacketError::TooManyCommands, offset);
-            m_streamOffset += (m_buffer.size() - m_head);
-            Reset(false);
-            return;
+            ++m_head;
+            ++m_streamOffset;
+            continue;
         }
 
         const std::size_t expected = kHeaderSize + (commandCount * kCommandSize);
         if (expected > kMaxPacketSize) {
             const auto offset = m_streamOffset + m_head;
             EmitError(PacketError::TooManyCommands, offset);
-            m_streamOffset += (m_buffer.size() - m_head);
-            Reset(false);
-            return;
+            ++m_head;
+            ++m_streamOffset;
+            continue;
         }
 
         const std::size_t remaining = m_buffer.size() - m_head;
@@ -52,7 +52,13 @@ void StreamParser::Push(const uint8_t* data, std::size_t length) {
             m_consecutiveErrors = 0;
         }
 
-        const std::size_t consumed = result.bytesConsumed ? result.bytesConsumed : expected;
+        std::size_t consumed = result.bytesConsumed;
+        if (consumed == 0) {
+            consumed = 1;
+        }
+        if (consumed > remaining) {
+            consumed = remaining;
+        }
         m_head += consumed;
         m_streamOffset += consumed;
     }
