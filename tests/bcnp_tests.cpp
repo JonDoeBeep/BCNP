@@ -75,6 +75,29 @@ void TestStreamParserChunking() {
     assert(packetSeen);
 }
 
+void TestStreamParserTruncatedWaits() {
+    bcnp::Packet packet{};
+    packet.header.commandCount = 1;
+    packet.commands.push_back({0.5f, 0.1f, 100});
+
+    std::vector<uint8_t> encoded;
+    assert(bcnp::EncodePacket(packet, encoded));
+
+    bool packetSeen = false;
+    std::size_t errors = 0;
+    bcnp::StreamParser parser(
+        [&](const bcnp::Packet&) { packetSeen = true; },
+        [&](const bcnp::StreamParser::ErrorInfo&) { ++errors; });
+
+    parser.Push(encoded.data(), encoded.size() - 1);
+    assert(!packetSeen);
+    assert(errors == 0);
+
+    parser.Push(encoded.data() + encoded.size() - 1, 1);
+    assert(packetSeen);
+    assert(errors == 0);
+}
+
 void TestStreamParserErrors() {
     std::vector<bcnp::StreamParser::ErrorInfo> errors;
     bcnp::StreamParser parser(
@@ -148,6 +171,7 @@ int main() {
     TestEncodeDecode();
     TestCommandQueue();
     TestStreamParserChunking();
+    TestStreamParserTruncatedWaits();
     TestStreamParserErrors();
     TestControllerClamping();
     TestQueueDisconnectStopsCommands();

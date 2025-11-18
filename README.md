@@ -41,3 +41,10 @@ and chunked stream parsing.
 	can log flaky links with context.
 - `ControllerDriver` reuses persistent RX/TX buffers to avoid per-cycle
 	allocations when feeding data between transports and the controller.
+
+### SPI transport demo
+
+- `examples/core_demo.cpp` now shows how to wrap BCNP packets with the
+	`SPI-EAK` framing helpers (`FrameCodec`/`FrameDecoder`) before pushing the
+	recovered payload into a `bcnp::Controller`. The demo assumes the `SPI-EAK`
+	submodule is checked out.

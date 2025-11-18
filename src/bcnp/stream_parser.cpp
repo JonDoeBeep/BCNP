@@ -39,11 +39,11 @@ void StreamParser::Push(const uint8_t* data, std::size_t length) {
             return;
         }
 
-        if ((m_buffer.size() - m_head) < expected) {
+        const std::size_t remaining = m_buffer.size() - m_head;
+        auto result = DecodePacket(headPtr, remaining);
+        if (result.error == PacketError::Truncated) {
             break;
         }
-
-        auto result = DecodePacket(headPtr, expected);
         if (!result.packet) {
             const auto offset = m_streamOffset + m_head;
             EmitError(result.error, offset);
