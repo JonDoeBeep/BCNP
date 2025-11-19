@@ -13,7 +13,7 @@ set(BCNP_CORE_SOURCES
     src/bcnp/transport/controller_driver.cpp)
 
 if(UNIX)
-    list(APPEND BCNP_CORE_SOURCES src/bcnp/transport/udp_posix.cpp)
+    list(APPEND BCNP_CORE_SOURCES src/bcnp/transport/udp_posix.cpp src/bcnp/transport/tcp_posix.cpp)
 else()
     message(STATUS "Skipping POSIX UDP adapter on non-UNIX platform")
 endif()

@@ -2,12 +2,14 @@
 #include "bcnp/controller.h"
 #include "bcnp/packet.h"
 #include "bcnp/stream_parser.h"
+#include "bcnp/transport/tcp_posix.h"
 
 #include <algorithm>
 #include <array>
 #include <chrono>
 #include <cstdlib>
 #include <iostream>
+#include <thread>
 #include <vector>
 
 namespace testutil {
@@ -259,6 +261,61 @@ void TestQueueDisconnectStopsCommands() {
     REQUIRE(queue.Size() == 0);
 }
 
+void TestTcpAdapter() {
+    // 1. Create Server
+    bcnp::TcpPosixAdapter server(12345);
+    REQUIRE(server.IsValid());
+
+    // 2. Create Client
+    bcnp::TcpPosixAdapter client(0, "127.0.0.1", 12345);
+    REQUIRE(client.IsValid());
+
+    // 3. Wait for connection (client connect is non-blocking/async in our impl, 
+    //    but server accept is called in ReceiveChunk)
+    
+    // Client sends data to trigger connection on server side
+    std::vector<uint8_t> txData = {0x01, 0x02, 0x03, 0x04};
+    // Give it a moment to connect
+    for (int i = 0; i < 10; ++i) {
+        client.SendBytes(txData.data(), txData.size());
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        if (client.IsConnected()) break;
+    }
+    
+    // Server needs to call ReceiveChunk to accept connection
+    std::vector<uint8_t> rxBuffer(1024);
+    bool received = false;
+    for (int i = 0; i < 50; ++i) {
+        size_t bytes = server.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
+        if (bytes > 0) {
+            received = true;
+            REQUIRE(bytes == txData.size());
+            REQUIRE(rxBuffer[0] == 0x01);
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    REQUIRE(received);
+    REQUIRE(server.IsConnected());
+
+    // 4. Server sends back to client
+    std::vector<uint8_t> response = {0x05, 0x06};
+    server.SendBytes(response.data(), response.size());
+
+    received = false;
+    for (int i = 0; i < 50; ++i) {
+        size_t bytes = client.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
+        if (bytes > 0) {
+            received = true;
+            REQUIRE(bytes == response.size());
+            REQUIRE(rxBuffer[0] == 0x05);
+            break;
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    }
+    REQUIRE(received);
+}
+
 } // namespace
 
 int main() {
@@ -271,6 +328,7 @@ int main() {
     TestStreamParserDoS();
     TestControllerClamping();
     TestQueueDisconnectStopsCommands();
+    TestTcpAdapter();
     std::cout << "BCNP tests passed" << std::endl;
     return 0;
 }
