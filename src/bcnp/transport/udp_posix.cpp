@@ -52,6 +52,8 @@ UdpPosixAdapter::UdpPosixAdapter(uint16_t listenPort, const char* targetIp, uint
         m_lastPeer.sin_port = htons(targetPort);
         if (inet_pton(AF_INET, targetIp, &m_lastPeer.sin_addr) > 0) {
             m_hasPeer = true;
+            m_peerLocked = true; // Lock to this peer for security
+            m_initialPeer = m_lastPeer;
         } else {
             LogErr("inet_pton (invalid target IP)");
         }
@@ -76,6 +78,14 @@ bool UdpPosixAdapter::SendBytes(const uint8_t* data, std::size_t length) {
     return sent == static_cast<ssize_t>(length);
 }
 
+void UdpPosixAdapter::SetPeerLockMode(bool locked) {
+    m_peerLocked = locked;
+    if (locked && m_hasPeer) {
+        // Lock to current peer
+        m_initialPeer = m_lastPeer;
+    }
+}
+
 std::size_t UdpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength) {
     if (m_socket < 0 || !buffer || maxLength == 0) {
         return 0;
@@ -91,6 +101,20 @@ std::size_t UdpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength
         }
         LogErr("recvfrom");
         return 0;
+    }
+
+    // Security: if peer is locked, reject packets from other sources
+    if (m_peerLocked) {
+        // If we have a locked peer, only accept from that address
+        if (m_hasPeer && (src.sin_addr.s_addr != m_initialPeer.sin_addr.s_addr ||
+                          src.sin_port != m_initialPeer.sin_port)) {
+            // Silently drop packets from unauthorized sources
+            return 0;
+        }
+        // First packet after lock enabled - this becomes our locked peer
+        if (!m_hasPeer) {
+            m_initialPeer = src;
+        }
     }
 
     m_lastPeer = src;

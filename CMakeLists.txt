@@ -24,9 +24,13 @@ target_include_directories(bcnp_core PUBLIC src)
 
 target_compile_features(bcnp_core PUBLIC cxx_std_17)
 
-add_executable(bcnp_tests tests/bcnp_tests.cpp)
+add_executable(bcnp_tests_1 tests/bcnp_tests_1.cpp)
+target_link_libraries(bcnp_tests_1 PRIVATE bcnp_core)
 
-target_link_libraries(bcnp_tests PRIVATE bcnp_core)
+add_executable(bcnp_tests_2 tests/bcnp_tests_2.cpp)
+target_link_libraries(bcnp_tests_2 PRIVATE bcnp_core)
+target_include_directories(bcnp_tests_2 PRIVATE tests)
 
 enable_testing()
-add_test(NAME bcnp_tests COMMAND bcnp_tests)
+add_test(NAME bcnp_tests_1 COMMAND bcnp_tests_1)
+add_test(NAME bcnp_tests_2 COMMAND bcnp_tests_2)

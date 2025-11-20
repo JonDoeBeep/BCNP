@@ -37,6 +37,8 @@ private:
     sockaddr_in m_peerAddr{};
     bool m_peerAddrValid{false};
     std::chrono::steady_clock::time_point m_nextReconnectAttempt{};
+    std::chrono::steady_clock::time_point m_lastServerRx{};
+    std::chrono::milliseconds m_serverClientTimeout{5000}; // 5 second zombie timeout
 };
 
 } // namespace bcnp

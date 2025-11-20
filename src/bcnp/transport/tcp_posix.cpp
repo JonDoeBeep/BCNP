@@ -134,6 +134,7 @@ void TcpPosixAdapter::BeginClientConnect(bool forceImmediate) {
         return;
     }
 
+    // Synchronous connect succeeded (rare for non-blocking socket)
     m_isConnected = true;
     m_connectInProgress = false;
 }
@@ -172,6 +173,17 @@ void TcpPosixAdapter::PollConnection() {
         }
 
         if (m_clientSocket >= 0) {
+            // Check for zombie client timeout
+            const auto now = std::chrono::steady_clock::now();
+            if (m_lastServerRx != std::chrono::steady_clock::time_point{} &&
+                now - m_lastServerRx > m_serverClientTimeout) {
+                // Client hasn't sent data in timeout period - close to allow new connection
+                ::close(m_clientSocket);
+                m_clientSocket = -1;
+                m_isConnected = false;
+                m_lastServerRx = {};
+                return;
+            }
             m_isConnected = true;
             return;
         }
@@ -183,6 +195,7 @@ void TcpPosixAdapter::PollConnection() {
             ConfigureSocket(clientSock);
             m_clientSocket = clientSock;
             m_isConnected = true;
+            m_lastServerRx = std::chrono::steady_clock::now();
         } else if (errno != EAGAIN && errno != EWOULDBLOCK) {
             LogErr("accept");
         }
@@ -234,14 +247,17 @@ void TcpPosixAdapter::HandleConnectionLoss() {
             ::close(m_clientSocket);
             m_clientSocket = -1;
         }
+        m_lastServerRx = {};
         return;
     }
 
+    // Client mode - close broken socket and trigger reconnection
     if (m_socket >= 0) {
         ::close(m_socket);
         m_socket = -1;
     }
     m_connectInProgress = false;
+    // Force immediate reconnection attempt after connection loss
     BeginClientConnect(true);
 }
 
@@ -321,6 +337,9 @@ std::size_t TcpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength
     } while (received < 0 && errno == EINTR);
 
     if (received > 0) {
+        if (m_isServer) {
+            m_lastServerRx = std::chrono::steady_clock::now();
+        }
         return static_cast<std::size_t>(received);
     } else if (received == 0) {
         HandleConnectionLoss();

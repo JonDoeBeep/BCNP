@@ -8,7 +8,7 @@
 namespace bcnp {
 
 constexpr uint8_t kProtocolMajor = 2;
-constexpr uint8_t kProtocolMinor = 1;
+constexpr uint8_t kProtocolMinor = 2;
 constexpr std::size_t kHeaderSize = 4;
 constexpr std::size_t kCommandSize = 10;
 constexpr std::size_t kMaxCommandsPerPacket = 100;

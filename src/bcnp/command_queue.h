@@ -12,6 +12,7 @@ namespace bcnp {
 struct QueueConfig {
     std::size_t maxQueueDepth{kMaxQueueSize};
     std::chrono::milliseconds connectionTimeout{200};
+    std::chrono::milliseconds maxCommandLag{100}; // Max lag before clamping virtual time
 };
 
 struct QueueMetrics {
@@ -51,7 +52,7 @@ private:
         Clock::time_point start;
     };
 
-    void PromoteNext(Clock::time_point startTime);
+    void PromoteNext(Clock::time_point startTime, Clock::time_point now);
 
     QueueConfig m_config{};
     QueueMetrics m_metrics{};

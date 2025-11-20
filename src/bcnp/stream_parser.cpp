@@ -73,9 +73,6 @@ void StreamParser::Push(const uint8_t* data, std::size_t length) {
         if (consumed == 0) {
             consumed = 1;
         }
-        if (consumed > remaining) {
-            consumed = remaining;
-        }
         m_head += consumed;
     }
 

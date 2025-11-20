@@ -7,12 +7,12 @@
 namespace bcnp {
 
 struct CommandLimits {
-    float vxMin{-1.5f};
-    float vxMax{1.5f};
-    float omegaMin{-2.5f};
-    float omegaMax{2.5f};
+    float vxMin{0.0f};
+    float vxMax{0.0f};
+    float omegaMin{0.0f};
+    float omegaMax{0.0f};
     uint16_t durationMin{0};
-    uint16_t durationMax{65535};
+    uint16_t durationMax{0};
 };
 
 struct ControllerConfig {
