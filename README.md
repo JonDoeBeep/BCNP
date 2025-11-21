@@ -13,7 +13,7 @@ library. The codebase is split into three layers:
 
 ## Building & Testing 
 ```bash
-cd /mnt/c/Users/michaelb/robot/BCNP && cmake -S . -B build && cmake --build build && ctest --test-dir build
+cmake -S . -B build && cmake --build build && ctest --test-dir build
 ```
 
 The command configures the project, builds `libbcnp_core.a`, and runs the
