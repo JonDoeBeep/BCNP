@@ -1,20 +1,18 @@
 #include "bcnp/transport/tcp_posix.h"
 
+#include <algorithm>
 #include <arpa/inet.h>
 #include <cerrno>
 #include <chrono>
 #include <fcntl.h>
 #include <iostream>
 #include <netinet/tcp.h>
-#include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
 namespace bcnp {
 
 namespace {
-constexpr int kSendWaitTimeoutMs = 20;
-constexpr int kSendWaitMaxAttempts = 200;
 constexpr auto kReconnectInterval = std::chrono::milliseconds(500);
 
 void LogErr(const char* message) {
@@ -34,6 +32,7 @@ void ConfigureSocket(int sock) {
 } // namespace
 
 TcpPosixAdapter::TcpPosixAdapter(uint16_t listenPort, const char* targetIp, uint16_t targetPort) {
+    m_txBuffer.reserve(kMaxPacketSize * 4);
     if (listenPort > 0) {
         m_isServer = true;
         if (!CreateBaseSocket()) {
@@ -139,33 +138,6 @@ void TcpPosixAdapter::BeginClientConnect(bool forceImmediate) {
     m_connectInProgress = false;
 }
 
-TcpPosixAdapter::PollStatus TcpPosixAdapter::WaitForWritable(int sock, int timeoutMs) const {
-    pollfd descriptor{};
-    descriptor.fd = sock;
-    descriptor.events = POLLOUT;
-
-    while (true) {
-        int result = ::poll(&descriptor, 1, timeoutMs);
-        if (result > 0) {
-            if (descriptor.revents & (POLLERR | POLLHUP | POLLNVAL)) {
-                return PollStatus::Error;
-            }
-            if (descriptor.revents & POLLOUT) {
-                return PollStatus::Ready;
-            }
-            return PollStatus::Error;
-        }
-        if (result == 0) {
-            return PollStatus::Timeout;
-        }
-        if (errno == EINTR) {
-            continue;
-        }
-        LogErr("poll");
-        return PollStatus::Error;
-    }
-}
-
 void TcpPosixAdapter::PollConnection() {
     if (m_isServer) {
         if (m_socket < 0) {
@@ -196,6 +168,7 @@ void TcpPosixAdapter::PollConnection() {
             m_clientSocket = clientSock;
             m_isConnected = true;
             m_lastServerRx = std::chrono::steady_clock::now();
+            TryFlushTxBuffer(m_clientSocket);
         } else if (errno != EAGAIN && errno != EWOULDBLOCK) {
             LogErr("accept");
         }
@@ -218,6 +191,7 @@ void TcpPosixAdapter::PollConnection() {
         if (err == 0) {
             m_isConnected = true;
             m_connectInProgress = false;
+            TryFlushTxBuffer(m_socket);
             return;
         }
 
@@ -241,6 +215,7 @@ void TcpPosixAdapter::PollConnection() {
 
 void TcpPosixAdapter::HandleConnectionLoss() {
     m_isConnected = false;
+    DropPendingTx();
 
     if (m_isServer) {
         if (m_clientSocket >= 0) {
@@ -273,48 +248,12 @@ bool TcpPosixAdapter::SendBytes(const uint8_t* data, std::size_t length) {
         return false;
     }
 
-    std::size_t totalSent = 0;
-    // Retry loop: Handles partial sends by waiting for socket writability (EAGAIN/EWOULDBLOCK). Must send complete message to avoid stream corruption.
-    while (totalSent < length) {
-        ssize_t sent = ::send(targetSock, data + totalSent, length - totalSent, MSG_NOSIGNAL);
-        if (sent > 0) {
-            totalSent += static_cast<std::size_t>(sent);
-            continue;
-        }
-
-        if (sent == 0) {
-            // Connection closed
-            HandleConnectionLoss();
-            return false;
-        }
-
-        if (errno == EINTR) {
-            continue;
-        }
-
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            auto pollResult = WaitForWritable(targetSock, kSendWaitTimeoutMs);
-            if (pollResult == PollStatus::Ready) {
-                continue;
-            } else if (pollResult == PollStatus::Timeout) {
-                // Timeout waiting for socket - this is a send failure
-                LogErr("send timeout waiting for writability");
-                return false;
-            } else {
-                HandleConnectionLoss();
-                return false;
-            }
-        }
-
-        if (errno == EPIPE || errno == ECONNRESET || errno == ENOTCONN) {
-            HandleConnectionLoss();
-        } else {
-            LogErr("send");
-        }
+    if (!EnqueueTx(data, length)) {
         return false;
     }
 
-    return totalSent == length;
+    TryFlushTxBuffer(targetSock);
+    return true;
 }
 
 std::size_t TcpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength) {
@@ -328,6 +267,8 @@ std::size_t TcpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength
     if (targetSock < 0 || !m_isConnected) {
         return 0;
     }
+
+    TryFlushTxBuffer(targetSock);
 
     ssize_t received;
     do {
@@ -353,6 +294,83 @@ std::size_t TcpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength
         }
         return 0;
     }
+}
+
+void TcpPosixAdapter::TryFlushTxBuffer(int targetSock) {
+    while (m_txHead < m_txBuffer.size() && targetSock >= 0 && m_isConnected) {
+        const std::size_t remaining = m_txBuffer.size() - m_txHead;
+        ssize_t sent = ::send(targetSock, m_txBuffer.data() + m_txHead, remaining, MSG_NOSIGNAL);
+        if (sent > 0) {
+            m_txHead += static_cast<std::size_t>(sent);
+            if (m_txHead >= m_txBuffer.size()) {
+                DropPendingTx();
+                break;
+            }
+            if (m_txHead > m_txBuffer.size() / 2) {
+                CompactTxBuffer();
+            }
+            continue;
+        }
+
+        if (sent == 0) {
+            HandleConnectionLoss();
+            DropPendingTx();
+            return;
+        }
+
+        if (errno == EINTR) {
+            continue;
+        }
+
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            return;
+        }
+
+        if (errno == EPIPE || errno == ECONNRESET || errno == ENOTCONN) {
+            HandleConnectionLoss();
+        } else {
+            LogErr("send");
+        }
+        DropPendingTx();
+        return;
+    }
+}
+
+bool TcpPosixAdapter::EnqueueTx(const uint8_t* data, std::size_t length) {
+    if (!data || length == 0) {
+        return true;
+    }
+
+    const std::size_t pending = PendingTxBytes();
+    if (pending + length > kMaxBufferedTxBytes) {
+        LogErr("tx buffer overflow - dropping packet");
+        return false;
+    }
+
+    if (m_txHead > 0 && (m_txHead > m_txBuffer.size() / 2)) {
+        CompactTxBuffer();
+    }
+
+    m_txBuffer.insert(m_txBuffer.end(), data, data + length);
+    return true;
+}
+
+void TcpPosixAdapter::DropPendingTx() {
+    m_txBuffer.clear();
+    m_txHead = 0;
+}
+
+void TcpPosixAdapter::CompactTxBuffer() {
+    if (m_txHead == 0) {
+        return;
+    }
+    if (m_txHead >= m_txBuffer.size()) {
+        DropPendingTx();
+        return;
+    }
+    using difference_type = std::vector<uint8_t>::difference_type;
+    m_txBuffer.erase(m_txBuffer.begin(), m_txBuffer.begin() + static_cast<difference_type>(m_txHead));
+    m_txHead = 0;
 }
 
 } // namespace bcnp

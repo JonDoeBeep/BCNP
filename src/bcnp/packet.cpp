@@ -1,6 +1,7 @@
 #include "bcnp/packet.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstring>
 
@@ -29,6 +30,50 @@ void StoreU16(uint16_t value, uint8_t* out) {
     out[0] = static_cast<uint8_t>((value >> 8) & 0xFF);
     out[1] = static_cast<uint8_t>(value & 0xFF);
 }
+
+int32_t LoadS32(const uint8_t* data) {
+    return static_cast<int32_t>(LoadU32(data));
+}
+
+void StoreS32(int32_t value, uint8_t* out) {
+    StoreU32(static_cast<uint32_t>(value), out);
+}
+
+constexpr std::array<uint32_t, 256> MakeCrcTable() {
+    std::array<uint32_t, 256> table{};
+    for (uint32_t i = 0; i < 256; ++i) {
+        uint32_t crc = i;
+        for (uint32_t bit = 0; bit < 8; ++bit) {
+            if (crc & 1U) {
+                crc = (crc >> 1U) ^ 0xEDB88320U;
+            } else {
+                crc >>= 1U;
+            }
+        }
+        table[i] = crc;
+    }
+    return table;
+}
+
+constexpr auto kCrc32Table = MakeCrcTable();
+
+uint32_t ComputeCrc32(const uint8_t* data, std::size_t length) {
+    uint32_t crc = 0xFFFFFFFFU;
+    for (std::size_t i = 0; i < length; ++i) {
+        const uint8_t index = static_cast<uint8_t>((crc ^ data[i]) & 0xFFU);
+        crc = (crc >> 8U) ^ kCrc32Table[index];
+    }
+    return crc ^ 0xFFFFFFFFU;
+}
+
+int32_t QuantizeScaled(float value, float scale) {
+    const double scaled = static_cast<double>(value) * static_cast<double>(scale);
+    return static_cast<int32_t>(std::llround(scaled));
+}
+
+float DequantizeScaled(int32_t fixed, float scale) {
+    return static_cast<float>(static_cast<double>(fixed) / static_cast<double>(scale));
+}
 } // namespace
 
 bool EncodePacket(const Packet& packet, uint8_t* output, std::size_t capacity, std::size_t& bytesWritten) {
@@ -37,7 +82,8 @@ bool EncodePacket(const Packet& packet, uint8_t* output, std::size_t capacity, s
         return false;
     }
 
-    const std::size_t required = kHeaderSize + packet.commands.size() * kCommandSize;
+    const std::size_t payloadSize = kHeaderSize + packet.commands.size() * kCommandSize;
+    const std::size_t required = payloadSize + kChecksumSize;
     if (capacity < required) {
         return false;
     }
@@ -49,15 +95,19 @@ bool EncodePacket(const Packet& packet, uint8_t* output, std::size_t capacity, s
 
     std::size_t offset = kHeaderSize;
     for (const auto& cmd : packet.commands) {
-        uint32_t vxBits;
-        uint32_t omegaBits;
-        std::memcpy(&vxBits, &cmd.vx, sizeof(float));
-        std::memcpy(&omegaBits, &cmd.omega, sizeof(float));
-        StoreU32(vxBits, &output[offset]);
-        StoreU32(omegaBits, &output[offset + 4]);
+        if (!std::isfinite(cmd.vx) || !std::isfinite(cmd.omega)) {
+            return false;
+        }
+        const int32_t vxFixed = QuantizeScaled(cmd.vx, kLinearVelocityScale);
+        const int32_t omegaFixed = QuantizeScaled(cmd.omega, kAngularVelocityScale);
+        StoreS32(vxFixed, &output[offset]);
+        StoreS32(omegaFixed, &output[offset + 4]);
         StoreU16(cmd.durationMs, &output[offset + 8]);
         offset += kCommandSize;
     }
+
+    const uint32_t crc = ComputeCrc32(output, payloadSize);
+    StoreU32(crc, &output[payloadSize]);
 
     bytesWritten = required;
     return true;
@@ -67,7 +117,7 @@ bool EncodePacket(const Packet& packet, std::vector<uint8_t>& output) {
     if (packet.commands.size() > kMaxCommandsPerPacket) {
         return false;
     }
-    const std::size_t required = kHeaderSize + packet.commands.size() * kCommandSize;
+    const std::size_t required = kHeaderSize + packet.commands.size() * kCommandSize + kChecksumSize;
     output.resize(required);
     std::size_t bytesWritten = 0;
     if (!EncodePacket(packet, output.data(), output.size(), bytesWritten)) {
@@ -103,24 +153,31 @@ DecodeResult DecodePacket(const uint8_t* data, std::size_t length) {
         return result;
     }
 
-    const std::size_t expectedSize = kHeaderSize + (packet.header.commandCount * kCommandSize);
+    const std::size_t payloadSize = kHeaderSize + (packet.header.commandCount * kCommandSize);
+    const std::size_t expectedSize = payloadSize + kChecksumSize;
     if (length < expectedSize) {
         result.error = PacketError::Truncated;
         return result;
     }
 
-    packet.commands.reserve(packet.header.commandCount);
+    const uint32_t transmittedCrc = LoadU32(&data[payloadSize]);
+    const uint32_t computedCrc = ComputeCrc32(data, payloadSize);
+    if (transmittedCrc != computedCrc) {
+        result.error = PacketError::ChecksumMismatch;
+        result.bytesConsumed = expectedSize;
+        return result;
+    }
+
+    packet.commands.reserve(kMaxCommandsPerPacket);
 
     std::size_t offset = kHeaderSize;
     for (std::size_t i = 0; i < packet.header.commandCount; ++i) {
-        const uint32_t vxBits = LoadU32(&data[offset]);
-        const uint32_t omegaBits = LoadU32(&data[offset + 4]);
+        const int32_t vxFixed = LoadS32(&data[offset]);
+        const int32_t omegaFixed = LoadS32(&data[offset + 4]);
         const uint16_t duration = LoadU16(&data[offset + 8]);
 
-        float vx;
-        float omega;
-        std::memcpy(&vx, &vxBits, sizeof(float));
-        std::memcpy(&omega, &omegaBits, sizeof(float));
+        const float vx = DequantizeScaled(vxFixed, kLinearVelocityScale);
+        const float omega = DequantizeScaled(omegaFixed, kAngularVelocityScale);
 
         if (!std::isfinite(vx) || !std::isfinite(omega)) {
             result.error = PacketError::InvalidFloat;

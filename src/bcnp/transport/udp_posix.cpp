@@ -10,10 +10,19 @@
 namespace bcnp {
 
 namespace {
+constexpr uint32_t kPairingMagic = 0x42434E50U; // "BCNP"
+
+uint32_t LoadU32(const uint8_t* data) {
+    return (uint32_t(data[0]) << 24) |
+           (uint32_t(data[1]) << 16) |
+           (uint32_t(data[2]) << 8) |
+           uint32_t(data[3]);
+}
+
 void LogErr(const char* message) {
     std::cerr << "UDP adapter error: " << message << " errno=" << errno << std::endl;
 }
-}
+} // namespace
 
 UdpPosixAdapter::UdpPosixAdapter(uint16_t listenPort, const char* targetIp, uint16_t targetPort) {
     m_socket = ::socket(AF_INET, SOCK_DGRAM, 0);
@@ -46,6 +55,8 @@ UdpPosixAdapter::UdpPosixAdapter(uint16_t listenPort, const char* targetIp, uint
         return;
     }
 
+    m_requirePairing = (listenPort > 0);
+
     if (targetIp && targetPort > 0) {
         m_lastPeer = {};
         m_lastPeer.sin_family = AF_INET;
@@ -54,6 +65,8 @@ UdpPosixAdapter::UdpPosixAdapter(uint16_t listenPort, const char* targetIp, uint
             m_hasPeer = true;
             m_peerLocked = true; // Lock to this peer for security
             m_initialPeer = m_lastPeer;
+            m_pairingComplete = true;
+            m_fixedPeerConfigured = true;
         } else {
             LogErr("inet_pton (invalid target IP)");
         }
@@ -80,9 +93,35 @@ bool UdpPosixAdapter::SendBytes(const uint8_t* data, std::size_t length) {
 
 void UdpPosixAdapter::SetPeerLockMode(bool locked) {
     m_peerLocked = locked;
-    if (locked && m_hasPeer) {
-        // Lock to current peer immediately
+    if (!locked) {
+        m_pairingComplete = false;
+        return;
+    }
+
+    if (m_fixedPeerConfigured && m_hasPeer) {
         m_initialPeer = m_lastPeer;
+        m_pairingComplete = true;
+        return;
+    }
+
+    if (m_requirePairing) {
+        m_pairingComplete = false;
+        m_hasPeer = false;
+    }
+}
+
+void UdpPosixAdapter::SetPairingToken(uint32_t token) {
+    m_pairingToken = token;
+    if (m_peerLocked && m_requirePairing && !m_fixedPeerConfigured) {
+        m_pairingComplete = false;
+        m_hasPeer = false;
+    }
+}
+
+void UdpPosixAdapter::UnlockPeer() {
+    if (!m_fixedPeerConfigured) {
+        m_pairingComplete = false;
+        m_hasPeer = false;
     }
 }
 
@@ -103,8 +142,14 @@ std::size_t UdpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength
         return 0;
     }
 
-    // Peer locking security model: Prevents session hijacking in untrusted networks.
     if (m_peerLocked) {
+        if (m_requirePairing && !m_pairingComplete && !m_fixedPeerConfigured) {
+            if (ProcessPairingPacket(buffer, static_cast<std::size_t>(received), src)) {
+                return 0; // Handshake packets are not forwarded upwards
+            }
+            return 0;
+        }
+
         if (m_hasPeer && (src.sin_addr.s_addr != m_initialPeer.sin_addr.s_addr ||
                           src.sin_port != m_initialPeer.sin_port)) {
             return 0;
@@ -112,15 +157,33 @@ std::size_t UdpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength
         if (!m_hasPeer) {
             m_initialPeer = src;
             m_hasPeer = true;
-            m_lastPeer = src;
         }
+        m_lastPeer = src;
     } else {
-        // Normal mode: accept from any source, track last sender
         m_lastPeer = src;
         m_hasPeer = true;
     }
 
     return static_cast<std::size_t>(received);
+}
+
+bool UdpPosixAdapter::ProcessPairingPacket(const uint8_t* buffer, std::size_t length, const sockaddr_in& src) {
+    constexpr std::size_t kPairingFrameSize = 8;
+    if (length != kPairingFrameSize) {
+        return false;
+    }
+
+    const uint32_t magic = LoadU32(buffer);
+    const uint32_t token = LoadU32(buffer + 4);
+    if (magic != kPairingMagic || token != m_pairingToken) {
+        return false;
+    }
+
+    m_initialPeer = src;
+    m_lastPeer = src;
+    m_hasPeer = true;
+    m_pairingComplete = true;
+    return true;
 }
 
 } // namespace bcnp

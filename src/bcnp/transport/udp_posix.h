@@ -2,6 +2,7 @@
 
 #include "bcnp/transport/adapter.h"
 
+#include <cstdint>
 #include <netinet/in.h>
 
 namespace bcnp {
@@ -18,13 +19,21 @@ public:
     
     // Peer security: when true, locks to initial peer and ignores other sources
     void SetPeerLockMode(bool locked);
+    void SetPairingToken(uint32_t token);
+    void UnlockPeer();
 
 private:
+    bool ProcessPairingPacket(const uint8_t* buffer, std::size_t length, const sockaddr_in& src);
+
     int m_socket{-1};
     sockaddr_in m_bind{};
     sockaddr_in m_lastPeer{};
     bool m_hasPeer{false};
     bool m_peerLocked{false};
+    bool m_pairingComplete{false};
+    bool m_requirePairing{false};
+    bool m_fixedPeerConfigured{false};
+    uint32_t m_pairingToken{0x42434E50U};
     sockaddr_in m_initialPeer{}; 
 };
 

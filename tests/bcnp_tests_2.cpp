@@ -20,6 +20,21 @@
 
 using namespace std::chrono_literals;
 
+namespace {
+std::array<uint8_t, 8> MakePairingFrame(uint32_t token) {
+    std::array<uint8_t, 8> frame{};
+    frame[0] = 'B';
+    frame[1] = 'C';
+    frame[2] = 'N';
+    frame[3] = 'P';
+    frame[4] = static_cast<uint8_t>((token >> 24) & 0xFF);
+    frame[5] = static_cast<uint8_t>((token >> 16) & 0xFF);
+    frame[6] = static_cast<uint8_t>((token >> 8) & 0xFF);
+    frame[7] = static_cast<uint8_t>(token & 0xFF);
+    return frame;
+}
+}
+
 // ============================================================================
 // Test Suite: Packet Encoding/Decoding
 // ============================================================================
@@ -44,17 +59,20 @@ TEST_CASE("Packet: Encode and decode round-trip") {
     CHECK(decode.packet->commands[1].omega == 0.25f);
 }
 
-TEST_CASE("Packet: Reject NaN and Inf floats") {
-    const uint8_t badPacket[] = {
-        bcnp::kProtocolMajor, bcnp::kProtocolMinor, 0x00, 0x01, // Header
-        0x7F, 0xC0, 0x00, 0x00, // vx = NaN
-        0x00, 0x00, 0x00, 0x00, // omega = 0
-        0x00, 0x64 // duration = 100
-    };
+TEST_CASE("Packet: CRC detects payload corruption") {
+    bcnp::Packet packet{};
+    packet.commands.push_back({0.25f, -0.5f, 100});
 
-    auto result = bcnp::DecodePacket(badPacket, sizeof(badPacket));
+    std::vector<uint8_t> bytes;
+    REQUIRE(bcnp::EncodePacket(packet, bytes));
+
+    // Flip one payload byte without updating the checksum
+    REQUIRE(bytes.size() > bcnp::kHeaderSize);
+    bytes[bcnp::kHeaderSize] ^= 0xFF;
+
+    auto result = bcnp::DecodePacket(bytes.data(), bytes.size());
     CHECK(!result.packet.has_value());
-    CHECK(result.error == bcnp::PacketError::InvalidFloat);
+    CHECK(result.error == bcnp::PacketError::ChecksumMismatch);
 }
 
 TEST_CASE("Packet: Reject too many commands") {
@@ -593,43 +611,50 @@ TEST_CASE("UDP: Basic send and receive") {
     CHECK(rxBuffer[1] == 0x22);
 }
 
-TEST_CASE("UDP: Peer locking prevents hijacking") {
-    // This test verifies that once a robot locks to a peer, it ignores other sources
-    // For now, simplify to test basic peer switching behavior
-    // Full peer locking requires more complex setup
-    
+TEST_CASE("UDP: Locked mode requires handshake before accepting data") {
+    constexpr uint32_t kToken = 0xA5A5A5A5;
     bcnp::UdpPosixAdapter robot(54323);
-    robot.SetPeerLockMode(false); // Start unlocked
+    robot.SetPeerLockMode(true);
+    robot.SetPairingToken(kToken);
     REQUIRE(robot.IsValid());
-    
-    bcnp::UdpPosixAdapter client1(54324, "127.0.0.1", 54323);
-    bcnp::UdpPosixAdapter client2(54325, "127.0.0.1", 54323);
-    
-    std::vector<uint8_t> data1 = {0xAA};
-    std::vector<uint8_t> data2 = {0xBB};
+
+    bcnp::UdpPosixAdapter attacker(54324, "127.0.0.1", 54323);
+    bcnp::UdpPosixAdapter driver(54325, "127.0.0.1", 54323);
+
     std::vector<uint8_t> rxBuffer(1024);
-    
-    // Client 1 sends
-    client1.SendBytes(data1.data(), data1.size());
-    std::this_thread::sleep_for(20ms);
-    
-    size_t received = robot.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
-    REQUIRE(received > 0);
-    CHECK(rxBuffer[0] == 0xAA);
-    
-    //Client 2 can also send (not locked)
-    client2.SendBytes(data2.data(), data2.size());
-    
-    bool received2 = false;
+
+    // Attacker sends data before pairing; robot should drop it silently.
+    std::vector<uint8_t> bogus = {0xAA};
+    attacker.SendBytes(bogus.data(), bogus.size());
+    CHECK(robot.ReceiveChunk(rxBuffer.data(), rxBuffer.size()) == 0);
+
+    // Attacker attempts handshake with wrong token.
+    auto wrongFrame = MakePairingFrame(kToken ^ 0xFF);
+    attacker.SendBytes(wrongFrame.data(), wrongFrame.size());
+    CHECK(robot.ReceiveChunk(rxBuffer.data(), rxBuffer.size()) == 0);
+
+    // Real driver pairs successfully.
+    auto goodFrame = MakePairingFrame(kToken);
+    driver.SendBytes(goodFrame.data(), goodFrame.size());
+    CHECK(robot.ReceiveChunk(rxBuffer.data(), rxBuffer.size()) == 0);
+
+    // After pairing, only the paired driver is heard.
+    std::vector<uint8_t> payload = {0x42};
+    driver.SendBytes(payload.data(), payload.size());
+    size_t received = 0;
     for (int i = 0; i < 10; ++i) {
-        std::this_thread::sleep_for(10ms);
         received = robot.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
-        if (received > 0 && rxBuffer[0] == 0xBB) {
-            received2 = true;
+        if (received > 0) {
             break;
         }
+        std::this_thread::sleep_for(10ms);
     }
-    CHECK(received2);
+    REQUIRE(received == payload.size());
+    CHECK(rxBuffer[0] == 0x42);
+
+    // Attacker messages remain blocked after pairing.
+    attacker.SendBytes(payload.data(), payload.size());
+    CHECK(robot.ReceiveChunk(rxBuffer.data(), rxBuffer.size()) == 0);
 }
 
 TEST_CASE("UDP: Peer switching when lock disabled") {

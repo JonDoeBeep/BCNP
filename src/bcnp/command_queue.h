@@ -2,11 +2,12 @@
 
 #include "bcnp/packet.h"
 
+#include <algorithm>
+#include <array>
 #include <chrono>
 #include <cstddef>
 #include <mutex>
 #include <optional>
-#include <queue>
 
 namespace bcnp {
 
@@ -20,6 +21,7 @@ struct QueueMetrics {
     uint64_t packetsReceived{0};
     uint64_t parseErrors{0};
     uint64_t queueOverflows{0};
+    uint64_t commandsSkipped{0};
 };
 
 class CommandQueue {
@@ -53,13 +55,25 @@ private:
         Clock::time_point start;
     };
 
-    void PromoteNext(Clock::time_point startTime, Clock::time_point now);
+    void PromoteNext(Clock::time_point now);
+    void ClearUnlocked();
+    bool PushUnlocked(const Command& command);
+    void PopUnlocked();
+    const Command& FrontUnlocked() const;
+    std::size_t Capacity() const { return m_storage.size(); }
+    std::size_t EffectiveDepth() const { return std::min(m_config.maxQueueDepth, Capacity()); }
+    void ClampConfig();
     bool IsConnectedUnlocked(Clock::time_point now) const;
 
     QueueConfig m_config{};
     QueueMetrics m_metrics{};
-    std::queue<Command> m_queue;
+    std::array<Command, kMaxQueueSize> m_storage{};
+    std::size_t m_head{0};
+    std::size_t m_tail{0};
+    std::size_t m_count{0};
     std::optional<ActiveSlot> m_active;
+    Clock::time_point m_virtualCursor{Clock::time_point::min()};
+    bool m_hasVirtualCursor{false};
     Clock::time_point m_lastRx{Clock::time_point::min()};
     mutable std::mutex m_mutex;
 };

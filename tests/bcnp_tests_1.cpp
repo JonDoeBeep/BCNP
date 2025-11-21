@@ -41,6 +41,20 @@ TEST_CASE("Packet: Encode and decode round-trip") {
     CHECK(decode.packet->commands[1].omega == 0.25f);
 }
 
+TEST_CASE("Packet: Detects checksum mismatch") {
+    bcnp::Packet packet{};
+    packet.commands.push_back({0.1f, 0.2f, 250});
+
+    std::vector<uint8_t> bytes;
+    REQUIRE(bcnp::EncodePacket(packet, bytes));
+
+    bytes.back() ^= 0xFF; // Corrupt CRC without touching payload
+
+    const auto decode = bcnp::DecodePacket(bytes.data(), bytes.size());
+    CHECK(!decode.packet.has_value());
+    CHECK(decode.error == bcnp::PacketError::ChecksumMismatch);
+}
+
 // ============================================================================
 // Test Suite: CommandQueue
 // ============================================================================

@@ -8,13 +8,17 @@
 namespace bcnp {
 
 constexpr uint8_t kProtocolMajor = 2;
-constexpr uint8_t kProtocolMinor = 2;
+constexpr uint8_t kProtocolMinor = 3;
 constexpr std::size_t kHeaderSize = 4;
 constexpr std::size_t kCommandSize = 10;
+constexpr std::size_t kChecksumSize = 4;
 constexpr std::size_t kMaxCommandsPerPacket = 100;
 constexpr std::size_t kMaxQueueSize = 200;
-constexpr std::size_t kMaxPacketSize = kHeaderSize + (kCommandSize * kMaxCommandsPerPacket);
+constexpr std::size_t kMaxPayloadSize = kHeaderSize + (kCommandSize * kMaxCommandsPerPacket);
+constexpr std::size_t kMaxPacketSize = kMaxPayloadSize + kChecksumSize;
 constexpr uint8_t kFlagClearQueue = 0x01;
+constexpr float kLinearVelocityScale = 10000.0f; // 1e-4 m/s resolution
+constexpr float kAngularVelocityScale = 10000.0f; // 1e-4 rad/s resolution
 constexpr std::size_t kHeaderMajorIndex = 0;
 constexpr std::size_t kHeaderMinorIndex = 1;
 constexpr std::size_t kHeaderFlagsIndex = 2;
@@ -44,7 +48,8 @@ enum class PacketError {
     UnsupportedVersion,
     TooManyCommands,
     Truncated,
-    InvalidFloat
+    InvalidFloat,
+    ChecksumMismatch
 };
 
 struct DecodeResult {

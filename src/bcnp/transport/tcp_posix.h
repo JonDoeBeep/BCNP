@@ -1,9 +1,11 @@
 #pragma once
 
+#include "bcnp/packet.h"
 #include "bcnp/transport/adapter.h"
 
 #include <chrono>
 #include <netinet/in.h>
+#include <vector>
 
 namespace bcnp {
 
@@ -21,13 +23,17 @@ public:
     bool IsConnected() const { return m_isConnected; }
 
 private:
-    enum class PollStatus { Ready, Timeout, Error };
-
     bool CreateBaseSocket();
     void BeginClientConnect(bool forceImmediate);
     void PollConnection();
     void HandleConnectionLoss();
-    PollStatus WaitForWritable(int sock, int timeoutMs) const;
+    void TryFlushTxBuffer(int targetSock);
+    bool EnqueueTx(const uint8_t* data, std::size_t length);
+    void DropPendingTx();
+    void CompactTxBuffer();
+    std::size_t PendingTxBytes() const {
+        return (m_txHead >= m_txBuffer.size()) ? 0 : (m_txBuffer.size() - m_txHead);
+    }
 
     int m_socket{-1};
     int m_clientSocket{-1}; // For server mode, the connected client
@@ -39,6 +45,9 @@ private:
     std::chrono::steady_clock::time_point m_nextReconnectAttempt{};
     std::chrono::steady_clock::time_point m_lastServerRx{};
     std::chrono::milliseconds m_serverClientTimeout{5000}; // 5 second zombie timeout
+    static constexpr std::size_t kMaxBufferedTxBytes = kMaxPacketSize * 256;
+    std::vector<uint8_t> m_txBuffer;
+    std::size_t m_txHead{0};
 };
 
 } // namespace bcnp

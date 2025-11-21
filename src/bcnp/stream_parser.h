@@ -2,11 +2,11 @@
 
 #include "bcnp/packet.h"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
 #include <utility>
-#include <vector>
 
 namespace bcnp {
 
@@ -32,10 +32,17 @@ private:
     void EmitPacket(const Packet& packet);
     void EmitError(PacketError error, std::size_t offset);
 
+    void WriteToBuffer(const uint8_t* data, std::size_t length);
+    void CopyOut(std::size_t offset, std::size_t length, uint8_t* dest) const;
+    void Discard(std::size_t count);
+    void ParseBuffer();
+
     PacketCallback m_onPacket;
     ErrorCallback m_onError;
-    std::vector<uint8_t> m_buffer;
+    std::array<uint8_t, kMaxBufferSize> m_buffer{};
+    std::array<uint8_t, kMaxPacketSize> m_decodeScratch{};
     std::size_t m_head{0};
+    std::size_t m_size{0};
     std::size_t m_streamOffset{0};
     uint64_t m_consecutiveErrors{0};
 };

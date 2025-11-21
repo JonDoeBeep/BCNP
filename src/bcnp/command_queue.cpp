@@ -4,28 +4,27 @@
 
 namespace bcnp {
 
-CommandQueue::CommandQueue(QueueConfig config) : m_config(config) {}
+CommandQueue::CommandQueue(QueueConfig config) : m_config(config) {
+    ClampConfig();
+}
 
 void CommandQueue::Clear() {
     std::lock_guard<std::mutex> lock(m_mutex);
-    std::queue<Command> empty;
-    std::swap(m_queue, empty);
-    m_active.reset();
+    ClearUnlocked();
 }
 
 bool CommandQueue::Push(const Command& command) {
     std::lock_guard<std::mutex> lock(m_mutex);
-    if (m_queue.size() >= m_config.maxQueueDepth) {
+    if (!PushUnlocked(command)) {
         ++m_metrics.queueOverflows;
         return false;
     }
-    m_queue.push(command);
     return true;
 }
 
 std::size_t CommandQueue::Size() const {
     std::lock_guard<std::mutex> lock(m_mutex);
-    return m_queue.size();
+    return m_count;
 }
 
 void CommandQueue::NotifyPacketReceived(Clock::time_point now) {
@@ -37,10 +36,8 @@ void CommandQueue::NotifyPacketReceived(Clock::time_point now) {
 void CommandQueue::Update(Clock::time_point now) {
     std::lock_guard<std::mutex> lock(m_mutex);
     if (!IsConnectedUnlocked(now)) {
-        // Inline Clear() to avoid deadlock (we already hold mutex)
-        std::queue<Command> empty;
-        std::swap(m_queue, empty);
-        m_active.reset();
+        ClearUnlocked();
+        m_hasVirtualCursor = false;
         return;
     }
 
@@ -48,15 +45,15 @@ void CommandQueue::Update(Clock::time_point now) {
         const auto elapsed = now - m_active->start;
         const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed);
         if (duration.count() >= m_active->command.durationMs) {
-            // Calculate the virtual end time of the current command to prevent drift
             const auto endTime = m_active->start + std::chrono::milliseconds(m_active->command.durationMs);
             m_active.reset();
-            PromoteNext(endTime, now);
+            m_virtualCursor = endTime;
+            m_hasVirtualCursor = true;
         }
     }
 
     if (!m_active) {
-        PromoteNext(now, now);
+        PromoteNext(now);
     }
 }
 
@@ -99,6 +96,7 @@ void CommandQueue::IncrementParseErrors() {
 void CommandQueue::SetConfig(const QueueConfig& config) {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_config = config;
+    ClampConfig();
 }
 
 QueueConfig CommandQueue::GetConfig() const {
@@ -106,21 +104,83 @@ QueueConfig CommandQueue::GetConfig() const {
     return m_config;
 }
 
-void CommandQueue::PromoteNext(Clock::time_point startTime, Clock::time_point now) {
-    if (m_queue.empty()) {
+void CommandQueue::PromoteNext(Clock::time_point now) {
+    if (!m_hasVirtualCursor || m_virtualCursor == Clock::time_point::min()) {
+        m_virtualCursor = now;
+        m_hasVirtualCursor = true;
+    }
+
+    if (m_count == 0) {
+        m_virtualCursor = std::max(m_virtualCursor, now);
         return;
     }
-    
-    // Lag compensation: Prevents "fast-forwarding" through buffered commands after system pause.
-    const auto maxLagTime = now - m_config.maxCommandLag;
-    
-    Clock::time_point effectiveStart = startTime;
-    if (startTime < maxLagTime) {
-        effectiveStart = maxLagTime;
+
+    const auto lagFloor = now - m_config.maxCommandLag;
+
+    while (m_count > 0) {
+        const Command next = FrontUnlocked();
+        const auto duration = std::chrono::milliseconds(next.durationMs);
+        auto projectedStart = m_virtualCursor;
+        auto projectedEnd = projectedStart + duration;
+
+        if (projectedEnd <= lagFloor) {
+            PopUnlocked();
+            m_virtualCursor = projectedEnd;
+            ++m_metrics.commandsSkipped;
+            continue;
+        }
+
+        if (projectedStart < lagFloor) {
+            projectedStart = lagFloor;
+            projectedEnd = projectedStart + duration;
+        }
+
+        m_active = ActiveSlot{next, projectedStart};
+        PopUnlocked();
+        m_virtualCursor = projectedEnd;
+        return;
     }
-    
-    m_active = ActiveSlot{m_queue.front(), effectiveStart};
-    m_queue.pop();
+}
+
+void CommandQueue::ClearUnlocked() {
+    m_head = 0;
+    m_tail = 0;
+    m_count = 0;
+    m_active.reset();
+    m_virtualCursor = Clock::time_point::min();
+    m_hasVirtualCursor = false;
+}
+
+bool CommandQueue::PushUnlocked(const Command& command) {
+    if (m_count >= EffectiveDepth()) {
+        return false;
+    }
+
+    m_storage[m_tail] = command;
+    m_tail = (m_tail + 1) % Capacity();
+    ++m_count;
+    return true;
+}
+
+void CommandQueue::PopUnlocked() {
+    if (m_count == 0) {
+        return;
+    }
+    m_head = (m_head + 1) % Capacity();
+    --m_count;
+}
+
+const Command& CommandQueue::FrontUnlocked() const {
+    return m_storage[m_head];
+}
+
+void CommandQueue::ClampConfig() {
+    if (m_config.maxQueueDepth == 0 || m_config.maxQueueDepth > kMaxQueueSize) {
+        m_config.maxQueueDepth = kMaxQueueSize;
+    }
+    if (m_config.maxCommandLag <= std::chrono::milliseconds::zero()) {
+        m_config.maxCommandLag = std::chrono::milliseconds(1);
+    }
 }
 
 } // namespace bcnp
