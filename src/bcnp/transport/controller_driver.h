@@ -3,7 +3,7 @@
 #include "bcnp/controller.h"
 #include "bcnp/transport/adapter.h"
 
-#include <array>
+#include <vector>
 
 namespace bcnp {
 
@@ -18,9 +18,8 @@ public:
 private:
     Controller& m_controller;
     DuplexAdapter& m_adapter;
-    std::array<uint8_t, kMaxPacketSize> m_txBuffer{};
-    // Use a full-packet scratch buffer so UDP datagrams are never truncated mid-packet.
-    std::array<uint8_t, kMaxPacketSize> m_rxScratch{};
+    std::vector<uint8_t> m_txBuffer;
+    std::vector<uint8_t> m_rxScratch;
 };
 
 } // namespace bcnp

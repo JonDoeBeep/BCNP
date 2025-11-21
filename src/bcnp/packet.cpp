@@ -95,7 +95,7 @@ bool EncodePacket(const Packet& packet, uint8_t* output, std::size_t capacity, s
     output[kHeaderMajorIndex] = packet.header.major;
     output[kHeaderMinorIndex] = packet.header.minor;
     output[kHeaderFlagsIndex] = packet.header.flags;
-    output[kHeaderCountIndex] = static_cast<uint8_t>(packet.commands.size());
+    StoreU16(static_cast<uint16_t>(packet.commands.size()), &output[kHeaderCountIndex]);
 
     std::size_t offset = kHeaderSize;
     for (const auto& cmd : packet.commands) {
@@ -143,7 +143,7 @@ DecodeResult DecodePacket(const uint8_t* data, std::size_t length) {
     packet.header.major = data[kHeaderMajorIndex];
     packet.header.minor = data[kHeaderMinorIndex];
     packet.header.flags = data[kHeaderFlagsIndex];
-    packet.header.commandCount = data[kHeaderCountIndex];
+    packet.header.commandCount = LoadU16(&data[kHeaderCountIndex]);
 
     if (packet.header.major != kProtocolMajor || packet.header.minor != kProtocolMinor) {
         result.error = PacketError::UnsupportedVersion;

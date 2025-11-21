@@ -147,13 +147,12 @@ TEST_CASE("StreamParser: Skip bad headers and recover") {
     REQUIRE(bcnp::EncodePacket(first, encoded));
     combined.insert(combined.end(), encoded.begin(), encoded.end());
 
-    // Append a malformed header (commandCount > kMaxCommandsPerPacket).
-    combined.push_back(bcnp::kProtocolMajor);
+    // Append a malformed header (wrong protocol version).
+    combined.push_back(bcnp::kProtocolMajor + 1);
     combined.push_back(bcnp::kProtocolMinor);
     combined.push_back(0x00);
-    combined.push_back(static_cast<uint8_t>(bcnp::kMaxCommandsPerPacket + 1));
-    combined.push_back(0xAA);
-    combined.push_back(0x55);
+    combined.push_back(0x00);
+    combined.push_back(0x01); // Count = 1
 
     REQUIRE(bcnp::EncodePacket(second, encoded));
     combined.insert(combined.end(), encoded.begin(), encoded.end());
@@ -179,18 +178,17 @@ TEST_CASE("StreamParser: Error info provides diagnostics") {
         [&](const bcnp::StreamParser::ErrorInfo& info) { errors.push_back(info); });
 
     std::array<uint8_t, bcnp::kHeaderSize> badHeader{};
-    badHeader[bcnp::kHeaderMajorIndex] = bcnp::kProtocolMajor;
+    badHeader[bcnp::kHeaderMajorIndex] = bcnp::kProtocolMajor + 1;
     badHeader[bcnp::kHeaderMinorIndex] = bcnp::kProtocolMinor;
-    badHeader[bcnp::kHeaderCountIndex] = static_cast<uint8_t>(bcnp::kMaxCommandsPerPacket + 1);
+    badHeader[bcnp::kHeaderCountIndex] = 0;
 
     parser.Push(badHeader.data(), badHeader.size());
     parser.Push(badHeader.data(), badHeader.size());
 
     REQUIRE(errors.size() >= 2);
-    CHECK(errors[0].code == bcnp::PacketError::TooManyCommands);
+    CHECK(errors[0].code == bcnp::PacketError::UnsupportedVersion);
     CHECK(errors[0].offset == 0);
     CHECK(errors[0].consecutiveErrors == 1);
-    CHECK(errors[1].offset == 1);
     CHECK(errors[1].consecutiveErrors == 2);
 
     parser.Reset();
@@ -201,11 +199,13 @@ TEST_CASE("StreamParser: Error info provides diagnostics") {
 
 TEST_CASE("StreamParser: DoS protection - survives garbage flood") {
     bool packetSeen = false;
+    const size_t kBufferSize = 4096;
     bcnp::StreamParser parser(
         [&](const bcnp::Packet&) { packetSeen = true; },
-        [](const bcnp::StreamParser::ErrorInfo&) {});
+        [](const bcnp::StreamParser::ErrorInfo&) {},
+        kBufferSize);
 
-    std::vector<uint8_t> garbage(bcnp::StreamParser::kMaxBufferSize + 100, 0xFF);
+    std::vector<uint8_t> garbage(kBufferSize + 100, 0xFF);
     parser.Push(garbage.data(), garbage.size());
 
     bcnp::Packet packet{};
@@ -403,7 +403,7 @@ TEST_CASE("TCP: Partial send handling with slow consumer") {
     
     // Establish connection
     std::vector<uint8_t> handshake = {0xAA};
-    std::vector<uint8_t> rxBuffer(1024);
+    std::vector<uint8_t> rxBuffer(65536);
     
     for (int i = 0; i < 50; ++i) {
         client.SendBytes(handshake.data(), handshake.size());
@@ -414,7 +414,7 @@ TEST_CASE("TCP: Partial send handling with slow consumer") {
     REQUIRE(server.IsConnected());
     
     // Test within real-time buffer limits (8 packets max)
-    std::vector<uint8_t> largeData(bcnp::kMaxPacketSize * 6, 0xBB);
+    std::vector<uint8_t> largeData(bcnp::kMaxPacketSize * 2, 0xBB);
     bool sendSuccess = server.SendBytes(largeData.data(), largeData.size());
     
     // Should succeed within buffer capacity

@@ -20,13 +20,12 @@ public:
     };
     using ErrorCallback = std::function<void(const ErrorInfo&)>;
 
-    StreamParser(PacketCallback onPacket, ErrorCallback onError = {});
+    StreamParser(PacketCallback onPacket, ErrorCallback onError = {}, std::size_t bufferSize = 4096);
 
     void Push(const uint8_t* data, std::size_t length);
 
     void Reset(bool resetErrorState = true);
 
-    static constexpr std::size_t kMaxBufferSize = 4096;
     static constexpr std::size_t kMaxParseIterationsPerPush = 1024;
 
 private:
@@ -41,8 +40,8 @@ private:
 
     PacketCallback m_onPacket;
     ErrorCallback m_onError;
-    std::array<uint8_t, kMaxBufferSize> m_buffer{};
-    std::array<uint8_t, kMaxPacketSize> m_decodeScratch{};
+    std::vector<uint8_t> m_buffer;
+    std::vector<uint8_t> m_decodeScratch;
     std::size_t m_head{0};
     std::size_t m_size{0};
     std::size_t m_streamOffset{0};

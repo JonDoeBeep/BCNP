@@ -75,15 +75,14 @@ TEST_CASE("Packet: CRC detects payload corruption") {
     CHECK(result.error == bcnp::PacketError::ChecksumMismatch);
 }
 
-TEST_CASE("Packet: Reject too many commands") {
+TEST_CASE("Packet: Reject unsupported version") {
     std::vector<uint8_t> buffer = {
-        bcnp::kProtocolMajor, bcnp::kProtocolMinor, 0x00,
-        static_cast<uint8_t>(bcnp::kMaxCommandsPerPacket + 1)
+        static_cast<uint8_t>(bcnp::kProtocolMajor + 1), bcnp::kProtocolMinor, 0x00, 0x00, 0x00
     };
 
     auto result = bcnp::DecodePacket(buffer.data(), buffer.size());
     CHECK(!result.packet.has_value());
-    CHECK(result.error == bcnp::PacketError::TooManyCommands);
+    CHECK(result.error == bcnp::PacketError::UnsupportedVersion);
 }
 
 // ============================================================================
@@ -280,13 +279,12 @@ TEST_CASE("StreamParser: Skip bad headers and recover") {
     REQUIRE(bcnp::EncodePacket(first, encoded));
     combined.insert(combined.end(), encoded.begin(), encoded.end());
     
-    // Insert garbage header
-    combined.push_back(bcnp::kProtocolMajor);
+    // Insert garbage header (wrong version)
+    combined.push_back(bcnp::kProtocolMajor + 1);
     combined.push_back(bcnp::kProtocolMinor);
     combined.push_back(0x00);
-    combined.push_back(static_cast<uint8_t>(bcnp::kMaxCommandsPerPacket + 1));
-    combined.push_back(0xAA);
-    combined.push_back(0x55);
+    combined.push_back(0x00);
+    combined.push_back(0x01); // Count = 1
     
     REQUIRE(bcnp::EncodePacket(second, encoded));
     combined.insert(combined.end(), encoded.begin(), encoded.end());
@@ -308,12 +306,14 @@ TEST_CASE("StreamParser: Skip bad headers and recover") {
 
 TEST_CASE("StreamParser: DoS protection - survives garbage flood") {
     bool packetSeen = false;
+    const size_t kBufferSize = 4096;
     bcnp::StreamParser parser(
         [&](const bcnp::Packet&) { packetSeen = true; },
-        [](const bcnp::StreamParser::ErrorInfo&) {});
+        [](const bcnp::StreamParser::ErrorInfo&) {},
+        kBufferSize);
     
     // Flood with garbage beyond buffer limit
-    std::vector<uint8_t> garbage(bcnp::StreamParser::kMaxBufferSize + 100, 0xFF);
+    std::vector<uint8_t> garbage(kBufferSize + 100, 0xFF);
     parser.Push(garbage.data(), garbage.size());
     
     // Parser should still accept valid packet after flood
@@ -333,15 +333,15 @@ TEST_CASE("StreamParser: Error info provides diagnostics") {
         [&](const bcnp::StreamParser::ErrorInfo& info) { errors.push_back(info); });
     
     std::array<uint8_t, bcnp::kHeaderSize> badHeader{};
-    badHeader[bcnp::kHeaderMajorIndex] = bcnp::kProtocolMajor;
+    badHeader[bcnp::kHeaderMajorIndex] = bcnp::kProtocolMajor + 1;
     badHeader[bcnp::kHeaderMinorIndex] = bcnp::kProtocolMinor;
-    badHeader[bcnp::kHeaderCountIndex] = static_cast<uint8_t>(bcnp::kMaxCommandsPerPacket + 1);
+    badHeader[bcnp::kHeaderCountIndex] = 0;
     
     parser.Push(badHeader.data(), badHeader.size());
     parser.Push(badHeader.data(), badHeader.size());
     
     REQUIRE(errors.size() >= 2);
-    CHECK(errors[0].code == bcnp::PacketError::TooManyCommands);
+    CHECK(errors[0].code == bcnp::PacketError::UnsupportedVersion);
     CHECK(errors[0].offset == 0);
     CHECK(errors[0].consecutiveErrors == 1);
     CHECK(errors[1].consecutiveErrors == 2);

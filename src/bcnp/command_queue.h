@@ -12,7 +12,7 @@
 namespace bcnp {
 
 struct QueueConfig {
-    std::size_t maxQueueDepth{kMaxQueueSize};
+    std::size_t capacity{200};
     std::chrono::milliseconds connectionTimeout{200};
     std::chrono::milliseconds maxCommandLag{100}; // Max lag before clamping virtual time
 };
@@ -61,13 +61,13 @@ private:
     void PopUnlocked();
     const Command& FrontUnlocked() const;
     std::size_t Capacity() const { return m_storage.size(); }
-    std::size_t EffectiveDepth() const { return std::min(m_config.maxQueueDepth, Capacity()); }
+    std::size_t EffectiveDepth() const { return std::min(m_config.capacity, Capacity()); }
     void ClampConfig();
     bool IsConnectedUnlocked(Clock::time_point now) const;
 
     QueueConfig m_config{};
     QueueMetrics m_metrics{};
-    std::array<Command, kMaxQueueSize> m_storage{};
+    std::vector<Command> m_storage;
     std::size_t m_head{0};
     std::size_t m_tail{0};
     std::size_t m_count{0};

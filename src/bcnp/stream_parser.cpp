@@ -5,8 +5,14 @@
 
 namespace bcnp {
 
-StreamParser::StreamParser(PacketCallback onPacket, ErrorCallback onError)
-    : m_onPacket(std::move(onPacket)), m_onError(std::move(onError)) {}
+StreamParser::StreamParser(PacketCallback onPacket, ErrorCallback onError, std::size_t bufferSize)
+    : m_onPacket(std::move(onPacket)), m_onError(std::move(onError)) {
+        if (bufferSize < kHeaderSize + kChecksumSize) {
+            bufferSize = kHeaderSize + kChecksumSize;
+        }
+        m_buffer.resize(bufferSize);
+        m_decodeScratch.resize(bufferSize);
+    }
 
 void StreamParser::Push(const uint8_t* data, std::size_t length) {
     if (length == 0 || !data) {
@@ -17,11 +23,11 @@ void StreamParser::Push(const uint8_t* data, std::size_t length) {
     std::size_t remaining = length;
 
     while (remaining > 0) {
-        if (m_size == kMaxBufferSize) {
+        if (m_size == m_buffer.size()) {
             ParseBuffer(iterationBudget);
         }
 
-        if (m_size == kMaxBufferSize) {
+        if (m_size == m_buffer.size()) {
             const auto errorOffset = m_streamOffset;
             EmitError(PacketError::TooManyCommands, errorOffset);
             m_streamOffset += m_size;
@@ -34,7 +40,7 @@ void StreamParser::Push(const uint8_t* data, std::size_t length) {
             return;
         }
 
-        const std::size_t writable = std::min(remaining, kMaxBufferSize - m_size);
+        const std::size_t writable = std::min(remaining, m_buffer.size() - m_size);
         if (writable == 0) {
             break;
         }
@@ -64,8 +70,8 @@ void StreamParser::Reset(bool resetErrorState) {
 }
 
 void StreamParser::WriteToBuffer(const uint8_t* data, std::size_t length) {
-    const std::size_t tailIndex = (m_head + m_size) % kMaxBufferSize;
-    const std::size_t firstChunk = std::min(length, kMaxBufferSize - tailIndex);
+    const std::size_t tailIndex = (m_head + m_size) % m_buffer.size();
+    const std::size_t firstChunk = std::min(length, m_buffer.size() - tailIndex);
     std::memcpy(&m_buffer[tailIndex], data, firstChunk);
     
     const std::size_t remaining = length - firstChunk;
@@ -76,8 +82,8 @@ void StreamParser::WriteToBuffer(const uint8_t* data, std::size_t length) {
 }
 
 void StreamParser::CopyOut(std::size_t offset, std::size_t length, uint8_t* dest) const {
-    const std::size_t startIndex = (m_head + offset) % kMaxBufferSize;
-    const std::size_t firstChunk = std::min(length, kMaxBufferSize - startIndex);
+    const std::size_t startIndex = (m_head + offset) % m_buffer.size();
+    const std::size_t firstChunk = std::min(length, m_buffer.size() - startIndex);
     std::memcpy(dest, &m_buffer[startIndex], firstChunk);
     
     const std::size_t remaining = length - firstChunk;
@@ -93,7 +99,7 @@ void StreamParser::Discard(std::size_t count) {
     if (count > m_size) {
         count = m_size;
     }
-    m_head = (m_head + count) % kMaxBufferSize;
+    m_head = (m_head + count) % m_buffer.size();
     m_size -= count;
     m_streamOffset += count;
 }
@@ -113,7 +119,8 @@ void StreamParser::ParseBuffer(std::size_t& iterationBudget) {
             continue;
         }
 
-        const uint8_t commandCount = m_decodeScratch[kHeaderCountIndex];
+        const uint16_t commandCount = (static_cast<uint16_t>(m_decodeScratch[kHeaderCountIndex]) << 8) |
+                                      static_cast<uint16_t>(m_decodeScratch[kHeaderCountIndex + 1]);
 
         if (commandCount > kMaxCommandsPerPacket) {
             const auto offset = m_streamOffset;
@@ -158,7 +165,7 @@ std::size_t StreamParser::FindNextHeaderCandidate() const {
     }
 
     for (std::size_t offset = 1; offset < m_size; ++offset) {
-        const std::size_t firstIndex = (m_head + offset) % kMaxBufferSize;
+        const std::size_t firstIndex = (m_head + offset) % m_buffer.size();
         if (m_buffer[firstIndex] != kProtocolMajor) {
             continue;
         }
@@ -167,7 +174,7 @@ std::size_t StreamParser::FindNextHeaderCandidate() const {
             return offset;
         }
 
-        const std::size_t secondIndex = (m_head + offset + 1) % kMaxBufferSize;
+        const std::size_t secondIndex = (m_head + offset + 1) % m_buffer.size();
         if (m_buffer[secondIndex] == kProtocolMinor) {
             return offset;
         }

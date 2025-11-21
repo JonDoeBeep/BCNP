@@ -5,7 +5,11 @@
 namespace bcnp {
 
 ControllerDriver::ControllerDriver(Controller& controller, DuplexAdapter& adapter)
-    : m_controller(controller), m_adapter(adapter) {}
+    : m_controller(controller), m_adapter(adapter) {
+        // Allocate buffers on heap to prevent stack overflow with large packet sizes
+        m_txBuffer.resize(kMaxPacketSize);
+        m_rxScratch.resize(kMaxPacketSize);
+    }
 
 void ControllerDriver::PollOnce() {
     // Limit iterations to prevent starvation if data arrives faster than we can process

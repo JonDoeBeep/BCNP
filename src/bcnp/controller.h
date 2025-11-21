@@ -19,6 +19,7 @@ struct CommandLimits {
 struct ControllerConfig {
     QueueConfig queue{};
     CommandLimits limits{};
+    std::size_t parserBufferSize{4096};
 };
 
 class Controller {

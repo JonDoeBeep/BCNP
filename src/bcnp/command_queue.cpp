@@ -6,6 +6,7 @@ namespace bcnp {
 
 CommandQueue::CommandQueue(QueueConfig config) : m_config(config) {
     ClampConfig();
+    m_storage.resize(m_config.capacity);
 }
 
 void CommandQueue::Clear() {
@@ -102,6 +103,11 @@ void CommandQueue::SetConfig(const QueueConfig& config) {
     std::lock_guard<std::mutex> lock(m_mutex);
     m_config = config;
     ClampConfig();
+    if (m_storage.size() != m_config.capacity) {
+        // Resizing queue clears it for safety
+        ClearUnlocked();
+        m_storage.resize(m_config.capacity);
+    }
 }
 
 QueueConfig CommandQueue::GetConfig() const {
@@ -180,8 +186,8 @@ const Command& CommandQueue::FrontUnlocked() const {
 }
 
 void CommandQueue::ClampConfig() {
-    if (m_config.maxQueueDepth == 0 || m_config.maxQueueDepth > kMaxQueueSize) {
-        m_config.maxQueueDepth = kMaxQueueSize;
+    if (m_config.capacity == 0) {
+        m_config.capacity = 200;
     }
     if (m_config.maxCommandLag <= std::chrono::milliseconds::zero()) {
         m_config.maxCommandLag = std::chrono::milliseconds(1);

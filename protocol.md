@@ -1,6 +1,7 @@
-# BCNP: Batched Command Network Protocol v2.3.2
+# BCNP: Batched Command Network Protocol v2.4
 
 ## Version History:
+- **v2.4** (Major): Expanded command count to 16-bit (65k commands/packet), increased packet size limit, and switched to dynamic memory allocation.
 - **v2.3.2** (bugfix): Fix bloat, safety, and optimize.
 - **v2.3.1** (bugfix): Fix several critical issues.
 - **v2.3.0** (Minor): Adds CRC32 integrity trailer, fixed-point command encoding, UDP pairing handshake, and buffered TCP send path.
@@ -22,11 +23,12 @@
 All multi-byte integers use **big-endian** byte order.
 
 ```
-┌─────────────────────────────────────────────────────┐
-│ Header (4 bytes)                                     │
-├──────────┬───────────┬──────────┬───────────────────┤
-│ Major(1) │ Minor (1) │ Flags(1) │ Cmd Count (1)     │
-└──────────┴───────────┴──────────┴───────────────────┘
+┌──────────────────────────────────────────────────────────┐
+│ Header (5 bytes)                                         │
+├──────────┬───────────┬──────────┬────────────────────────┤
+│ Major(1) │ Minor (1) │ Flags(1) │ Cmd Count (2)          │
+│          │           │          │ uint16 (BE)            │
+└──────────┴───────────┴──────────┴────────────────────────┘
 
 ┌─────────────────────────────────────────────────────┐
 │ Command 1 (10 bytes)                                 │
@@ -47,26 +49,26 @@ All multi-byte integers use **big-endian** byte order.
 │ IEEE CRC32 of header+commands                        │
 └─────────────────────────────────────────────────────┘
 
-... (up to 100 commands per packet)
+... (up to 65,535 commands per packet)
 ```
 
 ### Header Fields
 
 - **Major** (1 byte): Protocol major version. Current: `2`
-- **Minor** (1 byte): Protocol minor version. Current: `3`
+- **Minor** (1 byte): Protocol minor version. Current: `4`
   - Robot rejects packets with mismatched major.minor version
   - Patch version not transmitted (for bug fixes only)
 - **Flags** (1 byte): Bit flags for special operations:
   - Bit 0: `CLEAR_QUEUE` - If set, clears the existing command queue before adding new commands
   - Bits 1-7: Reserved (set to 0)
-- **Command Count** (1 byte): Number of commands in this packet (0-100)
+- **Command Count** (2 bytes, uint16, big-endian): Number of commands in this packet (0-65535)
 
 ### Queue Management
 
-- **Maximum queue size:** 200 commands (DoS protection)
-- **Maximum commands per packet:** 100 commands
-- **Packet size:** 4 bytes (header) + 1000 bytes (100 commands) + 4 bytes (CRC32) = 1008 bytes (fits in standard MTU)
-- Clients can send multiple packets to fill the 200-command queue
+- **Maximum queue size:** Configurable (default: 65,535 commands)
+- **Maximum commands per packet:** 65,535 commands
+- **Packet size:** 5 bytes (header) + 655,350 bytes (65k commands) + 4 bytes (CRC32) ≈ 655 KB
+- Clients can send multiple packets to fill the queue
 
 ### Command Fields
 
