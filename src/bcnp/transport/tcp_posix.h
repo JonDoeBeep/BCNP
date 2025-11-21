@@ -2,6 +2,7 @@
 
 #include "bcnp/transport/adapter.h"
 
+#include <chrono>
 #include <netinet/in.h>
 
 namespace bcnp {
@@ -16,15 +17,26 @@ public:
     bool SendBytes(const uint8_t* data, std::size_t length) override;
     std::size_t ReceiveChunk(uint8_t* buffer, std::size_t maxLength) override;
 
-    bool IsValid() const { return m_socket >= 0; }
+    bool IsValid() const { return m_socket >= 0 || (!m_isServer && m_peerAddrValid); }
     bool IsConnected() const { return m_isConnected; }
 
 private:
+    enum class PollStatus { Ready, Timeout, Error };
+
+    bool CreateBaseSocket();
+    void BeginClientConnect(bool forceImmediate);
+    void PollConnection();
+    void HandleConnectionLoss();
+    PollStatus WaitForWritable(int sock, int timeoutMs) const;
+
     int m_socket{-1};
     int m_clientSocket{-1}; // For server mode, the connected client
     bool m_isServer{false};
     bool m_isConnected{false};
+    bool m_connectInProgress{false};
     sockaddr_in m_peerAddr{};
+    bool m_peerAddrValid{false};
+    std::chrono::steady_clock::time_point m_nextReconnectAttempt{};
 };
 
 } // namespace bcnp

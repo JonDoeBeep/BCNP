@@ -2,15 +2,21 @@
 
 #include <arpa/inet.h>
 #include <cerrno>
+#include <chrono>
 #include <fcntl.h>
 #include <iostream>
 #include <netinet/tcp.h>
+#include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
 namespace bcnp {
 
 namespace {
+constexpr int kSendWaitTimeoutMs = 20;
+constexpr int kSendWaitMaxAttempts = 200;
+constexpr auto kReconnectInterval = std::chrono::milliseconds(500);
+
 void LogErr(const char* message) {
     std::cerr << "TCP adapter error: " << message << " errno=" << errno << std::endl;
 }
@@ -20,7 +26,7 @@ void ConfigureSocket(int sock) {
     if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char*)&yes, sizeof(int)) < 0) {
         LogErr("setsockopt(TCP_NODELAY)");
     }
-    
+
     if (fcntl(sock, F_SETFL, O_NONBLOCK) < 0) {
         LogErr("fcntl(O_NONBLOCK)");
     }
@@ -28,22 +34,12 @@ void ConfigureSocket(int sock) {
 } // namespace
 
 TcpPosixAdapter::TcpPosixAdapter(uint16_t listenPort, const char* targetIp, uint16_t targetPort) {
-    m_socket = ::socket(AF_INET, SOCK_STREAM, 0);
-    if (m_socket < 0) {
-        LogErr("socket");
-        return;
-    }
-
-    int yes = 1;
-    if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0) {
-        LogErr("setsockopt(SO_REUSEADDR)");
-    }
-
-    ConfigureSocket(m_socket);
-
     if (listenPort > 0) {
-        // Server mode
         m_isServer = true;
+        if (!CreateBaseSocket()) {
+            return;
+        }
+
         sockaddr_in bindAddr{};
         bindAddr.sin_family = AF_INET;
         bindAddr.sin_port = htons(listenPort);
@@ -63,31 +59,18 @@ TcpPosixAdapter::TcpPosixAdapter(uint16_t listenPort, const char* targetIp, uint
             return;
         }
     } else if (targetIp && targetPort > 0) {
-        // Client mode
         m_isServer = false;
         sockaddr_in targetAddr{};
         targetAddr.sin_family = AF_INET;
         targetAddr.sin_port = htons(targetPort);
         if (inet_pton(AF_INET, targetIp, &targetAddr.sin_addr) <= 0) {
             LogErr("inet_pton (invalid target IP)");
-            ::close(m_socket);
-            m_socket = -1;
             return;
         }
 
-        if (connect(m_socket, reinterpret_cast<sockaddr*>(&targetAddr), sizeof(targetAddr)) < 0) {
-            if (errno != EINPROGRESS) {
-                LogErr("connect");
-                ::close(m_socket);
-                m_socket = -1;
-                return;
-            }
-            // EINPROGRESS is expected for non-blocking connect
-        }
-        // For client, we consider it "connected" once the socket is created and connect() called.
-        // Actual connection state might need to be checked via select/poll or first send/recv.
-        // But for simplicity here, we'll assume it's attempting.
-        m_isConnected = true; 
+        m_peerAddr = targetAddr;
+        m_peerAddrValid = true;
+        BeginClientConnect(true);
     }
 }
 
@@ -100,33 +83,224 @@ TcpPosixAdapter::~TcpPosixAdapter() {
     }
 }
 
+bool TcpPosixAdapter::CreateBaseSocket() {
+    if (m_socket >= 0) {
+        ::close(m_socket);
+        m_socket = -1;
+    }
+
+    m_socket = ::socket(AF_INET, SOCK_STREAM, 0);
+    if (m_socket < 0) {
+        LogErr("socket");
+        return false;
+    }
+
+    int yes = 1;
+    if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0) {
+        LogErr("setsockopt(SO_REUSEADDR)");
+    }
+
+    ConfigureSocket(m_socket);
+    m_isConnected = false;
+    m_connectInProgress = false;
+    return true;
+}
+
+void TcpPosixAdapter::BeginClientConnect(bool forceImmediate) {
+    if (m_isServer || !m_peerAddrValid) {
+        return;
+    }
+
+    const auto now = std::chrono::steady_clock::now();
+    if (!forceImmediate && now < m_nextReconnectAttempt) {
+        return;
+    }
+    m_nextReconnectAttempt = now + kReconnectInterval;
+
+    if (!CreateBaseSocket()) {
+        return;
+    }
+
+    if (connect(m_socket, reinterpret_cast<sockaddr*>(&m_peerAddr), sizeof(m_peerAddr)) < 0) {
+        if (errno == EINPROGRESS || errno == EALREADY) {
+            m_connectInProgress = true;
+            return;
+        }
+        LogErr("connect");
+        ::close(m_socket);
+        m_socket = -1;
+        m_connectInProgress = false;
+        m_isConnected = false;
+        return;
+    }
+
+    m_isConnected = true;
+    m_connectInProgress = false;
+}
+
+TcpPosixAdapter::PollStatus TcpPosixAdapter::WaitForWritable(int sock, int timeoutMs) const {
+    pollfd descriptor{};
+    descriptor.fd = sock;
+    descriptor.events = POLLOUT;
+
+    while (true) {
+        int result = ::poll(&descriptor, 1, timeoutMs);
+        if (result > 0) {
+            if (descriptor.revents & (POLLERR | POLLHUP | POLLNVAL)) {
+                return PollStatus::Error;
+            }
+            if (descriptor.revents & POLLOUT) {
+                return PollStatus::Ready;
+            }
+            return PollStatus::Error;
+        }
+        if (result == 0) {
+            return PollStatus::Timeout;
+        }
+        if (errno == EINTR) {
+            continue;
+        }
+        LogErr("poll");
+        return PollStatus::Error;
+    }
+}
+
+void TcpPosixAdapter::PollConnection() {
+    if (m_isServer) {
+        if (m_socket < 0) {
+            return;
+        }
+
+        if (m_clientSocket >= 0) {
+            m_isConnected = true;
+            return;
+        }
+
+        sockaddr_in clientAddr{};
+        socklen_t len = sizeof(clientAddr);
+        int clientSock = ::accept(m_socket, reinterpret_cast<sockaddr*>(&clientAddr), &len);
+        if (clientSock >= 0) {
+            ConfigureSocket(clientSock);
+            m_clientSocket = clientSock;
+            m_isConnected = true;
+        } else if (errno != EAGAIN && errno != EWOULDBLOCK) {
+            LogErr("accept");
+        }
+        return;
+    }
+
+    if (m_socket < 0) {
+        BeginClientConnect(false);
+        return;
+    }
+
+    if (!m_isConnected && m_connectInProgress) {
+        int err = 0;
+        socklen_t errLen = sizeof(err);
+        if (getsockopt(m_socket, SOL_SOCKET, SO_ERROR, &err, &errLen) < 0) {
+            LogErr("getsockopt(SO_ERROR)");
+            return;
+        }
+
+        if (err == 0) {
+            m_isConnected = true;
+            m_connectInProgress = false;
+            return;
+        }
+
+        if (err == EINPROGRESS || err == EALREADY) {
+            return;
+        }
+
+        errno = err;
+        LogErr("connect (async)");
+        ::close(m_socket);
+        m_socket = -1;
+        m_connectInProgress = false;
+        BeginClientConnect(false);
+        return;
+    }
+
+    if (!m_isConnected) {
+        BeginClientConnect(false);
+    }
+}
+
+void TcpPosixAdapter::HandleConnectionLoss() {
+    m_isConnected = false;
+
+    if (m_isServer) {
+        if (m_clientSocket >= 0) {
+            ::close(m_clientSocket);
+            m_clientSocket = -1;
+        }
+        return;
+    }
+
+    if (m_socket >= 0) {
+        ::close(m_socket);
+        m_socket = -1;
+    }
+    m_connectInProgress = false;
+    BeginClientConnect(true);
+}
+
 bool TcpPosixAdapter::SendBytes(const uint8_t* data, std::size_t length) {
     if (!data || length == 0) {
         return true;
     }
 
+    PollConnection();
+
     int targetSock = m_isServer ? m_clientSocket : m_socket;
-    if (targetSock < 0) {
+    if (targetSock < 0 || !m_isConnected) {
         return false;
     }
 
-    // Check connection status for client if needed, but send() will fail if not connected.
-    
-    ssize_t sent = ::send(targetSock, data, length, MSG_NOSIGNAL);
-    if (sent < 0) {
-        if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            return false; // Buffer full
+    std::size_t totalSent = 0;
+    int waitAttempts = 0;
+    while (totalSent < length) {
+        ssize_t sent = ::send(targetSock, data + totalSent, length - totalSent, MSG_NOSIGNAL);
+        if (sent > 0) {
+            totalSent += static_cast<std::size_t>(sent);
+            waitAttempts = 0;
+            continue;
         }
-        if (errno == EPIPE || errno == ECONNRESET) {
-            m_isConnected = false;
-            if (m_isServer) {
-                ::close(m_clientSocket);
-                m_clientSocket = -1;
+
+        if (sent == 0) {
+            break;
+        }
+
+        if (errno == EINTR) {
+            continue;
+        }
+
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            if (waitAttempts >= kSendWaitMaxAttempts) {
+                HandleConnectionLoss();
+                return false;
             }
+            ++waitAttempts;
+            const PollStatus status = WaitForWritable(targetSock, kSendWaitTimeoutMs);
+            if (status == PollStatus::Ready) {
+                continue;
+            }
+            if (status == PollStatus::Timeout) {
+                continue;
+            }
+            HandleConnectionLoss();
+            return false;
+        }
+
+        if (errno == EPIPE || errno == ECONNRESET || errno == ENOTCONN) {
+            HandleConnectionLoss();
+        } else {
+            LogErr("send");
         }
         return false;
     }
-    return static_cast<std::size_t>(sent) == length;
+
+    return totalSent == length;
 }
 
 std::size_t TcpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength) {
@@ -134,48 +308,31 @@ std::size_t TcpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength
         return 0;
     }
 
-    if (m_isServer) {
-        if (m_clientSocket < 0) {
-            // Try to accept
-            sockaddr_in clientAddr{};
-            socklen_t len = sizeof(clientAddr);
-            int clientSock = ::accept(m_socket, reinterpret_cast<sockaddr*>(&clientAddr), &len);
-            if (clientSock >= 0) {
-                m_clientSocket = clientSock;
-                m_isConnected = true;
-                ConfigureSocket(m_clientSocket);
-                // Fall through to read
-            } else {
-                if (errno != EAGAIN && errno != EWOULDBLOCK) {
-                    LogErr("accept");
-                }
-                return 0;
-            }
-        }
-    }
+    PollConnection();
 
     int targetSock = m_isServer ? m_clientSocket : m_socket;
-    if (targetSock < 0) return 0;
+    if (targetSock < 0 || !m_isConnected) {
+        return 0;
+    }
 
-    ssize_t received = ::recv(targetSock, buffer, maxLength, 0);
+    ssize_t received;
+    do {
+        received = ::recv(targetSock, buffer, maxLength, 0);
+    } while (received < 0 && errno == EINTR);
+
     if (received > 0) {
         return static_cast<std::size_t>(received);
     } else if (received == 0) {
-        // Peer closed
-        m_isConnected = false;
-        if (m_isServer) {
-            ::close(m_clientSocket);
-            m_clientSocket = -1;
-        }
+        HandleConnectionLoss();
         return 0;
     } else {
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
             return 0;
         }
-        // Error or not connected yet (for client)
-        if (!m_isServer && !m_isConnected) {
-             // Check if connected?
-             // For now, just assume error means not connected or broken pipe
+        if (errno == ENOTCONN || errno == ECONNRESET) {
+            HandleConnectionLoss();
+        } else {
+            LogErr("recv");
         }
         return 0;
     }
