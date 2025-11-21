@@ -4,6 +4,7 @@
 #include <arpa/inet.h>
 #include <cerrno>
 #include <chrono>
+#include <cstring>
 #include <fcntl.h>
 #include <iostream>
 #include <netinet/tcp.h>
@@ -14,24 +15,12 @@ namespace bcnp {
 
 namespace {
 constexpr auto kReconnectInterval = std::chrono::milliseconds(500);
-
-void LogErr(const char* message) {
-    std::cerr << "TCP adapter error: " << message << " errno=" << errno << std::endl;
-}
-
-void ConfigureSocket(int sock) {
-    int yes = 1;
-    if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char*)&yes, sizeof(int)) < 0) {
-        LogErr("setsockopt(TCP_NODELAY)");
-    }
-
-    if (fcntl(sock, F_SETFL, O_NONBLOCK) < 0) {
-        LogErr("fcntl(O_NONBLOCK)");
-    }
-}
+constexpr auto kLogThrottle = std::chrono::seconds(1);
 } // namespace
 
 TcpPosixAdapter::TcpPosixAdapter(uint16_t listenPort, const char* targetIp, uint16_t targetPort) {
+    m_txBuffer = std::make_unique<uint8_t[]>(kTxBufferCapacity);
+
     if (listenPort > 0) {
         m_isServer = true;
         if (!CreateBaseSocket()) {
@@ -44,14 +33,14 @@ TcpPosixAdapter::TcpPosixAdapter(uint16_t listenPort, const char* targetIp, uint
         bindAddr.sin_addr.s_addr = INADDR_ANY;
 
         if (bind(m_socket, reinterpret_cast<sockaddr*>(&bindAddr), sizeof(bindAddr)) < 0) {
-            LogErr("bind");
+            LogError("bind");
             ::close(m_socket);
             m_socket = -1;
             return;
         }
 
         if (listen(m_socket, 1) < 0) {
-            LogErr("listen");
+            LogError("listen");
             ::close(m_socket);
             m_socket = -1;
             return;
@@ -62,7 +51,7 @@ TcpPosixAdapter::TcpPosixAdapter(uint16_t listenPort, const char* targetIp, uint
         targetAddr.sin_family = AF_INET;
         targetAddr.sin_port = htons(targetPort);
         if (inet_pton(AF_INET, targetIp, &targetAddr.sin_addr) <= 0) {
-            LogErr("inet_pton (invalid target IP)");
+            LogError("inet_pton (invalid target IP)");
             return;
         }
 
@@ -89,16 +78,20 @@ bool TcpPosixAdapter::CreateBaseSocket() {
 
     m_socket = ::socket(AF_INET, SOCK_STREAM, 0);
     if (m_socket < 0) {
-        LogErr("socket");
+        LogError("socket");
         return false;
     }
 
     int yes = 1;
     if (setsockopt(m_socket, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes)) < 0) {
-        LogErr("setsockopt(SO_REUSEADDR)");
+        LogError("setsockopt(SO_REUSEADDR)");
     }
 
-    ConfigureSocket(m_socket);
+    if (!ConfigureSocket(m_socket)) {
+        ::close(m_socket);
+        m_socket = -1;
+        return false;
+    }
     m_isConnected = false;
     m_connectInProgress = false;
     return true;
@@ -124,7 +117,7 @@ void TcpPosixAdapter::BeginClientConnect(bool forceImmediate) {
             m_connectInProgress = true;
             return;
         }
-        LogErr("connect");
+        LogError("connect");
         ::close(m_socket);
         m_socket = -1;
         m_connectInProgress = false;
@@ -163,13 +156,16 @@ void TcpPosixAdapter::PollConnection() {
         socklen_t len = sizeof(clientAddr);
         int clientSock = ::accept(m_socket, reinterpret_cast<sockaddr*>(&clientAddr), &len);
         if (clientSock >= 0) {
-            ConfigureSocket(clientSock);
+            if (!ConfigureSocket(clientSock)) {
+                ::close(clientSock);
+                return;
+            }
             m_clientSocket = clientSock;
             m_isConnected = true;
             m_lastServerRx = std::chrono::steady_clock::now();
             TryFlushTxBuffer(m_clientSocket);
         } else if (errno != EAGAIN && errno != EWOULDBLOCK) {
-            LogErr("accept");
+            LogError("accept");
         }
         return;
     }
@@ -183,7 +179,7 @@ void TcpPosixAdapter::PollConnection() {
         int err = 0;
         socklen_t errLen = sizeof(err);
         if (getsockopt(m_socket, SOL_SOCKET, SO_ERROR, &err, &errLen) < 0) {
-            LogErr("getsockopt(SO_ERROR)");
+            LogError("getsockopt(SO_ERROR)");
             return;
         }
 
@@ -199,7 +195,7 @@ void TcpPosixAdapter::PollConnection() {
         }
 
         errno = err;
-        LogErr("connect (async)");
+        LogError("connect (async)");
         ::close(m_socket);
         m_socket = -1;
         m_connectInProgress = false;
@@ -248,7 +244,7 @@ bool TcpPosixAdapter::SendBytes(const uint8_t* data, std::size_t length) {
     }
 
     if (length > kTxBufferCapacity) {
-        LogErr("send payload exceeds tx buffer capacity");
+        LogError("send payload exceeds tx buffer capacity");
         return false;
     }
 
@@ -294,16 +290,21 @@ std::size_t TcpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength
         if (errno == ENOTCONN || errno == ECONNRESET) {
             HandleConnectionLoss();
         } else {
-            LogErr("recv");
+            LogError("recv");
         }
         return 0;
     }
 }
 
 void TcpPosixAdapter::TryFlushTxBuffer(int targetSock) {
+    uint8_t* buffer = m_txBuffer.get();
+    if (!buffer) {
+        return;
+    }
+
     while (m_txSize > 0 && targetSock >= 0 && m_isConnected) {
         const std::size_t contiguous = std::min(m_txSize, kTxBufferCapacity - m_txHead);
-        ssize_t sent = ::send(targetSock, m_txBuffer.data() + m_txHead, contiguous, MSG_NOSIGNAL);
+        ssize_t sent = ::send(targetSock, buffer + m_txHead, contiguous, MSG_NOSIGNAL);
         if (sent > 0) {
             const std::size_t consumed = static_cast<std::size_t>(sent);
             m_txHead = (m_txHead + consumed) % kTxBufferCapacity;
@@ -328,7 +329,7 @@ void TcpPosixAdapter::TryFlushTxBuffer(int targetSock) {
         if (errno == EPIPE || errno == ECONNRESET || errno == ENOTCONN) {
             HandleConnectionLoss();
         } else {
-            LogErr("send");
+            LogError("send");
         }
         DropPendingTx();
         return;
@@ -341,16 +342,44 @@ bool TcpPosixAdapter::EnqueueTx(const uint8_t* data, std::size_t length) {
     }
 
     if (length > kTxBufferCapacity - m_txSize) {
-        LogErr("tx buffer full - dropping packet");
+        LogError("tx buffer full - dropping packet");
         return false;
     }
 
-    for (std::size_t i = 0; i < length; ++i) {
-        m_txBuffer[m_txTail] = data[i];
-        m_txTail = (m_txTail + 1) % kTxBufferCapacity;
+    const auto* src = data;
+    const std::size_t firstChunk = std::min(length, kTxBufferCapacity - m_txTail);
+    std::memcpy(m_txBuffer.get() + m_txTail, src, firstChunk);
+
+    const std::size_t remaining = length - firstChunk;
+    if (remaining > 0) {
+        std::memcpy(m_txBuffer.get(), src + firstChunk, remaining);
     }
+
+    m_txTail = (m_txTail + length) % kTxBufferCapacity;
     m_txSize += length;
     return true;
+}
+bool TcpPosixAdapter::ConfigureSocket(int sock) {
+    int yes = 1;
+    if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char*)&yes, sizeof(int)) < 0) {
+        LogError("setsockopt(TCP_NODELAY)");
+        return false;
+    }
+
+    if (fcntl(sock, F_SETFL, O_NONBLOCK) < 0) {
+        LogError("fcntl(O_NONBLOCK)");
+        return false;
+    }
+    return true;
+}
+
+void TcpPosixAdapter::LogError(const char* message) {
+    const auto now = std::chrono::steady_clock::now();
+    if (now - m_lastErrorLog < kLogThrottle) {
+        return;
+    }
+    m_lastErrorLog = now;
+    std::cerr << "TCP adapter error: " << message << " errno=" << errno << std::endl;
 }
 
 void TcpPosixAdapter::DropPendingTx() {

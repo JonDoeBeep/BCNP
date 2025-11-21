@@ -1,5 +1,7 @@
 #pragma once
 
+#include "bcnp/static_vector.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <optional>
@@ -39,7 +41,7 @@ struct Command {
 
 struct Packet {
     PacketHeader header{};
-    std::vector<Command> commands;
+    StaticVector<Command, kMaxCommandsPerPacket> commands{};
 };
 
 enum class PacketError {

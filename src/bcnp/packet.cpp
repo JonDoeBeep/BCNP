@@ -172,8 +172,6 @@ DecodeResult DecodePacket(const uint8_t* data, std::size_t length) {
         return result;
     }
 
-    packet.commands.reserve(kMaxCommandsPerPacket);
-
     std::size_t offset = kHeaderSize;
     for (std::size_t i = 0; i < packet.header.commandCount; ++i) {
         const int32_t vxFixed = LoadS32(&data[offset]);
