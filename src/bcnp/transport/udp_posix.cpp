@@ -81,7 +81,7 @@ bool UdpPosixAdapter::SendBytes(const uint8_t* data, std::size_t length) {
 void UdpPosixAdapter::SetPeerLockMode(bool locked) {
     m_peerLocked = locked;
     if (locked && m_hasPeer) {
-        // Lock to current peer
+        // Lock to current peer immediately
         m_initialPeer = m_lastPeer;
     }
 }
@@ -103,22 +103,23 @@ std::size_t UdpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength
         return 0;
     }
 
-    // Security: if peer is locked, reject packets from other sources
+    // Peer locking security model: Prevents session hijacking in untrusted networks.
     if (m_peerLocked) {
-        // If we have a locked peer, only accept from that address
         if (m_hasPeer && (src.sin_addr.s_addr != m_initialPeer.sin_addr.s_addr ||
                           src.sin_port != m_initialPeer.sin_port)) {
-            // Silently drop packets from unauthorized sources
             return 0;
         }
-        // First packet after lock enabled - this becomes our locked peer
         if (!m_hasPeer) {
             m_initialPeer = src;
+            m_hasPeer = true;
+            m_lastPeer = src;
         }
+    } else {
+        // Normal mode: accept from any source, track last sender
+        m_lastPeer = src;
+        m_hasPeer = true;
     }
 
-    m_lastPeer = src;
-    m_hasPeer = true;
     return static_cast<std::size_t>(received);
 }
 

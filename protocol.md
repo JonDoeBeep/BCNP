@@ -1,10 +1,7 @@
-# BCNP: Batched Command Network Protocol v2.2.0
+# BCNP: Batched Command Network Protocol v2.2.1
 
-## Overview
-
-The robot networking system has been upgraded to support **batched movement commands**. This allows a client to send multiple sequential movement commands in a single UDP packet, which the robot will execute in order.
-
-**Version History:**
+## Version History:
+- **v2.2.1** (Minor): Security bugfixes. 
 - **v2.2.0** (Minor): Security bugfixes, optimization. 
 - **v2.1.1** (Bugfix): TCP improvements.
 - **v2.1.0** (Minor, deprecated): TCP Optimization/Adapter support.
@@ -46,8 +43,8 @@ All multi-byte integers use **big-endian** byte order.
 
 ### Header Fields
 
-- **Major** (1 byte): Protocol major version. Current: `1`
-- **Minor** (1 byte): Protocol minor version. Current: `1`
+- **Major** (1 byte): Protocol major version. Current: `2`
+- **Minor** (1 byte): Protocol minor version. Current: `2`
   - Robot rejects packets with mismatched major.minor version
   - Patch version not transmitted (for bug fixes only)
 - **Flags** (1 byte): Bit flags for special operations:

@@ -274,17 +274,18 @@ bool TcpPosixAdapter::SendBytes(const uint8_t* data, std::size_t length) {
     }
 
     std::size_t totalSent = 0;
-    int waitAttempts = 0;
+    // Retry loop: Handles partial sends by waiting for socket writability (EAGAIN/EWOULDBLOCK). Must send complete message to avoid stream corruption.
     while (totalSent < length) {
         ssize_t sent = ::send(targetSock, data + totalSent, length - totalSent, MSG_NOSIGNAL);
         if (sent > 0) {
             totalSent += static_cast<std::size_t>(sent);
-            waitAttempts = 0;
             continue;
         }
 
         if (sent == 0) {
-            break;
+            // Connection closed
+            HandleConnectionLoss();
+            return false;
         }
 
         if (errno == EINTR) {
@@ -292,20 +293,17 @@ bool TcpPosixAdapter::SendBytes(const uint8_t* data, std::size_t length) {
         }
 
         if (errno == EAGAIN || errno == EWOULDBLOCK) {
-            if (waitAttempts >= kSendWaitMaxAttempts) {
+            auto pollResult = WaitForWritable(targetSock, kSendWaitTimeoutMs);
+            if (pollResult == PollStatus::Ready) {
+                continue;
+            } else if (pollResult == PollStatus::Timeout) {
+                // Timeout waiting for socket - this is a send failure
+                LogErr("send timeout waiting for writability");
+                return false;
+            } else {
                 HandleConnectionLoss();
                 return false;
             }
-            ++waitAttempts;
-            const PollStatus status = WaitForWritable(targetSock, kSendWaitTimeoutMs);
-            if (status == PollStatus::Ready) {
-                continue;
-            }
-            if (status == PollStatus::Timeout) {
-                continue;
-            }
-            HandleConnectionLoss();
-            return false;
         }
 
         if (errno == EPIPE || errno == ECONNRESET || errno == ENOTCONN) {

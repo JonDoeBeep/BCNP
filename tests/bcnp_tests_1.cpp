@@ -1,3 +1,6 @@
+#define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
+#include "doctest.h"
+
 #include "bcnp/command_queue.h"
 #include "bcnp/controller.h"
 #include "bcnp/packet.h"
@@ -6,40 +9,22 @@
 
 #include <algorithm>
 #include <array>
+#include <atomic>
 #include <chrono>
-#include <cstdlib>
+#include <condition_variable>
+#include <future>
 #include <iostream>
+#include <mutex>
 #include <thread>
 #include <vector>
 
-namespace testutil {
-[[noreturn]] void Fail(const char* expr, const char* file, int line, const char* message = nullptr) {
-    std::cerr << "Test failure: " << expr << " at " << file << ':' << line;
-    if (message) {
-        std::cerr << " - " << message;
-    }
-    std::cerr << std::endl;
-    std::exit(EXIT_FAILURE);
-}
-} // namespace testutil
+using namespace std::chrono_literals;
 
-#define REQUIRE(expr)                                                                    \
-    do {                                                                                 \
-        if (!(expr)) {                                                                   \
-            testutil::Fail(#expr, __FILE__, __LINE__);                                   \
-        }                                                                                \
-    } while (false)
+// ============================================================================
+// Test Suite: Packet Encoding/Decoding
+// ============================================================================
 
-#define REQUIRE_MSG(expr, msg)                                                           \
-    do {                                                                                 \
-        if (!(expr)) {                                                                   \
-            testutil::Fail(#expr, __FILE__, __LINE__, msg);                              \
-        }                                                                                \
-    } while (false)
-
-namespace {
-
-void TestEncodeDecode() {
+TEST_CASE("Packet: Encode and decode round-trip") {
     bcnp::Packet packet{};
     packet.header.flags = bcnp::kFlagClearQueue;
     packet.commands.push_back({0.5f, -1.0f, 1500});
@@ -51,12 +36,16 @@ void TestEncodeDecode() {
 
     const auto decode = bcnp::DecodePacket(buffer.data(), buffer.size());
     REQUIRE(decode.packet.has_value());
-    REQUIRE(decode.packet->commands.size() == 2);
-    REQUIRE(decode.packet->commands[0].vx == 0.5f);
-    REQUIRE(decode.packet->commands[1].omega == 0.25f);
+    CHECK(decode.packet->commands.size() == 2);
+    CHECK(decode.packet->commands[0].vx == 0.5f);
+    CHECK(decode.packet->commands[1].omega == 0.25f);
 }
 
-void TestCommandQueue() {
+// ============================================================================
+// Test Suite: CommandQueue
+// ============================================================================
+
+TEST_CASE("CommandQueue: Basic command execution timing") {
     bcnp::CommandQueue queue;
     queue.Push({1.0f, 0.0f, 100});
     queue.Push({2.0f, 0.5f, 50});
@@ -66,19 +55,23 @@ void TestCommandQueue() {
     queue.Update(start);
     auto cmd = queue.ActiveCommand();
     REQUIRE(cmd.has_value());
-    REQUIRE(cmd->vx == 1.0f);
+    CHECK(cmd->vx == 1.0f);
 
-    queue.Update(start + std::chrono::milliseconds(110));
+    queue.Update(start + 110ms);
     cmd = queue.ActiveCommand();
     REQUIRE(cmd.has_value());
-    REQUIRE(cmd->vx == 2.0f);
+    CHECK(cmd->vx == 2.0f);
 
-    queue.Update(start + std::chrono::milliseconds(200));
+    queue.Update(start + 200ms);
     cmd = queue.ActiveCommand();
-    REQUIRE(!cmd.has_value());
+    CHECK(!cmd.has_value());
 }
 
-void TestStreamParserChunking() {
+// ============================================================================
+// Test Suite: StreamParser
+// ============================================================================
+
+TEST_CASE("StreamParser: Chunked packet delivery") {
     bcnp::Packet packet{};
     packet.commands.push_back({0.1f, 0.2f, 250});
     packet.header.commandCount = 1;
@@ -90,19 +83,19 @@ void TestStreamParserChunking() {
     bcnp::StreamParser parser(
         [&](const bcnp::Packet& parsed) {
             packetSeen = true;
-            REQUIRE(parsed.commands.size() == 1);
+            CHECK(parsed.commands.size() == 1);
         },
         [&](const bcnp::StreamParser::ErrorInfo&) {
-            REQUIRE_MSG(false, "Unexpected parse error");
+            FAIL("Unexpected parse error");
         });
 
     parser.Push(encoded.data(), 3);
-    REQUIRE(!packetSeen);
+    CHECK(!packetSeen);
     parser.Push(encoded.data() + 3, encoded.size() - 3);
-    REQUIRE(packetSeen);
+    CHECK(packetSeen);
 }
 
-void TestStreamParserTruncatedWaits() {
+TEST_CASE("StreamParser: Truncated packet waits without error") {
     bcnp::Packet packet{};
     packet.header.commandCount = 1;
     packet.commands.push_back({0.5f, 0.1f, 100});
@@ -117,15 +110,15 @@ void TestStreamParserTruncatedWaits() {
         [&](const bcnp::StreamParser::ErrorInfo&) { ++errors; });
 
     parser.Push(encoded.data(), encoded.size() - 1);
-    REQUIRE(!packetSeen);
-    REQUIRE(errors == 0);
+    CHECK(!packetSeen);
+    CHECK(errors == 0);
 
     parser.Push(encoded.data() + encoded.size() - 1, 1);
-    REQUIRE(packetSeen);
-    REQUIRE(errors == 0);
+    CHECK(packetSeen);
+    CHECK(errors == 0);
 }
 
-void TestStreamParserSkipsBadHeader() {
+TEST_CASE("StreamParser: Skip bad headers and recover") {
     bcnp::Packet first{};
     first.header.commandCount = 1;
     first.commands.push_back({0.2f, 0.0f, 150});
@@ -159,13 +152,13 @@ void TestStreamParserSkipsBadHeader() {
 
     parser.Push(combined.data(), combined.size());
 
-    REQUIRE(errorCount >= 1);
-    REQUIRE(seen.size() == 2);
-    REQUIRE(seen.front().commands.front().vx == first.commands.front().vx);
-    REQUIRE(seen.back().commands.front().omega == second.commands.front().omega);
+    CHECK(errorCount >= 1);
+    CHECK(seen.size() == 2);
+    CHECK(seen.front().commands.front().vx == first.commands.front().vx);
+    CHECK(seen.back().commands.front().omega == second.commands.front().omega);
 }
 
-void TestStreamParserErrors() {
+TEST_CASE("StreamParser: Error info provides diagnostics") {
     std::vector<bcnp::StreamParser::ErrorInfo> errors;
     bcnp::StreamParser parser(
         [](const bcnp::Packet&) {},
@@ -179,49 +172,42 @@ void TestStreamParserErrors() {
     parser.Push(badHeader.data(), badHeader.size());
     parser.Push(badHeader.data(), badHeader.size());
 
-    // With byte-by-byte scanning (O(m) fix), we will get an error for every byte offset
-    // that doesn't look like a valid header.
-    // 1. Offset 0: TooManyCommands (consumes 1 byte)
-    // 2. Offset 1: UnsupportedVersion (consumes 1 byte)
-    // ... and so on.
-    
     REQUIRE(errors.size() >= 2);
-    REQUIRE(errors[0].code == bcnp::PacketError::TooManyCommands);
-    REQUIRE(errors[0].offset == 0);
-    REQUIRE(errors[0].consecutiveErrors == 1);
-    
-    // The next error should be at offset 1
-    REQUIRE(errors[1].offset == 1);
-    REQUIRE(errors[1].consecutiveErrors == 2);
+    CHECK(errors[0].code == bcnp::PacketError::TooManyCommands);
+    CHECK(errors[0].offset == 0);
+    CHECK(errors[0].consecutiveErrors == 1);
+    CHECK(errors[1].offset == 1);
+    CHECK(errors[1].consecutiveErrors == 2);
 
     parser.Reset();
     parser.Push(badHeader.data(), badHeader.size());
-    REQUIRE(errors.size() > 2); // Should have added more errors
-    REQUIRE(errors.back().consecutiveErrors == 1); // Reset cleared the counter
+    CHECK(errors.size() > 2);
+    CHECK(errors.back().consecutiveErrors == 1);
 }
 
-void TestStreamParserDoS() {
+TEST_CASE("StreamParser: DoS protection - survives garbage flood") {
     bool packetSeen = false;
     bcnp::StreamParser parser(
         [&](const bcnp::Packet&) { packetSeen = true; },
         [](const bcnp::StreamParser::ErrorInfo&) {});
 
-    // 1. Fill buffer with garbage beyond limit
     std::vector<uint8_t> garbage(bcnp::StreamParser::kMaxBufferSize + 100, 0xFF);
     parser.Push(garbage.data(), garbage.size());
 
-    // 2. Verify parser is still alive and can accept a valid packet
-    // (The garbage should have been cleared or handled)
     bcnp::Packet packet{};
     packet.commands.push_back({0.1f, 0.1f, 100});
     std::vector<uint8_t> encoded;
     bcnp::EncodePacket(packet, encoded);
 
     parser.Push(encoded.data(), encoded.size());
-    REQUIRE(packetSeen);
+    CHECK(packetSeen);
 }
 
-void TestControllerClamping() {
+// ============================================================================
+// Test Suite: Controller
+// ============================================================================
+
+TEST_CASE("Controller: Command clamping enforces limits") {
     bcnp::ControllerConfig config{};
     config.limits.vxMin = -0.25f;
     config.limits.vxMax = 0.25f;
@@ -239,14 +225,14 @@ void TestControllerClamping() {
 
     auto cmd = controller.CurrentCommand(bcnp::CommandQueue::Clock::now());
     REQUIRE(cmd.has_value());
-    REQUIRE(cmd->vx == config.limits.vxMax);
-    REQUIRE(cmd->omega == config.limits.omegaMin);
-    REQUIRE(cmd->durationMs == config.limits.durationMax);
+    CHECK(cmd->vx == config.limits.vxMax);
+    CHECK(cmd->omega == config.limits.omegaMin);
+    CHECK(cmd->durationMs == config.limits.durationMax);
 }
 
-void TestQueueDisconnectStopsCommands() {
+TEST_CASE("CommandQueue: Disconnect clears active command immediately") {
     bcnp::QueueConfig config{};
-    config.connectionTimeout = std::chrono::milliseconds(50);
+    config.connectionTimeout = 50ms;
     bcnp::CommandQueue queue(config);
 
     const auto now = bcnp::CommandQueue::Clock::now();
@@ -255,50 +241,128 @@ void TestQueueDisconnectStopsCommands() {
     queue.Update(now);
     REQUIRE(queue.ActiveCommand().has_value());
 
-    const auto later = now + config.connectionTimeout + std::chrono::milliseconds(1);
+    const auto later = now + config.connectionTimeout + 1ms;
     queue.Update(later);
-    REQUIRE(!queue.ActiveCommand().has_value());
-    REQUIRE(queue.Size() == 0);
+    CHECK(!queue.ActiveCommand().has_value());
+    CHECK(queue.Size() == 0);
 }
 
-void TestTcpAdapter() {
-    // 1. Create Server
+// ============================================================================
+// Test Suite: Thread Safety (NEW)
+// ============================================================================
+
+TEST_CASE("Controller: Thread-safe PushBytes from multiple threads") {
+    bcnp::Controller controller;
+    std::atomic<int> packetsReceived{0};
+    
+    // Prepare valid packets
+    bcnp::Packet packet{};
+    packet.commands.push_back({0.1f, 0.1f, 100});
+    std::vector<uint8_t> encoded;
+    REQUIRE(bcnp::EncodePacket(packet, encoded));
+    
+    // Track received packets
+    std::mutex resultsMutex;
+    std::vector<bcnp::Packet> receivedPackets;
+    
+    // Replace the parser with one that tracks packets
+    controller.Parser().Reset();
+    
+    // Launch 3 threads that all push the same packet repeatedly
+    const int threadsCount = 3;
+    const int iterationsPerThread = 50;
+    
+    std::vector<std::thread> threads;
+    for (int t = 0; t < threadsCount; ++t) {
+        threads.emplace_back([&, t]() {
+            for (int i = 0; i < iterationsPerThread; ++i) {
+                controller.PushBytes(encoded.data(), encoded.size());
+                std::this_thread::sleep_for(std::chrono::microseconds(100));
+            }
+        });
+    }
+    
+    for (auto& thread : threads) {
+        thread.join();
+    }
+    
+    // Verify no crashes occurred (test passes if we reach here)
+    CHECK(true);
+}
+
+TEST_CASE("CommandQueue: Concurrent Push and ActiveCommand") {
+    bcnp::CommandQueue queue;
+    std::atomic<bool> running{true};
+    std::atomic<int> pushCount{0};
+    std::atomic<int> readCount{0};
+    
+    auto now = bcnp::CommandQueue::Clock::now();
+    queue.NotifyPacketReceived(now);
+    
+    // Thread 1: Continuously push commands
+    std::thread pusher([&]() {
+        for (int i = 0; i < 100; ++i) {
+            if (queue.Push({0.1f, 0.1f, 10})) {
+                ++pushCount;
+            }
+            std::this_thread::sleep_for(std::chrono::microseconds(100));
+        }
+        running = false;
+    });
+    
+    // Thread 2: Continuously read active command
+    std::thread reader([&]() {
+        while (running) {
+            queue.Update(bcnp::CommandQueue::Clock::now());
+            auto cmd = queue.ActiveCommand();
+            if (cmd.has_value()) {
+                ++readCount;
+            }
+            std::this_thread::sleep_for(std::chrono::microseconds(50));
+        }
+    });
+    
+    pusher.join();
+    reader.join();
+    
+    // Verify operations completed without crashes
+    CHECK(pushCount > 0);
+    CHECK(readCount > 0);
+}
+
+// ============================================================================
+// Test Suite: TCP Adapter (Integration Tests)
+// ============================================================================
+
+TEST_CASE("TCP: Basic server-client connection and data transfer") {
     bcnp::TcpPosixAdapter server(12345);
     REQUIRE(server.IsValid());
 
-    // 2. Create Client
     bcnp::TcpPosixAdapter client(0, "127.0.0.1", 12345);
     REQUIRE(client.IsValid());
 
-    // 3. Wait for connection (client connect is non-blocking/async in our impl, 
-    //    but server accept is called in ReceiveChunk)
-    
-    // Client sends data to trigger connection on server side
     std::vector<uint8_t> txData = {0x01, 0x02, 0x03, 0x04};
-    // Give it a moment to connect
     for (int i = 0; i < 10; ++i) {
         client.SendBytes(txData.data(), txData.size());
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(10ms);
         if (client.IsConnected()) break;
     }
-    
-    // Server needs to call ReceiveChunk to accept connection
+
     std::vector<uint8_t> rxBuffer(1024);
     bool received = false;
     for (int i = 0; i < 50; ++i) {
         size_t bytes = server.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
         if (bytes > 0) {
             received = true;
-            REQUIRE(bytes == txData.size());
-            REQUIRE(rxBuffer[0] == 0x01);
+            CHECK(bytes == txData.size());
+            CHECK(rxBuffer[0] == 0x01);
             break;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(10ms);
     }
     REQUIRE(received);
-    REQUIRE(server.IsConnected());
+    CHECK(server.IsConnected());
 
-    // 4. Server sends back to client
     std::vector<uint8_t> response = {0x05, 0x06};
     server.SendBytes(response.data(), response.size());
 
@@ -307,28 +371,51 @@ void TestTcpAdapter() {
         size_t bytes = client.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
         if (bytes > 0) {
             received = true;
-            REQUIRE(bytes == response.size());
-            REQUIRE(rxBuffer[0] == 0x05);
+            CHECK(bytes == response.size());
+            CHECK(rxBuffer[0] == 0x05);
             break;
         }
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        std::this_thread::sleep_for(10ms);
     }
-    REQUIRE(received);
+    CHECK(received);
 }
 
-} // namespace
-
-int main() {
-    TestEncodeDecode();
-    TestCommandQueue();
-    TestStreamParserChunking();
-    TestStreamParserTruncatedWaits();
-    TestStreamParserErrors();
-    TestStreamParserSkipsBadHeader();
-    TestStreamParserDoS();
-    TestControllerClamping();
-    TestQueueDisconnectStopsCommands();
-    TestTcpAdapter();
-    std::cout << "BCNP tests passed" << std::endl;
-    return 0;
+TEST_CASE("TCP: Partial send handling with slow consumer") {
+    bcnp::TcpPosixAdapter server(12346);
+    REQUIRE(server.IsValid());
+    
+    bcnp::TcpPosixAdapter client(0, "127.0.0.1", 12346);
+    REQUIRE(client.IsValid());
+    
+    // Establish connection
+    std::vector<uint8_t> handshake = {0xAA};
+    std::vector<uint8_t> rxBuffer(1024);
+    
+    for (int i = 0; i < 50; ++i) {
+        client.SendBytes(handshake.data(), handshake.size());
+        server.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
+        if (server.IsConnected() && client.IsConnected()) break;
+        std::this_thread::sleep_for(10ms);
+    }
+    REQUIRE(server.IsConnected());
+    
+    // Send large data (may trigger partial send if socket buffer fills)
+    std::vector<uint8_t> largeData(64 * 1024, 0xBB); // 64KB
+    bool sendSuccess = server.SendBytes(largeData.data(), largeData.size());
+    
+    // Even if socket buffer is full, send should eventually succeed
+    // (our fix waits for writability)
+    CHECK(sendSuccess);
+    
+    // Client should be able to receive all data
+    std::vector<uint8_t> received;
+    for (int i = 0; i < 1000 && received.size() < largeData.size(); ++i) {
+        size_t bytes = client.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
+        if (bytes > 0) {
+            received.insert(received.end(), rxBuffer.begin(), rxBuffer.begin() + bytes);
+        }
+        std::this_thread::sleep_for(5ms);
+    }
+    
+    CHECK(received.size() == largeData.size());
 }

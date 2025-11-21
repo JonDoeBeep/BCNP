@@ -15,22 +15,23 @@ void StreamParser::Push(const uint8_t* data, std::size_t length) {
         return;
     }
 
-    // Prevent infinite buffer growth
+    // DoS protection: Prevent unbounded buffer growth from garbage floods
     if (m_buffer.size() + length > kMaxBufferSize) {
         // Try to compact first
         if (m_head > 0) {
             const std::size_t remaining = m_buffer.size() - m_head;
             std::memmove(m_buffer.data(), m_buffer.data() + m_head, remaining);
             m_buffer.resize(remaining);
+            m_streamOffset += m_head;
             m_head = 0;
         }
 
-        // If still too big, we must drop data to protect memory
         if (m_buffer.size() + length > kMaxBufferSize) {
-            // Clear buffer to recover from DoS/OOM state
+            const auto errorOffset = m_streamOffset;
+            m_streamOffset += m_buffer.size();
             m_buffer.clear();
             m_head = 0;
-            // We could emit an error here, but we just reset for safety
+            EmitError(PacketError::TooManyCommands, errorOffset);
         }
     }
 

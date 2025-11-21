@@ -4,6 +4,7 @@
 
 #include <chrono>
 #include <cstddef>
+#include <mutex>
 #include <optional>
 #include <queue>
 
@@ -29,7 +30,7 @@ public:
 
     void Clear();
     bool Push(const Command& command);
-    std::size_t Size() const { return m_queue.size(); }
+    std::size_t Size() const;
 
     void NotifyPacketReceived(Clock::time_point now);
 
@@ -39,12 +40,12 @@ public:
 
     bool IsConnected(Clock::time_point now) const;
 
-    void SetMetrics(QueueMetrics metrics) { m_metrics = metrics; }
-    QueueMetrics& Metrics() { return m_metrics; }
-    const QueueMetrics& Metrics() const { return m_metrics; }
+    void SetMetrics(const QueueMetrics& metrics);
+    QueueMetrics GetMetrics() const;
+    void IncrementParseErrors();
 
-    QueueConfig& Config() { return m_config; }
-    const QueueConfig& Config() const { return m_config; }
+    void SetConfig(const QueueConfig& config);
+    QueueConfig GetConfig() const;
 
 private:
     struct ActiveSlot {
@@ -53,12 +54,14 @@ private:
     };
 
     void PromoteNext(Clock::time_point startTime, Clock::time_point now);
+    bool IsConnectedUnlocked(Clock::time_point now) const;
 
     QueueConfig m_config{};
     QueueMetrics m_metrics{};
     std::queue<Command> m_queue;
     std::optional<ActiveSlot> m_active;
     Clock::time_point m_lastRx{Clock::time_point::min()};
+    mutable std::mutex m_mutex;
 };
 
 } // namespace bcnp

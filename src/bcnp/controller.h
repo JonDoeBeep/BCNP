@@ -3,6 +3,7 @@
 #include "bcnp/command_queue.h"
 #include "bcnp/stream_parser.h"
 #include <cstdint>
+#include <mutex>
 
 namespace bcnp {
 
@@ -24,6 +25,7 @@ class Controller {
 public:
     explicit Controller(ControllerConfig config = {});
 
+    // Thread-safe: can be called from network receive thread
     void PushBytes(const uint8_t* data, std::size_t length);
 
     void HandlePacket(const Packet& packet);
@@ -44,6 +46,7 @@ private:
     ControllerConfig m_config;
     CommandQueue m_queue;
     StreamParser m_parser;
+    mutable std::mutex m_parserMutex; // Protects m_parser from concurrent PushBytes calls
 };
 
 } // namespace bcnp

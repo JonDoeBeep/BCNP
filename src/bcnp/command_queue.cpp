@@ -7,12 +7,14 @@ namespace bcnp {
 CommandQueue::CommandQueue(QueueConfig config) : m_config(config) {}
 
 void CommandQueue::Clear() {
+    std::lock_guard<std::mutex> lock(m_mutex);
     std::queue<Command> empty;
     std::swap(m_queue, empty);
     m_active.reset();
 }
 
 bool CommandQueue::Push(const Command& command) {
+    std::lock_guard<std::mutex> lock(m_mutex);
     if (m_queue.size() >= m_config.maxQueueDepth) {
         ++m_metrics.queueOverflows;
         return false;
@@ -21,16 +23,24 @@ bool CommandQueue::Push(const Command& command) {
     return true;
 }
 
+std::size_t CommandQueue::Size() const {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_queue.size();
+}
+
 void CommandQueue::NotifyPacketReceived(Clock::time_point now) {
+    std::lock_guard<std::mutex> lock(m_mutex);
     m_lastRx = now;
     ++m_metrics.packetsReceived;
 }
 
 void CommandQueue::Update(Clock::time_point now) {
-    if (!IsConnected(now)) {
-        if (m_active || !m_queue.empty()) {
-            Clear();
-        }
+    std::lock_guard<std::mutex> lock(m_mutex);
+    if (!IsConnectedUnlocked(now)) {
+        // Inline Clear() to avoid deadlock (we already hold mutex)
+        std::queue<Command> empty;
+        std::swap(m_queue, empty);
+        m_active.reset();
         return;
     }
 
@@ -51,6 +61,7 @@ void CommandQueue::Update(Clock::time_point now) {
 }
 
 std::optional<Command> CommandQueue::ActiveCommand() const {
+    std::lock_guard<std::mutex> lock(m_mutex);
     if (m_active) {
         return m_active->command;
     }
@@ -58,6 +69,11 @@ std::optional<Command> CommandQueue::ActiveCommand() const {
 }
 
 bool CommandQueue::IsConnected(Clock::time_point now) const {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return IsConnectedUnlocked(now);
+}
+
+bool CommandQueue::IsConnectedUnlocked(Clock::time_point now) const {
     if (m_lastRx == Clock::time_point::min()) {
         return false;
     }
@@ -65,15 +81,39 @@ bool CommandQueue::IsConnected(Clock::time_point now) const {
     return elapsed <= m_config.connectionTimeout;
 }
 
+void CommandQueue::SetMetrics(const QueueMetrics& metrics) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_metrics = metrics;
+}
+
+QueueMetrics CommandQueue::GetMetrics() const {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_metrics;
+}
+
+void CommandQueue::IncrementParseErrors() {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    ++m_metrics.parseErrors;
+}
+
+void CommandQueue::SetConfig(const QueueConfig& config) {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    m_config = config;
+}
+
+QueueConfig CommandQueue::GetConfig() const {
+    std::lock_guard<std::mutex> lock(m_mutex);
+    return m_config;
+}
+
 void CommandQueue::PromoteNext(Clock::time_point startTime, Clock::time_point now) {
     if (m_queue.empty()) {
         return;
     }
     
-    // Prevent fast-forwarding if startTime is too far in the past due to lag
+    // Lag compensation: Prevents "fast-forwarding" through buffered commands after system pause.
     const auto maxLagTime = now - m_config.maxCommandLag;
     
-    // If startTime is more than maxCommandLag in the past, clamp it to prevent skipping
     Clock::time_point effectiveStart = startTime;
     if (startTime < maxLagTime) {
         effectiveStart = maxLagTime;

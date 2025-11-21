@@ -7,9 +7,10 @@ Controller::Controller(ControllerConfig config)
             m_queue(m_config.queue),
             m_parser(
                     [this](const Packet& packet) { HandlePacket(packet); },
-                    [this](const StreamParser::ErrorInfo&) { ++m_queue.Metrics().parseErrors; }) {}
+                    [this](const StreamParser::ErrorInfo&) { m_queue.IncrementParseErrors(); }) {}
 
 void Controller::PushBytes(const uint8_t* data, std::size_t length) {
+    std::lock_guard<std::mutex> lock(m_parserMutex);
     m_parser.Push(data, length);
 }
 
