@@ -64,18 +64,25 @@ void StreamParser::Reset(bool resetErrorState) {
 }
 
 void StreamParser::WriteToBuffer(const uint8_t* data, std::size_t length) {
-    for (std::size_t i = 0; i < length; ++i) {
-        const std::size_t slot = (m_head + m_size + i) % kMaxBufferSize;
-        m_buffer[slot] = data[i];
+    const std::size_t tailIndex = (m_head + m_size) % kMaxBufferSize;
+    const std::size_t firstChunk = std::min(length, kMaxBufferSize - tailIndex);
+    std::memcpy(&m_buffer[tailIndex], data, firstChunk);
+    
+    const std::size_t remaining = length - firstChunk;
+    if (remaining > 0) {
+        std::memcpy(&m_buffer[0], data + firstChunk, remaining);
     }
     m_size += length;
 }
 
 void StreamParser::CopyOut(std::size_t offset, std::size_t length, uint8_t* dest) const {
-    std::size_t index = (m_head + offset) % kMaxBufferSize;
-    for (std::size_t i = 0; i < length; ++i) {
-        dest[i] = m_buffer[index];
-        index = (index + 1) % kMaxBufferSize;
+    const std::size_t startIndex = (m_head + offset) % kMaxBufferSize;
+    const std::size_t firstChunk = std::min(length, kMaxBufferSize - startIndex);
+    std::memcpy(dest, &m_buffer[startIndex], firstChunk);
+    
+    const std::size_t remaining = length - firstChunk;
+    if (remaining > 0) {
+        std::memcpy(dest + firstChunk, &m_buffer[0], remaining);
     }
 }
 
@@ -129,8 +136,13 @@ void StreamParser::ParseBuffer(std::size_t& iterationBudget) {
         if (!result.packet) {
             const auto offset = m_streamOffset;
             EmitError(result.error, offset);
-            const std::size_t consumed = result.bytesConsumed > 0 ? result.bytesConsumed : 1;
-            Discard(consumed);
+            // Poison packet: only discard 1 byte to resync, not the entire calculated frame
+            if (result.error == PacketError::ChecksumMismatch || result.error == PacketError::InvalidFloat) {
+                Discard(1);
+            } else {
+                const std::size_t consumed = result.bytesConsumed > 0 ? result.bytesConsumed : 1;
+                Discard(consumed);
+            }
             continue;
         }
 

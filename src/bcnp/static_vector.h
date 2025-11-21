@@ -33,29 +33,30 @@ public:
     constexpr size_type capacity() const noexcept { return Capacity; }
     bool empty() const noexcept { return m_size == 0; }
 
-    iterator begin() noexcept { return m_storage; }
-    iterator end() noexcept { return m_storage + m_size; }
-    const_iterator begin() const noexcept { return m_storage; }
-    const_iterator end() const noexcept { return m_storage + m_size; }
-    const_iterator cbegin() const noexcept { return m_storage; }
-    const_iterator cend() const noexcept { return m_storage + m_size; }
+    iterator begin() noexcept { return reinterpret_cast<T*>(m_storage); }
+    iterator end() noexcept { return reinterpret_cast<T*>(m_storage) + m_size; }
+    const_iterator begin() const noexcept { return reinterpret_cast<const T*>(m_storage); }
+    const_iterator end() const noexcept { return reinterpret_cast<const T*>(m_storage) + m_size; }
+    const_iterator cbegin() const noexcept { return reinterpret_cast<const T*>(m_storage); }
+    const_iterator cend() const noexcept { return reinterpret_cast<const T*>(m_storage) + m_size; }
 
-    T& operator[](size_type index) noexcept { return m_storage[index]; }
-    const T& operator[](size_type index) const noexcept { return m_storage[index]; }
+    T& operator[](size_type index) noexcept { return reinterpret_cast<T*>(m_storage)[index]; }
+    const T& operator[](size_type index) const noexcept { return reinterpret_cast<const T*>(m_storage)[index]; }
 
-    T& front() noexcept { return m_storage[0]; }
-    const T& front() const noexcept { return m_storage[0]; }
+    T& front() noexcept { return reinterpret_cast<T*>(m_storage)[0]; }
+    const T& front() const noexcept { return reinterpret_cast<const T*>(m_storage)[0]; }
 
-    T& back() noexcept { return m_storage[m_size - 1]; }
-    const T& back() const noexcept { return m_storage[m_size - 1]; }
+    T& back() noexcept { return reinterpret_cast<T*>(m_storage)[m_size - 1]; }
+    const T& back() const noexcept { return reinterpret_cast<const T*>(m_storage)[m_size - 1]; }
 
-    T* data() noexcept { return m_storage; }
-    const T* data() const noexcept { return m_storage; }
+    T* data() noexcept { return reinterpret_cast<T*>(m_storage); }
+    const T* data() const noexcept { return reinterpret_cast<const T*>(m_storage); }
 
     void clear() noexcept {
         if constexpr (!std::is_trivially_destructible_v<T>) {
+            T* storage = reinterpret_cast<T*>(m_storage);
             for (size_type i = 0; i < m_size; ++i) {
-                m_storage[i].~T();
+                storage[i].~T();
             }
         }
         m_size = 0;
@@ -65,10 +66,11 @@ public:
         if (m_size >= Capacity) {
             throw std::out_of_range("StaticVector capacity exceeded");
         }
+        T* storage = reinterpret_cast<T*>(m_storage);
         if constexpr (std::is_trivially_copyable_v<T>) {
-            m_storage[m_size++] = value;
+            storage[m_size++] = value;
         } else {
-            new (&m_storage[m_size++]) T(value);
+            new (&storage[m_size++]) T(value);
         }
     }
 
@@ -76,10 +78,11 @@ public:
         if (m_size >= Capacity) {
             throw std::out_of_range("StaticVector capacity exceeded");
         }
+        T* storage = reinterpret_cast<T*>(m_storage);
         if constexpr (std::is_trivially_copyable_v<T>) {
-            m_storage[m_size++] = std::move(value);
+            storage[m_size++] = std::move(value);
         } else {
-            new (&m_storage[m_size++]) T(std::move(value));
+            new (&storage[m_size++]) T(std::move(value));
         }
     }
 
@@ -88,13 +91,14 @@ public:
         if (m_size >= Capacity) {
             throw std::out_of_range("StaticVector capacity exceeded");
         }
-        T* slot = &m_storage[m_size++];
+        T* storage = reinterpret_cast<T*>(m_storage);
+        T* slot = &storage[m_size++];
         new (slot) T(std::forward<Args>(args)...);
         return *slot;
     }
 
 private:
-    T m_storage[Capacity]{};
+    alignas(T) unsigned char m_storage[sizeof(T) * Capacity];
     size_type m_size{0};
 };
 

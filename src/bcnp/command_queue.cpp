@@ -58,7 +58,12 @@ void CommandQueue::Update(Clock::time_point now) {
 }
 
 std::optional<Command> CommandQueue::ActiveCommand() const {
-    std::lock_guard<std::mutex> lock(m_mutex);
+    // Try-lock to avoid priority inversion in real-time control loops
+    std::unique_lock<std::mutex> lock(m_mutex, std::try_to_lock);
+    if (!lock.owns_lock()) {
+        // Network thread holds mutex - return previous command to avoid blocking
+        return std::nullopt;
+    }
     if (m_active) {
         return m_active->command;
     }

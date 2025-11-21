@@ -8,7 +8,9 @@ ControllerDriver::ControllerDriver(Controller& controller, DuplexAdapter& adapte
     : m_controller(controller), m_adapter(adapter) {}
 
 void ControllerDriver::PollOnce() {
-    while (true) {
+    // Limit iterations to prevent starvation if data arrives faster than we can process
+    constexpr std::size_t kMaxChunksPerPoll = 10;
+    for (std::size_t i = 0; i < kMaxChunksPerPoll; ++i) {
         const std::size_t received = m_adapter.ReceiveChunk(m_rxScratch.data(), m_rxScratch.size());
         if (received == 0) {
             break;

@@ -130,6 +130,14 @@ std::size_t UdpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength
         return 0;
     }
 
+    // Auto-unlock peer after timeout to allow re-pairing
+    const auto now = std::chrono::steady_clock::now();
+    if (m_peerLocked && m_hasPeer && !m_fixedPeerConfigured &&
+        m_lastPeerRx != std::chrono::steady_clock::time_point{} &&
+        now - m_lastPeerRx > kPeerTimeout) {
+        UnlockPeer();
+    }
+
     sockaddr_in src{};
     socklen_t slen = sizeof(src);
     const auto received = ::recvfrom(m_socket, buffer, maxLength, MSG_DONTWAIT,
@@ -145,6 +153,7 @@ std::size_t UdpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength
     if (m_peerLocked) {
         if (m_requirePairing && !m_pairingComplete && !m_fixedPeerConfigured) {
             if (ProcessPairingPacket(buffer, static_cast<std::size_t>(received), src)) {
+                m_lastPeerRx = now;
                 return 0; // Handshake packets are not forwarded upwards
             }
             return 0;
@@ -159,9 +168,11 @@ std::size_t UdpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength
             m_hasPeer = true;
         }
         m_lastPeer = src;
+        m_lastPeerRx = now;
     } else {
         m_lastPeer = src;
         m_hasPeer = true;
+        m_lastPeerRx = now;
     }
 
     return static_cast<std::size_t>(received);

@@ -2,6 +2,7 @@
 
 #include "bcnp/transport/adapter.h"
 
+#include <chrono>
 #include <cstdint>
 #include <netinet/in.h>
 
@@ -34,7 +35,9 @@ private:
     bool m_requirePairing{false};
     bool m_fixedPeerConfigured{false};
     uint32_t m_pairingToken{0x42434E50U};
-    sockaddr_in m_initialPeer{}; 
+    sockaddr_in m_initialPeer{};
+    std::chrono::steady_clock::time_point m_lastPeerRx{};
+    static constexpr std::chrono::milliseconds kPeerTimeout{5000};
 };
 
 } // namespace bcnp

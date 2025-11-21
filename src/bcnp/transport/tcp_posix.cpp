@@ -341,9 +341,11 @@ bool TcpPosixAdapter::EnqueueTx(const uint8_t* data, std::size_t length) {
         return true;
     }
 
-    // Real-time control: drop old data when buffer > 50% to prevent runaway buffering
+    // Real-time control: reject new packets when buffer > 50% to prevent runaway buffering
+    // This avoids mid-packet corruption that would occur if we dropped the buffer during flush
     if (m_txSize > kTxBufferCapacity / 2) {
-        DropPendingTx();
+        LogError("tx buffer congested - rejecting new packet");
+        return false;
     }
 
     if (length > kTxBufferCapacity - m_txSize) {
