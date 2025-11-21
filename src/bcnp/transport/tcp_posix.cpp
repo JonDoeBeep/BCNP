@@ -32,7 +32,6 @@ void ConfigureSocket(int sock) {
 } // namespace
 
 TcpPosixAdapter::TcpPosixAdapter(uint16_t listenPort, const char* targetIp, uint16_t targetPort) {
-    m_txBuffer.reserve(kMaxPacketSize * 4);
     if (listenPort > 0) {
         m_isServer = true;
         if (!CreateBaseSocket()) {
@@ -248,6 +247,11 @@ bool TcpPosixAdapter::SendBytes(const uint8_t* data, std::size_t length) {
         return false;
     }
 
+    if (length > kTxBufferCapacity) {
+        LogErr("send payload exceeds tx buffer capacity");
+        return false;
+    }
+
     if (!EnqueueTx(data, length)) {
         return false;
     }
@@ -297,18 +301,13 @@ std::size_t TcpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength
 }
 
 void TcpPosixAdapter::TryFlushTxBuffer(int targetSock) {
-    while (m_txHead < m_txBuffer.size() && targetSock >= 0 && m_isConnected) {
-        const std::size_t remaining = m_txBuffer.size() - m_txHead;
-        ssize_t sent = ::send(targetSock, m_txBuffer.data() + m_txHead, remaining, MSG_NOSIGNAL);
+    while (m_txSize > 0 && targetSock >= 0 && m_isConnected) {
+        const std::size_t contiguous = std::min(m_txSize, kTxBufferCapacity - m_txHead);
+        ssize_t sent = ::send(targetSock, m_txBuffer.data() + m_txHead, contiguous, MSG_NOSIGNAL);
         if (sent > 0) {
-            m_txHead += static_cast<std::size_t>(sent);
-            if (m_txHead >= m_txBuffer.size()) {
-                DropPendingTx();
-                break;
-            }
-            if (m_txHead > m_txBuffer.size() / 2) {
-                CompactTxBuffer();
-            }
+            const std::size_t consumed = static_cast<std::size_t>(sent);
+            m_txHead = (m_txHead + consumed) % kTxBufferCapacity;
+            m_txSize -= consumed;
             continue;
         }
 
@@ -341,36 +340,23 @@ bool TcpPosixAdapter::EnqueueTx(const uint8_t* data, std::size_t length) {
         return true;
     }
 
-    const std::size_t pending = PendingTxBytes();
-    if (pending + length > kMaxBufferedTxBytes) {
-        LogErr("tx buffer overflow - dropping packet");
+    if (length > kTxBufferCapacity - m_txSize) {
+        LogErr("tx buffer full - dropping packet");
         return false;
     }
 
-    if (m_txHead > 0 && (m_txHead > m_txBuffer.size() / 2)) {
-        CompactTxBuffer();
+    for (std::size_t i = 0; i < length; ++i) {
+        m_txBuffer[m_txTail] = data[i];
+        m_txTail = (m_txTail + 1) % kTxBufferCapacity;
     }
-
-    m_txBuffer.insert(m_txBuffer.end(), data, data + length);
+    m_txSize += length;
     return true;
 }
 
 void TcpPosixAdapter::DropPendingTx() {
-    m_txBuffer.clear();
     m_txHead = 0;
-}
-
-void TcpPosixAdapter::CompactTxBuffer() {
-    if (m_txHead == 0) {
-        return;
-    }
-    if (m_txHead >= m_txBuffer.size()) {
-        DropPendingTx();
-        return;
-    }
-    using difference_type = std::vector<uint8_t>::difference_type;
-    m_txBuffer.erase(m_txBuffer.begin(), m_txBuffer.begin() + static_cast<difference_type>(m_txHead));
-    m_txHead = 0;
+    m_txTail = 0;
+    m_txSize = 0;
 }
 
 } // namespace bcnp

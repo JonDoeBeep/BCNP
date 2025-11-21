@@ -3,9 +3,9 @@
 #include "bcnp/packet.h"
 #include "bcnp/transport/adapter.h"
 
+#include <array>
 #include <chrono>
 #include <netinet/in.h>
-#include <vector>
 
 namespace bcnp {
 
@@ -30,10 +30,6 @@ private:
     void TryFlushTxBuffer(int targetSock);
     bool EnqueueTx(const uint8_t* data, std::size_t length);
     void DropPendingTx();
-    void CompactTxBuffer();
-    std::size_t PendingTxBytes() const {
-        return (m_txHead >= m_txBuffer.size()) ? 0 : (m_txBuffer.size() - m_txHead);
-    }
 
     int m_socket{-1};
     int m_clientSocket{-1}; // For server mode, the connected client
@@ -45,9 +41,11 @@ private:
     std::chrono::steady_clock::time_point m_nextReconnectAttempt{};
     std::chrono::steady_clock::time_point m_lastServerRx{};
     std::chrono::milliseconds m_serverClientTimeout{5000}; // 5 second zombie timeout
-    static constexpr std::size_t kMaxBufferedTxBytes = kMaxPacketSize * 256;
-    std::vector<uint8_t> m_txBuffer;
+    static constexpr std::size_t kTxBufferCapacity = kMaxPacketSize * 128;
+    std::array<uint8_t, kTxBufferCapacity> m_txBuffer{};
     std::size_t m_txHead{0};
+    std::size_t m_txTail{0};
+    std::size_t m_txSize{0};
 };
 
 } // namespace bcnp

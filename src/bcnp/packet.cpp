@@ -4,6 +4,7 @@
 #include <array>
 #include <cmath>
 #include <cstring>
+#include <limits>
 
 namespace bcnp {
 
@@ -68,7 +69,10 @@ uint32_t ComputeCrc32(const uint8_t* data, std::size_t length) {
 
 int32_t QuantizeScaled(float value, float scale) {
     const double scaled = static_cast<double>(value) * static_cast<double>(scale);
-    return static_cast<int32_t>(std::llround(scaled));
+    const double clamped = std::clamp(scaled,
+        static_cast<double>(std::numeric_limits<int32_t>::min()),
+        static_cast<double>(std::numeric_limits<int32_t>::max()));
+    return static_cast<int32_t>(std::llround(clamped));
 }
 
 float DequantizeScaled(int32_t fixed, float scale) {

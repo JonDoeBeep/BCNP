@@ -13,10 +13,12 @@ void StreamParser::Push(const uint8_t* data, std::size_t length) {
         return;
     }
 
+    std::size_t iterationBudget = kMaxParseIterationsPerPush;
     std::size_t remaining = length;
+
     while (remaining > 0) {
         if (m_size == kMaxBufferSize) {
-            ParseBuffer();
+            ParseBuffer(iterationBudget);
         }
 
         if (m_size == kMaxBufferSize) {
@@ -28,13 +30,28 @@ void StreamParser::Push(const uint8_t* data, std::size_t length) {
             return;
         }
 
+        if (iterationBudget == 0) {
+            return;
+        }
+
         const std::size_t writable = std::min(remaining, kMaxBufferSize - m_size);
+        if (writable == 0) {
+            break;
+        }
+
         const std::size_t chunkOffset = length - remaining;
         WriteToBuffer(data + chunkOffset, writable);
         remaining -= writable;
+
+        ParseBuffer(iterationBudget);
+        if (iterationBudget == 0 && remaining > 0) {
+            return;
+        }
     }
 
-    ParseBuffer();
+    if (iterationBudget > 0) {
+        ParseBuffer(iterationBudget);
+    }
 }
 
 void StreamParser::Reset(bool resetErrorState) {
@@ -74,9 +91,21 @@ void StreamParser::Discard(std::size_t count) {
     m_streamOffset += count;
 }
 
-void StreamParser::ParseBuffer() {
-    while (m_size >= kHeaderSize) {
+void StreamParser::ParseBuffer(std::size_t& iterationBudget) {
+    while (iterationBudget > 0 && m_size >= kHeaderSize) {
+        --iterationBudget;
+
         CopyOut(0, kHeaderSize, m_decodeScratch.data());
+
+        if (m_decodeScratch[kHeaderMajorIndex] != kProtocolMajor ||
+            m_decodeScratch[kHeaderMinorIndex] != kProtocolMinor) {
+            const auto offset = m_streamOffset;
+            EmitError(PacketError::UnsupportedVersion, offset);
+            const std::size_t skip = FindNextHeaderCandidate();
+            Discard(skip > 0 ? skip : 1);
+            continue;
+        }
+
         const uint8_t commandCount = m_decodeScratch[kHeaderCountIndex];
 
         if (commandCount > kMaxCommandsPerPacket) {
@@ -114,6 +143,29 @@ void StreamParser::ParseBuffer() {
         m_consecutiveErrors = 0;
         Discard(result.bytesConsumed);
     }
+}
+
+std::size_t StreamParser::FindNextHeaderCandidate() const {
+    if (m_size <= 1) {
+        return m_size == 0 ? 0 : 1;
+    }
+
+    for (std::size_t offset = 1; offset < m_size; ++offset) {
+        const std::size_t firstIndex = (m_head + offset) % kMaxBufferSize;
+        if (m_buffer[firstIndex] != kProtocolMajor) {
+            continue;
+        }
+
+        if (offset + 1 >= m_size) {
+            return offset;
+        }
+
+        const std::size_t secondIndex = (m_head + offset + 1) % kMaxBufferSize;
+        if (m_buffer[secondIndex] == kProtocolMinor) {
+            return offset;
+        }
+    }
+    return 1;
 }
 
 void StreamParser::EmitPacket(const Packet& packet) {

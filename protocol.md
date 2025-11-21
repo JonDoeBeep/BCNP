@@ -1,6 +1,7 @@
 # BCNP: Batched Command Network Protocol v2.3.0
 
 ## Version History:
+- **v2.3.1** (bugfix): Fix several critical issues.
 - **v2.3.0** (Minor): Adds CRC32 integrity trailer, fixed-point command encoding, UDP pairing handshake, and buffered TCP send path.
 - **v2.2.1** (Minor): Security bugfixes. 
 - **v2.2.0** (Minor, deprecated): Security bugfixes, optimization. 

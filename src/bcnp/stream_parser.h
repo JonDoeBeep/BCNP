@@ -27,6 +27,7 @@ public:
     void Reset(bool resetErrorState = true);
 
     static constexpr std::size_t kMaxBufferSize = 4096;
+    static constexpr std::size_t kMaxParseIterationsPerPush = 1024;
 
 private:
     void EmitPacket(const Packet& packet);
@@ -35,7 +36,8 @@ private:
     void WriteToBuffer(const uint8_t* data, std::size_t length);
     void CopyOut(std::size_t offset, std::size_t length, uint8_t* dest) const;
     void Discard(std::size_t count);
-    void ParseBuffer();
+    void ParseBuffer(std::size_t& iterationBudget);
+    std::size_t FindNextHeaderCandidate() const;
 
     PacketCallback m_onPacket;
     ErrorCallback m_onError;
