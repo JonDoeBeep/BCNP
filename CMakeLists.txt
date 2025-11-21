@@ -10,7 +10,8 @@ set(BCNP_CORE_SOURCES
     src/bcnp/command_queue.cpp
     src/bcnp/stream_parser.cpp
     src/bcnp/controller.cpp
-    src/bcnp/transport/controller_driver.cpp)
+    src/bcnp/transport/controller_driver.cpp
+    src/bcnp/spi_adapter.cpp)
 
 if(UNIX)
     list(APPEND BCNP_CORE_SOURCES src/bcnp/transport/udp_posix.cpp src/bcnp/transport/tcp_posix.cpp)
