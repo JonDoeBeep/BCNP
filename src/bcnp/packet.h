@@ -60,6 +60,7 @@ struct DecodeResult {
     std::size_t bytesConsumed{0};
 };
 
+// WARNING: Allocates on heap - not for real-time loops. Use fixed-buffer overload instead.
 bool EncodePacket(const Packet& packet, std::vector<uint8_t>& output);
 
 bool EncodePacket(const Packet& packet, uint8_t* output, std::size_t capacity, std::size_t& bytesWritten);

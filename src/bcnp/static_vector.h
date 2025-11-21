@@ -65,14 +65,22 @@ public:
         if (m_size >= Capacity) {
             throw std::out_of_range("StaticVector capacity exceeded");
         }
-        m_storage[m_size++] = value;
+        if constexpr (std::is_trivially_copyable_v<T>) {
+            m_storage[m_size++] = value;
+        } else {
+            new (&m_storage[m_size++]) T(value);
+        }
     }
 
     void push_back(T&& value) {
         if (m_size >= Capacity) {
             throw std::out_of_range("StaticVector capacity exceeded");
         }
-        m_storage[m_size++] = std::move(value);
+        if constexpr (std::is_trivially_copyable_v<T>) {
+            m_storage[m_size++] = std::move(value);
+        } else {
+            new (&m_storage[m_size++]) T(std::move(value));
+        }
     }
 
     template <typename... Args>

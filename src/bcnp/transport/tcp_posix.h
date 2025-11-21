@@ -43,7 +43,7 @@ private:
     std::chrono::steady_clock::time_point m_nextReconnectAttempt{};
     std::chrono::steady_clock::time_point m_lastServerRx{};
     std::chrono::milliseconds m_serverClientTimeout{5000}; // 5 second zombie timeout
-    static constexpr std::size_t kTxBufferCapacity = kMaxPacketSize * 128;
+    static constexpr std::size_t kTxBufferCapacity = kMaxPacketSize * 8; // Real-time: limit buffering
     std::unique_ptr<uint8_t[]> m_txBuffer;
     std::size_t m_txHead{0};
     std::size_t m_txTail{0};

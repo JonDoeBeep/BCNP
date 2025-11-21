@@ -115,13 +115,8 @@ void StreamParser::ParseBuffer(std::size_t& iterationBudget) {
             continue;
         }
 
+        // commandCount already validated against kMaxCommandsPerPacket above
         const std::size_t expected = kHeaderSize + (commandCount * kCommandSize) + kChecksumSize;
-        if (expected > kMaxPacketSize) {
-            const auto offset = m_streamOffset;
-            EmitError(PacketError::TooManyCommands, offset);
-            Discard(1);
-            continue;
-        }
 
         const std::size_t available = std::min(expected, m_size);
         CopyOut(0, available, m_decodeScratch.data());

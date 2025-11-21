@@ -413,12 +413,11 @@ TEST_CASE("TCP: Partial send handling with slow consumer") {
     }
     REQUIRE(server.IsConnected());
     
-    // Send large data (may trigger partial send if socket buffer fills)
-    std::vector<uint8_t> largeData(64 * 1024, 0xBB); // 64KB
+    // Test within real-time buffer limits (8 packets max)
+    std::vector<uint8_t> largeData(bcnp::kMaxPacketSize * 6, 0xBB);
     bool sendSuccess = server.SendBytes(largeData.data(), largeData.size());
     
-    // Even if socket buffer is full, send should eventually succeed
-    // (our fix waits for writability)
+    // Should succeed within buffer capacity
     CHECK(sendSuccess);
     
     // Client should be able to receive all data
