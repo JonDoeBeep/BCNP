@@ -51,7 +51,7 @@ All multi-byte integers use **big-endian** byte order.
 ### Header Fields
 
 - **Major** (1 byte): Protocol major version. Current: `2`
-- **Minor** (1 byte): Protocol minor version. Current: `2`
+- **Minor** (1 byte): Protocol minor version. Current: `3`
   - Robot rejects packets with mismatched major.minor version
   - Patch version not transmitted (for bug fixes only)
 - **Flags** (1 byte): Bit flags for special operations:
