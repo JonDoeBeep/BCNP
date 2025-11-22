@@ -18,13 +18,15 @@ void Controller::PushBytes(const uint8_t* data, std::size_t length) {
 void Controller::HandlePacket(const PacketView& packet) {
     m_queue.NotifyPacketReceived(CommandQueue::Clock::now());
 
+    auto txn = m_queue.BeginTransaction();
+
     if (packet.header.flags & kFlagClearQueue) {
-        m_queue.Clear();
+        txn.Clear();
     }
 
     for (const auto& cmd : packet) {
         const auto clamped = ClampCommand(cmd);
-        if (!m_queue.Push(clamped)) {
+        if (!txn.Push(clamped)) {
             break;
         }
     }

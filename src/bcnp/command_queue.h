@@ -49,6 +49,29 @@ public:
     void SetConfig(const QueueConfig& config);
     QueueConfig GetConfig() const;
 
+    class Transaction {
+    public:
+        explicit Transaction(CommandQueue& queue) : m_queue(queue), m_lock(queue.m_mutex) {}
+        
+        bool Push(const Command& command) {
+            if (!m_queue.PushUnlocked(command)) {
+                m_queue.IncrementQueueOverflows();
+                return false;
+            }
+            return true;
+        }
+
+        void Clear() {
+            m_queue.ClearUnlocked();
+        }
+
+    private:
+        CommandQueue& m_queue;
+        std::lock_guard<std::mutex> m_lock;
+    };
+
+    Transaction BeginTransaction() { return Transaction(*this); }
+
 private:
     struct ActiveSlot {
         Command command;
@@ -57,13 +80,27 @@ private:
 
     void PromoteNext(Clock::time_point now);
     void ClearUnlocked();
-    bool PushUnlocked(const Command& command);
+    
+    // Inline for performance and Transaction access
+    bool PushUnlocked(const Command& command) {
+        if (m_count >= EffectiveDepth()) {
+            return false;
+        }
+        m_storage[m_tail] = command;
+        m_tail = (m_tail + 1) % Capacity();
+        ++m_count;
+        return true;
+    }
+
     void PopUnlocked();
     const Command& FrontUnlocked() const;
+    
     std::size_t Capacity() const { return m_storage.size(); }
     std::size_t EffectiveDepth() const { return std::min(m_config.capacity, Capacity()); }
+    
     void ClampConfig();
     bool IsConnectedUnlocked(Clock::time_point now) const;
+    void IncrementQueueOverflows() { ++m_metrics.queueOverflows; }
 
     QueueConfig m_config{};
     QueueMetrics m_metrics{};

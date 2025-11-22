@@ -162,17 +162,6 @@ void CommandQueue::ClearUnlocked() {
     m_hasVirtualCursor = false;
 }
 
-bool CommandQueue::PushUnlocked(const Command& command) {
-    if (m_count >= EffectiveDepth()) {
-        return false;
-    }
-
-    m_storage[m_tail] = command;
-    m_tail = (m_tail + 1) % Capacity();
-    ++m_count;
-    return true;
-}
-
 void CommandQueue::PopUnlocked() {
     if (m_count == 0) {
         return;
