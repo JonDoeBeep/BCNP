@@ -12,7 +12,7 @@ namespace bcnp {
 
 class StreamParser {
 public:
-    using PacketCallback = std::function<void(const Packet&)>;
+    using PacketCallback = std::function<void(const PacketView&)>;
     struct ErrorInfo {
         PacketError code{PacketError::None};
         std::size_t offset{0};
@@ -29,7 +29,7 @@ public:
     static constexpr std::size_t kMaxParseIterationsPerPush = 1024;
 
 private:
-    void EmitPacket(const Packet& packet);
+    void EmitPacket(const PacketView& packet);
     void EmitError(PacketError error, std::size_t offset);
 
     void WriteToBuffer(const uint8_t* data, std::size_t length);

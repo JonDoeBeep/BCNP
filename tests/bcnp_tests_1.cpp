@@ -95,9 +95,9 @@ TEST_CASE("StreamParser: Chunked packet delivery") {
 
     bool packetSeen = false;
     bcnp::StreamParser parser(
-        [&](const bcnp::Packet& parsed) {
+        [&](const bcnp::PacketView& parsed) {
             packetSeen = true;
-            CHECK(parsed.commands.size() == 1);
+            CHECK(std::distance(parsed.begin(), parsed.end()) == 1);
         },
         [&](const bcnp::StreamParser::ErrorInfo&) {
             FAIL("Unexpected parse error");
@@ -120,7 +120,7 @@ TEST_CASE("StreamParser: Truncated packet waits without error") {
     bool packetSeen = false;
     std::size_t errors = 0;
     bcnp::StreamParser parser(
-        [&](const bcnp::Packet&) { packetSeen = true; },
+        [&](const bcnp::PacketView&) { packetSeen = true; },
         [&](const bcnp::StreamParser::ErrorInfo&) { ++errors; });
 
     parser.Push(encoded.data(), encoded.size() - 1);
@@ -160,7 +160,14 @@ TEST_CASE("StreamParser: Skip bad headers and recover") {
     std::vector<bcnp::Packet> seen;
     std::size_t errorCount = 0;
     bcnp::StreamParser parser(
-        [&](const bcnp::Packet& parsed) { seen.push_back(parsed); },
+        [&](const bcnp::PacketView& parsed) {
+            bcnp::Packet p;
+            p.header = parsed.header;
+            for (const auto& cmd : parsed) {
+                p.commands.push_back(cmd);
+            }
+            seen.push_back(p);
+        },
         [&](const bcnp::StreamParser::ErrorInfo&) { ++errorCount; });
 
     parser.Push(combined.data(), combined.size());
@@ -174,7 +181,7 @@ TEST_CASE("StreamParser: Skip bad headers and recover") {
 TEST_CASE("StreamParser: Error info provides diagnostics") {
     std::vector<bcnp::StreamParser::ErrorInfo> errors;
     bcnp::StreamParser parser(
-        [](const bcnp::Packet&) {},
+        [](const bcnp::PacketView&) {},
         [&](const bcnp::StreamParser::ErrorInfo& info) { errors.push_back(info); });
 
     std::array<uint8_t, bcnp::kHeaderSize> badHeader{};
@@ -201,7 +208,7 @@ TEST_CASE("StreamParser: DoS protection - survives garbage flood") {
     bool packetSeen = false;
     const size_t kBufferSize = 4096;
     bcnp::StreamParser parser(
-        [&](const bcnp::Packet&) { packetSeen = true; },
+        [&](const bcnp::PacketView&) { packetSeen = true; },
         [](const bcnp::StreamParser::ErrorInfo&) {},
         kBufferSize);
 
@@ -235,7 +242,15 @@ TEST_CASE("Controller: Command clamping enforces limits") {
     bcnp::Packet packet{};
     packet.header.commandCount = 1;
     packet.commands.push_back({1.0f, -2.0f, 6000});
-    controller.HandlePacket(packet);
+    
+    std::vector<uint8_t> encoded;
+    REQUIRE(bcnp::EncodePacket(packet, encoded));
+    
+    bcnp::PacketView view;
+    view.header = packet.header;
+    view.payloadStart = encoded.data() + bcnp::kHeaderSize;
+    
+    controller.HandlePacket(view);
 
     auto cmd = controller.CurrentCommand(bcnp::CommandQueue::Clock::now());
     REQUIRE(cmd.has_value());

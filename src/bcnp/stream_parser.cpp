@@ -134,13 +134,13 @@ void StreamParser::ParseBuffer(std::size_t& iterationBudget) {
 
         const std::size_t available = std::min(expected, m_size);
         CopyOut(0, available, m_decodeScratch.data());
-        auto result = DecodePacket(m_decodeScratch.data(), available);
+        auto result = DecodePacketView(m_decodeScratch.data(), available);
 
         if (result.error == PacketError::Truncated) {
             break;
         }
 
-        if (!result.packet) {
+        if (!result.view) {
             const auto offset = m_streamOffset;
             EmitError(result.error, offset);
             // Poison packet: only discard 1 byte to resync, not the entire calculated frame
@@ -153,7 +153,7 @@ void StreamParser::ParseBuffer(std::size_t& iterationBudget) {
             continue;
         }
 
-        EmitPacket(*result.packet);
+        EmitPacket(*result.view);
         m_consecutiveErrors = 0;
         Discard(result.bytesConsumed);
     }
@@ -182,7 +182,7 @@ std::size_t StreamParser::FindNextHeaderCandidate() const {
     return 1;
 }
 
-void StreamParser::EmitPacket(const Packet& packet) {
+void StreamParser::EmitPacket(const PacketView& packet) {
     if (m_onPacket) {
         m_onPacket(packet);
     }

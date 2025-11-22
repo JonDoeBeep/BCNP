@@ -1,7 +1,8 @@
-# BCNP: Batched Command Network Protocol v2.4
+# BCNP: Batched Command Network Protocol v2.4.1
 
 ## Version History:
-- **v2.4** (Major): Expanded command count to 16-bit (65k commands/packet), increased packet size limit, and switched to dynamic memory allocation.
+- **v2.4.1** (Optimization): Implemented Zero-Copy packet parsing using `PacketView` and `CommandIterator` to reduce heap allocations.
+- **v2.4.0** (Major): Expanded command count to 16-bit (65k commands/packet), increased packet size limit, and switched to dynamic memory allocation.
 - **v2.3.2** (bugfix): Fix bloat, safety, and optimize.
 - **v2.3.1** (bugfix): Fix several critical issues.
 - **v2.3.0** (Minor): Adds CRC32 integrity trailer, fixed-point command encoding, UDP pairing handshake, and buffered TCP send path.

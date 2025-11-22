@@ -6,7 +6,7 @@ Controller::Controller(ControllerConfig config)
         : m_config(config),
             m_queue(m_config.queue),
             m_parser(
-                    [this](const Packet& packet) { HandlePacket(packet); },
+                    [this](const PacketView& packet) { HandlePacket(packet); },
                     [this](const StreamParser::ErrorInfo&) { m_queue.IncrementParseErrors(); },
                     m_config.parserBufferSize) {}
 
@@ -15,14 +15,14 @@ void Controller::PushBytes(const uint8_t* data, std::size_t length) {
     m_parser.Push(data, length);
 }
 
-void Controller::HandlePacket(const Packet& packet) {
+void Controller::HandlePacket(const PacketView& packet) {
     m_queue.NotifyPacketReceived(CommandQueue::Clock::now());
 
     if (packet.header.flags & kFlagClearQueue) {
         m_queue.Clear();
     }
 
-    for (const auto& cmd : packet.commands) {
+    for (const auto& cmd : packet) {
         const auto clamped = ClampCommand(cmd);
         if (!m_queue.Push(clamped)) {
             break;

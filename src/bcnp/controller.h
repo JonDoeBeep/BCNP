@@ -29,7 +29,7 @@ public:
     // Thread-safe: can be called from network receive thread
     void PushBytes(const uint8_t* data, std::size_t length);
 
-    void HandlePacket(const Packet& packet);
+    void HandlePacket(const PacketView& packet);
 
     std::optional<Command> CurrentCommand(CommandQueue::Clock::time_point now);
 

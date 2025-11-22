@@ -80,6 +80,45 @@ float DequantizeScaled(int32_t fixed, float scale) {
 }
 } // namespace
 
+Command CommandIterator::operator*() const {
+    const int32_t vxFixed = LoadS32(m_ptr);
+    const int32_t omegaFixed = LoadS32(m_ptr + 4);
+    const uint16_t duration = LoadU16(m_ptr + 8);
+
+    const float vx = DequantizeScaled(vxFixed, kLinearVelocityScale);
+    const float omega = DequantizeScaled(omegaFixed, kAngularVelocityScale);
+
+    return Command{vx, omega, duration};
+}
+
+CommandIterator& CommandIterator::operator++() {
+    if (m_count > 0) {
+        m_ptr += kCommandSize;
+        m_count--;
+    }
+    if (m_count == 0) {
+        m_ptr = nullptr;
+    }
+    return *this;
+}
+
+CommandIterator CommandIterator::operator++(int) {
+    CommandIterator tmp = *this;
+    ++(*this);
+    return tmp;
+}
+
+bool CommandIterator::operator==(const CommandIterator& other) const {
+    if (m_count == 0 && other.m_count == 0) {
+        return true;
+    }
+    return m_ptr == other.m_ptr && m_count == other.m_count;
+}
+
+bool CommandIterator::operator!=(const CommandIterator& other) const {
+    return !(*this == other);
+}
+
 bool EncodePacket(const Packet& packet, uint8_t* output, std::size_t capacity, std::size_t& bytesWritten) {
     bytesWritten = 0;
     if (packet.commands.size() > kMaxCommandsPerPacket || !output) {
@@ -131,33 +170,33 @@ bool EncodePacket(const Packet& packet, std::vector<uint8_t>& output) {
     return true;
 }
 
-DecodeResult DecodePacket(const uint8_t* data, std::size_t length) {
-    DecodeResult result{};
+DecodeViewResult DecodePacketView(const uint8_t* data, std::size_t length) {
+    DecodeViewResult result{};
 
     if (length < kHeaderSize) {
         result.error = PacketError::TooSmall;
         return result;
     }
 
-    Packet packet{};
-    packet.header.major = data[kHeaderMajorIndex];
-    packet.header.minor = data[kHeaderMinorIndex];
-    packet.header.flags = data[kHeaderFlagsIndex];
-    packet.header.commandCount = LoadU16(&data[kHeaderCountIndex]);
+    PacketHeader header;
+    header.major = data[kHeaderMajorIndex];
+    header.minor = data[kHeaderMinorIndex];
+    header.flags = data[kHeaderFlagsIndex];
+    header.commandCount = LoadU16(&data[kHeaderCountIndex]);
 
-    if (packet.header.major != kProtocolMajor || packet.header.minor != kProtocolMinor) {
+    if (header.major != kProtocolMajor || header.minor != kProtocolMinor) {
         result.error = PacketError::UnsupportedVersion;
         result.bytesConsumed = 1;
         return result;
     }
 
-    if (packet.header.commandCount > kMaxCommandsPerPacket) {
+    if (header.commandCount > kMaxCommandsPerPacket) {
         result.error = PacketError::TooManyCommands;
         result.bytesConsumed = 1;
         return result;
     }
 
-    const std::size_t payloadSize = kHeaderSize + (packet.header.commandCount * kCommandSize);
+    const std::size_t payloadSize = kHeaderSize + (header.commandCount * kCommandSize);
     const std::size_t expectedSize = payloadSize + kChecksumSize;
     if (length < expectedSize) {
         result.error = PacketError::Truncated;
@@ -172,12 +211,12 @@ DecodeResult DecodePacket(const uint8_t* data, std::size_t length) {
         return result;
     }
 
+    // Validate floats without allocating
     std::size_t offset = kHeaderSize;
-    for (std::size_t i = 0; i < packet.header.commandCount; ++i) {
+    for (std::size_t i = 0; i < header.commandCount; ++i) {
         const int32_t vxFixed = LoadS32(&data[offset]);
         const int32_t omegaFixed = LoadS32(&data[offset + 4]);
-        const uint16_t duration = LoadU16(&data[offset + 8]);
-
+        
         const float vx = DequantizeScaled(vxFixed, kLinearVelocityScale);
         const float omega = DequantizeScaled(omegaFixed, kAngularVelocityScale);
 
@@ -186,14 +225,34 @@ DecodeResult DecodePacket(const uint8_t* data, std::size_t length) {
             result.bytesConsumed = expectedSize;
             return result;
         }
-
-        packet.commands.push_back(Command{vx, omega, duration});
         offset += kCommandSize;
     }
 
-    result.packet = std::move(packet);
+    PacketView view;
+    view.header = header;
+    view.payloadStart = data + kHeaderSize;
+    
+    result.view = view;
     result.error = PacketError::None;
     result.bytesConsumed = expectedSize;
+    return result;
+}
+
+DecodeResult DecodePacket(const uint8_t* data, std::size_t length) {
+    auto viewResult = DecodePacketView(data, length);
+    DecodeResult result;
+    result.error = viewResult.error;
+    result.bytesConsumed = viewResult.bytesConsumed;
+    
+    if (viewResult.view) {
+        Packet packet;
+        packet.header = viewResult.view->header;
+        packet.commands.reserve(packet.header.commandCount);
+        for (const auto& cmd : *viewResult.view) {
+            packet.commands.push_back(cmd);
+        }
+        result.packet = std::move(packet);
+    }
     return result;
 }
 

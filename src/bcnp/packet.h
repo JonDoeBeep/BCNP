@@ -43,6 +43,36 @@ struct Packet {
     std::vector<Command> commands{};
 };
 
+class CommandIterator {
+public:
+    using iterator_category = std::forward_iterator_tag;
+    using value_type = Command;
+    using difference_type = std::ptrdiff_t;
+    using pointer = const Command*;
+    using reference = Command;
+
+    CommandIterator(const uint8_t* ptr, std::size_t count) 
+        : m_ptr(ptr), m_count(count) {}
+
+    Command operator*() const;
+    CommandIterator& operator++();
+    CommandIterator operator++(int);
+    bool operator==(const CommandIterator& other) const;
+    bool operator!=(const CommandIterator& other) const;
+
+private:
+    const uint8_t* m_ptr;
+    std::size_t m_count;
+};
+
+struct PacketView {
+    PacketHeader header{};
+    const uint8_t* payloadStart{nullptr};
+    
+    CommandIterator begin() const { return CommandIterator(payloadStart, header.commandCount); }
+    CommandIterator end() const { return CommandIterator(nullptr, 0); }
+};
+
 enum class PacketError {
     None,
     TooSmall,
@@ -59,11 +89,19 @@ struct DecodeResult {
     std::size_t bytesConsumed{0};
 };
 
+struct DecodeViewResult {
+    std::optional<PacketView> view;
+    PacketError error{PacketError::None};
+    std::size_t bytesConsumed{0};
+};
+
 // WARNING: Allocates on heap - not for real-time loops. Use fixed-buffer overload instead.
 bool EncodePacket(const Packet& packet, std::vector<uint8_t>& output);
 
 bool EncodePacket(const Packet& packet, uint8_t* output, std::size_t capacity, std::size_t& bytesWritten);
 
 DecodeResult DecodePacket(const uint8_t* data, std::size_t length);
+
+DecodeViewResult DecodePacketView(const uint8_t* data, std::size_t length);
 
 } // namespace bcnp
