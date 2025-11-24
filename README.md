@@ -8,8 +8,7 @@ library. The codebase is split into two layers:
 	the standard library.
 - `src/bcnp/transport`: thin adapters that connect streaming byte sources
 	(UDP/SPI/etc.) to the core controller without leaking platform headers into
-	the protocol logic. The provided POSIX UDP adapter is an example of a
-	transport that feeds bytes chunk-by-chunk.
+	the protocol logic.
 
 ## Building & Testing 
 ```bash
