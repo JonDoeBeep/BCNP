@@ -32,6 +32,11 @@ add_executable(bcnp_tests_2 tests/bcnp_tests_2.cpp)
 target_link_libraries(bcnp_tests_2 PRIVATE bcnp_core)
 target_include_directories(bcnp_tests_2 PRIVATE tests)
 
+if(UNIX)
+    add_executable(core_demo examples/core_demo.cpp)
+    target_link_libraries(core_demo PRIVATE bcnp_core)
+endif()
+
 enable_testing()
 add_test(NAME bcnp_tests_1 COMMAND bcnp_tests_1)
 add_test(NAME bcnp_tests_2 COMMAND bcnp_tests_2)

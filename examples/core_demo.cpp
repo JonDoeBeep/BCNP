@@ -1,78 +1,91 @@
 #include "bcnp/controller.h"
-
-#include "SPI-EAK/link_layer.h"
+#include "bcnp/transport/tcp_posix.h"
+#include "bcnp/transport/controller_driver.h"
+#include "bcnp/packet.h"
 
 #include <chrono>
-#include <cstdint>
 #include <iostream>
+#include <thread>
 #include <vector>
+#include <cmath>
+#include <csignal>
+#include <atomic>
+
+using namespace std::chrono_literals;
+
+std::atomic<bool> g_running{true};
+
+void SignalHandler(int) {
+    g_running = false;
+}
+
+// Basic demo config, replace with your own.
+bcnp::ControllerConfig MakeDemoConfig() {
+    bcnp::ControllerConfig config;
+    config.limits.vxMax = 1.5f;
+    config.limits.vxMin = -1.5f;
+    config.limits.omegaMax = 2.5f;
+    config.limits.omegaMin = -2.5f;
+    config.limits.durationMin = 0;
+    config.limits.durationMax = 65535;
+    
+    config.queue.connectionTimeout = 200ms;
+    config.queue.maxCommandLag = 5000ms;
+    config.queue.capacity = bcnp::kMaxCommandsPerPacket;
+    config.parserBufferSize = bcnp::kMaxPacketSize;
+    
+    return config;
+}
 
 int main() {
-    bcnp::Controller controller;
+    std::signal(SIGINT, SignalHandler);
+    std::signal(SIGTERM, SignalHandler);
 
-    // Compose a BCNP packet as if it originated from a remote planner.
-    bcnp::Packet outgoing{};
-    outgoing.commands.push_back({0.25f, 0.0f, 250});
-    outgoing.commands.push_back({-0.10f, 0.35f, 400});
+    constexpr uint16_t kPort = 5800;
+    
+    std::cout << "[Server] Starting BCNP TCP Demo on port " << kPort << "...\n";
+    std::cout << "[Server] Press Ctrl+C to stop.\n";
 
-    std::vector<uint8_t> wirePayload;
-    if (!bcnp::EncodePacket(outgoing, wirePayload)) {
-        std::cerr << "Failed to encode BCNP payload\n";
-        return 1;
-    }
+    // 1. Setup Controller
+    bcnp::Controller controller(MakeDemoConfig());
 
-    // Wrap the BCNP payload with SPI-EAK's framed transport (start/stop/escape + CRC16).
-    spi_eak::FrameCodec::Parameters frameParams{};
-    auto framed = spi_eak::FrameCodec::encode(wirePayload, frameParams);
-    if (!framed.ok) {
-        std::cerr << "SPI-EAK framing error\n";
-        return 1;
-    }
+    // 2. Setup Transport (Server)
+    bcnp::TcpPosixAdapter serverAdapter(kPort);
+    
+    // 3. Setup Driver (Connects Transport -> Controller)
+    bcnp::ControllerDriver driver(controller, serverAdapter);
 
-    // In a real system you'd call spi_eak::SPI::transfer(). Here we simply loop the
-    // frame back as if the robot immediately echoed what we sent.
-    const std::vector<uint8_t> rxFrame = framed.frame;
+    // 4. Main Loop
+    while (g_running) {
+        // Poll network
+        driver.PollOnce();
 
-    spi_eak::FrameDecoder::Options decoderOpts;
-    decoderOpts.params = frameParams;
-    decoderOpts.max_frame_bytes = 2048;
-    spi_eak::FrameDecoder decoder(decoderOpts);
+        // Update controller time
+        auto now = std::chrono::steady_clock::now();
+        controller.Queue().Update(now);
 
-    std::vector<uint8_t> decoded;
-    for (uint8_t byte : rxFrame) {
-        const auto result = decoder.push(byte, decoded);
-        if (result.frame_dropped) {
-            std::cerr << "Dropped frame before BCNP could read it\n";
-            decoded.clear();
-            continue;
-        }
-        if (result.frame_ready) {
-            // Feed the recovered BCNP payload directly into the controller's stream parser.
-            controller.PushBytes(decoded.data(), decoded.size());
-            decoded.clear();
-        }
-    }
-
-    auto now = bcnp::CommandQueue::Clock::now();
-    for (int i = 0; i < 4; ++i) {
-        auto cmd = controller.CurrentCommand(now);
-        if (cmd) {
-            std::cout << "Command vx=" << cmd->vx << " omega=" << cmd->omega
-                      << " durationMs=" << cmd->durationMs << std::endl;
+        // Check status
+        if (controller.IsConnected(now)) {
+            auto cmd = controller.CurrentCommand(now);
+            if (cmd) {
+                std::cout << "[Server] Executing: vx=" << cmd->vx 
+                          << " omega=" << cmd->omega 
+                          << " duration=" << cmd->durationMs << "ms"
+                          << " QueueSize=" << controller.Queue().Size() << "\n";
+            } else {
+                std::cout << "[Server] Connected, Idle. QueueSize=" << controller.Queue().Size() << "\n";
+            }
         } else {
-            std::cout << "Queue empty" << std::endl;
+            // Only print occasionally to avoid spamming
+            static int counter = 0;
+            if (counter++ % 10 == 0) {
+                std::cout << "[Server] Waiting for connection...\n";
+            }
         }
-        now += std::chrono::milliseconds(300);
+
+        std::this_thread::sleep_for(100ms);
     }
 
-    // When sending telemetry back to the field, encode the controller's packet once and
-    // wrap it with FrameCodec before hitting spi_eak::SPI::transfer().
-    std::vector<uint8_t> txBuf;
-    if (bcnp::EncodePacket(outgoing, txBuf)) {
-        auto txFrame = spi_eak::FrameCodec::encode(txBuf, frameParams);
-        std::cout << "Prepared " << txFrame.frame.size()
-                  << " byte SPI-EAK frame for transmission" << std::endl;
-    }
-
+    std::cout << "[Server] Demo finished.\n";
     return 0;
 }
