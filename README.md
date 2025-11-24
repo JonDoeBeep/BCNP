@@ -1,7 +1,7 @@
 # BCNP Core
 
 This repository hosts the BCNP (Batched Command Network Protocol) core
-library. The codebase is split into three layers:
+library. The codebase is split into two layers:
 
 - `src/bcnp`: wire-format definitions, serialization/deserialization, command
 	queueing, and a streaming parser. This layer is pure C++17 and only depends on
