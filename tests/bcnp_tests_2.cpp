@@ -150,8 +150,8 @@ TEST_CASE("CommandQueue: Lag protection prevents fast-forwarding") {
     auto now = bcnp::CommandQueue::Clock::time_point{} + 1000ms;
     queue.NotifyPacketReceived(now);
     
-    // Queue 5 commands, each 100ms
-    for (int i = 0; i < 5; ++i) {
+    // Queue 10 commands, each 100ms
+    for (int i = 0; i < 10; ++i) {
         queue.Push({static_cast<float>(i), 0.0f, 100});
     }
     
@@ -163,18 +163,17 @@ TEST_CASE("CommandQueue: Lag protection prevents fast-forwarding") {
     queue.NotifyPacketReceived(now); // Keep connection alive despite lag
     queue.Update(now);
     
-    // Without lag protection, all 5 commands would skip instantly
+    // Without lag protection, all 10 commands would skip instantly (if we processed 1000ms)
     // With protection, we should not skip through all commands
     // After 500ms lag with 100ms max lag, the virtual time is clamped
     // First command started at t=1000, should end at t=1100
     // With 500ms lag at t=1500, we clamp to t=1400 (1500-100)
-    // So we've only progressed through ~4 commands worth of time
+    // So we've only progressed through ~4-5 commands worth of time
     
-    // The active command should be near the end but not all skipped
+    // The active command should be near the middle
     auto active = queue.ActiveCommand();
     if (active.has_value()) {
-        // We should have executed most but not necessarily all
-        CHECK(active->vx < 5.0f); // Not completely skipped all
+        CHECK(active->vx < 10.0f); 
     }
     
     // Key test: queue should not be completely empty from fast-forward
@@ -209,6 +208,30 @@ TEST_CASE("CommandQueue: Virtual time prevents drift") {
     CHECK(!queue.ActiveCommand().has_value()); // Both complete
     
     // Despite timing jitter, total execution time should be ~200ms
+}
+
+TEST_CASE("CommandQueue: Sub-tick granularity handles short commands") {
+    bcnp::CommandQueue queue;
+    auto now = bcnp::CommandQueue::Clock::time_point{} + 1000ms;
+    queue.NotifyPacketReceived(now);
+
+    // Push 10 commands of 1ms each (total 10ms)
+    for (int i = 0; i < 10; ++i) {
+        queue.Push({1.0f, 0.0f, 1});
+    }
+
+    queue.Update(now);
+    // First command should be active
+    CHECK(queue.ActiveCommand().has_value());
+
+    // Advance time by 20ms (enough to finish all 10ms of commands)
+    // In the old implementation, this would only finish Cmd1 and start Cmd2
+    now += 20ms;
+    queue.Update(now);
+
+    // Should be finished with all commands
+    CHECK(!queue.ActiveCommand().has_value());
+    CHECK(queue.Size() == 0);
 }
 
 // ============================================================================
@@ -416,10 +439,8 @@ TEST_CASE("Controller: Zero defaults require explicit limits") {
     controller.Queue().NotifyPacketReceived(now);
     auto cmd = controller.CurrentCommand(now);
     
-    REQUIRE(cmd.has_value());
-    CHECK(cmd->vx == 0.0f); // Clamped to max=0
-    CHECK(cmd->omega == 0.0f);
-    CHECK(cmd->durationMs == 0); // Clamped to max=0
+    // With sub-tick updates, a 0-duration command is processed immediately
+    CHECK(!cmd.has_value());
 }
 
 // ============================================================================

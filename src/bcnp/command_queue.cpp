@@ -42,19 +42,27 @@ void CommandQueue::Update(Clock::time_point now) {
         return;
     }
 
-    if (m_active) {
-        const auto elapsed = now - m_active->start;
-        const auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(elapsed);
-        if (duration.count() >= m_active->command.durationMs) {
-            const auto endTime = m_active->start + std::chrono::milliseconds(m_active->command.durationMs);
+    while (true) {
+        if (m_active) {
+            const auto elapsed = now - m_active->start;
+            const auto duration = std::chrono::milliseconds(m_active->command.durationMs);
+            
+            if (elapsed < duration) {
+                break;
+            }
+
+            const auto endTime = m_active->start + duration;
             m_active.reset();
             m_virtualCursor = endTime;
             m_hasVirtualCursor = true;
         }
-    }
 
-    if (!m_active) {
-        PromoteNext(now);
+        if (!m_active) {
+            PromoteNext(now);
+            if (!m_active) {
+                break;
+            }
+        }
     }
 }
 
