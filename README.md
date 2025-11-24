@@ -1,15 +1,14 @@
 # BCNP Core
 
 This repository hosts the BCNP (Batched Command Network Protocol) core
-library. The codebase is split into three layers:
+library. The codebase is split into two layers:
 
 - `src/bcnp`: wire-format definitions, serialization/deserialization, command
 	queueing, and a streaming parser. This layer is pure C++17 and only depends on
 	the standard library.
 - `src/bcnp/transport`: thin adapters that connect streaming byte sources
 	(UDP/SPI/etc.) to the core controller without leaking platform headers into
-	the protocol logic. The provided POSIX UDP adapter is an example of a
-	transport that feeds bytes chunk-by-chunk.
+	the protocol logic.
 
 ## Building & Testing 
 ```bash
