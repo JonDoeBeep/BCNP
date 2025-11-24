@@ -141,7 +141,6 @@ void TcpPosixAdapter::PollConnection() {
             const auto now = std::chrono::steady_clock::now();
             if (m_lastServerRx != std::chrono::steady_clock::time_point{} &&
                 now - m_lastServerRx > m_serverClientTimeout) {
-                // Client hasn't sent data in timeout period - close to allow new connection
                 ::close(m_clientSocket);
                 m_clientSocket = -1;
                 m_isConnected = false;
@@ -227,7 +226,6 @@ void TcpPosixAdapter::HandleConnectionLoss() {
         m_socket = -1;
     }
     m_connectInProgress = false;
-    // Force immediate reconnection attempt after connection loss
     BeginClientConnect(true);
 }
 

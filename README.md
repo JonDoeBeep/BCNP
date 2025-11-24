@@ -11,18 +11,6 @@ library. The codebase is split into three layers:
 	the protocol logic. The provided POSIX UDP adapter is an example of a
 	transport that feeds bytes chunk-by-chunk.
 
-### What's new in 2.3
-
-- Each packet now appends a CRC32 checksum and encodes `vx`/`omega` as
-	fixed-point integers (1e-4 resolution) to guarantee cross-platform bit-
-	exactness. Existing callers still use `float` APIs; the quantization happens
-	inside `EncodePacket`/`DecodePacket`.
-- `TcpPosixAdapter` buffers writes internally so `SendPacket` never blocks a
-	20 ms/100 ms control loop waiting for kernel send windows.
-- `UdpPosixAdapter` requires a short `"BCNP" + token` pairing datagram whenever
-	peer locking is enabled, preventing “trust-on-first-use” hijacks. Call
-	`SetPairingToken()` to rotate secrets and `UnlockPeer()` to force re-pairing.
-
 ## Building & Testing 
 ```bash
 cmake -S . -B build && cmake --build build && ctest --test-dir build
@@ -53,10 +41,3 @@ and chunked stream parsing.
 	can log flaky links with context.
 - `ControllerDriver` reuses persistent RX/TX buffers to avoid per-cycle
 	allocations when feeding data between transports and the controller.
-
-### SPI transport demo
-
-- `examples/core_demo.cpp` now shows how to wrap BCNP packets with the
-	`SPI-EAK` framing helpers (`FrameCodec`/`FrameDecoder`) before pushing the
-	recovered payload into a `bcnp::Controller`. The demo assumes the `SPI-EAK`
-	submodule is checked out.
