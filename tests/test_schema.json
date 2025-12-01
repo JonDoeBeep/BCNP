@@ -1,0 +1,33 @@
+{
+  "$schema": "../schema/bcnp_schema.json",
+  "version": "3.0",
+  "namespace": "bcnp",
+  "description": "Test schema for BCNP unit tests",
+  "messages": [
+    {
+      "id": 1,
+      "name": "TestCmd",
+      "description": "Test command for unit tests",
+      "fields": [
+        {
+          "name": "value1",
+          "type": "float32",
+          "scale": 10000,
+          "description": "First test value"
+        },
+        {
+          "name": "value2",
+          "type": "float32",
+          "scale": 10000,
+          "description": "Second test value"
+        },
+        {
+          "name": "durationMs",
+          "type": "uint16",
+          "unit": "ms",
+          "description": "Command duration in milliseconds"
+        }
+      ]
+    }
+  ]
+}

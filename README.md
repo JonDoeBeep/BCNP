@@ -3,41 +3,55 @@
 This repository hosts the BCNP (Batched Command Network Protocol) core
 library. The codebase is split into two layers:
 
-- `src/bcnp`: wire-format definitions, serialization/deserialization, command
+- `src/bcnp`: wire-format definitions, serialization/deserialization, message
 	queueing, and a streaming parser. This layer is pure C++17 and only depends on
 	the standard library.
 - `src/bcnp/transport`: thin adapters that connect streaming byte sources
-	(UDP/SPI/etc.) to the core controller without leaking platform headers into
+	(TCP/UDP) to the core dispatcher without leaking platform headers into
 	the protocol logic.
 
 ## Quick Start
 
-### 1. Generate Message Types
+### 1. Define Your Message Types
 
-Define your messages in `schema/messages.json`, then generate the C++ header:
+Edit `schema/messages.json` to define your robot's message types:
+
+```json
+{
+  "version": "3.0",
+  "namespace": "bcnp",
+  "messages": [
+    {
+      "id": 1,
+      "name": "DriveCmd",
+      "fields": [
+        {"name": "vx", "type": "float32", "scale": 10000},
+        {"name": "omega", "type": "float32", "scale": 10000},
+        {"name": "durationMs", "type": "uint16"}
+      ]
+    }
+  ]
+}
+```
+
+### 2. Build (CMake auto-generates message_types.h)
 
 ```bash
-python schema/bcnp_codegen.py schema/messages.json --cpp generated --python examples
+cmake -S . -B build && cmake --build build && ctest --test-dir build
 ```
 
-This creates `generated/bcnp/message_types.h`.
+CMake automatically runs `bcnp_codegen.py` when the schema changes, generating `generated/bcnp/message_types.h`.
 
-### 2. Add Include Path
+### 3. For FRC Projects
 
-Add the `generated/` folder to your include path so the library can find `<bcnp/message_types.h>`.
+Add the BCNP library and generated folder to your include path in `build.gradle`:
 
-**CMake:**
-```cmake
-target_include_directories(your_target PRIVATE path/to/generated)
-```
-
-**FRC Gradle (build.gradle):**
 ```groovy
 model {
     components {
         frcUserProgram(NativeExecutableSpec) {
-            // ... existing config ...
             binaries.all {
+                cppCompiler.args "-I${projectDir}/libraries/BCNP/src"
                 cppCompiler.args "-I${projectDir}/libraries/BCNP/generated"
             }
         }
@@ -45,34 +59,14 @@ model {
 }
 ```
 
-### 3. Build & Test
-
 ```bash
-cmake -S . -B build && cmake --build build && ctest --test-dir build
+python libraries/BCNP/schema/bcnp_codegen.py libraries/BCNP/schema/messages.json --cpp libraries/BCNP/generated
 ```
-
-The command configures the project, builds `libbcnp_core.a`, and runs the
-`bcnp_tests` executable that exercises packet encode/decode, queue scheduling,
-and chunked stream parsing.
-
-## Using BCNP Core
-
-1. Create a `bcnp::Controller` with a `ControllerConfig` that sets queue
-	timeouts and `CommandLimits` for vx/omega/duration clamping.
-2. Feed raw bytes into `Controller::PushBytes` (or use `bcnp::ControllerDriver`
-	 plus a transport adapter).
-3. Poll `Controller::CurrentCommand` to retrieve active commands as
-	 wire-accurate `float` + `uint16_t` data.
-4. Unit conversions can still happen at the robot layer, but wire values are
-	 clamped inside the controller using the provided limits to guarantee safe
-	 bounds even if upstream clients misbehave. When `connectionTimeout` elapses
-	 without fresh packets, the controller immediately clears the active queue to
-	 avoid runaway motion.
 
 ### Diagnostics
 
 - `bcnp::StreamParser` surfaces rich `ErrorInfo` (error code, absolute stream
 	offset, and consecutive error count) through its error callback so transports
 	can log flaky links with context.
-- `ControllerDriver` reuses persistent RX/TX buffers to avoid per-cycle
-	allocations when feeding data between transports and the controller.
+- `DispatcherDriver` reuses persistent RX buffers to avoid per-cycle
+	allocations when feeding data between transports and the dispatcher.

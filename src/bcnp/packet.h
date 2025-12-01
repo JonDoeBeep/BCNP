@@ -12,17 +12,12 @@ namespace bcnp {
 
 // Primary constants from message_types.h:
 // kProtocolMajorV3, kProtocolMinorV3, kSchemaHash, kHeaderSizeV3,
-// kHeaderMsgTypeIndex, kHeaderMsgCountIndex, kDriveCmdSize, etc.
+// kHeaderMsgTypeIndex, kHeaderMsgCountIndex
 
 // Common constants
 constexpr std::size_t kChecksumSize = 4;
 constexpr std::size_t kMaxMessagesPerPacket = 65535;
 constexpr uint8_t kFlagClearQueue = 0x01;
-
-// Max packet size (header + max payload + CRC)
-// For DriveCmd: 7 + (10 * 65535) + 4 = 655361 bytes
-constexpr std::size_t kMaxPayloadSize = kHeaderSizeV3 + (kDriveCmdSize * kMaxMessagesPerPacket);
-constexpr std::size_t kMaxPacketSize = kMaxPayloadSize + kChecksumSize;
 
 // Use V3 as the active protocol
 constexpr uint8_t kProtocolMajor = kProtocolMajorV3;
@@ -35,10 +30,6 @@ constexpr std::size_t kHeaderMinorIndex = 1;
 constexpr std::size_t kHeaderFlagsIndex = 2;
 // kHeaderMsgTypeIndex = 3 (from generated)
 // kHeaderMsgCountIndex = 5 (from generated)
-
-// Convenience aliases
-constexpr std::size_t kMaxCommandsPerPacket = kMaxMessagesPerPacket;
-constexpr std::size_t kCommandSize = kDriveCmdSize;
 
 // Packet Header
 
@@ -101,10 +92,6 @@ private:
     std::size_t m_count;
 };
 
-// Command type alias (DriveCmd is the primary command type)
-using Command = DriveCmd;
-using CommandIterator = MessageIterator<DriveCmd>;
-
 // Packet View (Zero-Copy)
 
 struct PacketView {
@@ -113,14 +100,6 @@ struct PacketView {
     
     /// Get message type ID
     MessageTypeId GetMessageType() const { return header.messageType; }
-    
-    /// Iterate as DriveCmd
-    MessageIterator<DriveCmd> begin() const { 
-        return MessageIterator<DriveCmd>(payloadStart, header.messageCount); 
-    }
-    MessageIterator<DriveCmd> end() const { 
-        return MessageIterator<DriveCmd>(nullptr, 0); 
-    }
     
     /// Type-safe iteration for any message type
     template<typename MsgType>
@@ -152,22 +131,12 @@ struct TypedPacket {
     }
 };
 
-// DriveCmd packet (most common)
-struct Packet {
-    PacketHeader header{};
-    std::vector<DriveCmd> commands{};
-    
-    Packet() {
-        header.messageType = MessageTypeId::DriveCmd;
-    }
-};
-
 enum class PacketError {
     None,
     TooSmall,
     UnsupportedVersion,
-    TooManyCommands,  // Legacy name
-    TooManyMessages = TooManyCommands,
+    TooManyMessages,
+    TooManyCommands = TooManyMessages,  // Legacy alias
     Truncated,
     InvalidFloat,
     ChecksumMismatch,
@@ -176,47 +145,112 @@ enum class PacketError {
     SchemaMismatch
 };
 
-struct DecodeResult {
-    std::optional<Packet> packet;
-    PacketError error{PacketError::None};
-    std::size_t bytesConsumed{0};
-};
-
 struct DecodeViewResult {
     std::optional<PacketView> view;
     PacketError error{PacketError::None};
     std::size_t bytesConsumed{0};
 };
 
-// Encoding Functions
+// CRC32 Utility - declared first so template functions can use it
+uint32_t ComputeCrc32(const uint8_t* data, std::size_t length);
+
+// ============================================================================
+// Encoding Functions (Template-based, header-only)
+// ============================================================================
 
 /// Encode a typed packet to buffer
 template<typename MsgType>
 bool EncodeTypedPacket(const TypedPacket<MsgType>& packet, uint8_t* output, 
-                       std::size_t capacity, std::size_t& bytesWritten);
+                       std::size_t capacity, std::size_t& bytesWritten) {
+    bytesWritten = 0;
+    if (packet.messages.size() > kMaxMessagesPerPacket || !output) {
+        return false;
+    }
+
+    const std::size_t payloadSize = kHeaderSizeV3 + packet.messages.size() * MsgType::kWireSize;
+    const std::size_t required = payloadSize + kChecksumSize;
+    if (capacity < required) {
+        return false;
+    }
+
+    // V3 Header
+    output[kHeaderMajorIndex] = packet.header.major;
+    output[kHeaderMinorIndex] = packet.header.minor;
+    output[kHeaderFlagsIndex] = packet.header.flags;
+    detail::StoreU16(static_cast<uint16_t>(MsgType::kTypeId), &output[kHeaderMsgTypeIndex]);
+    detail::StoreU16(static_cast<uint16_t>(packet.messages.size()), &output[kHeaderMsgCountIndex]);
+
+    // Encode messages
+    std::size_t offset = kHeaderSizeV3;
+    for (const auto& msg : packet.messages) {
+        if (!msg.Encode(&output[offset], MsgType::kWireSize)) {
+            return false;
+        }
+        offset += MsgType::kWireSize;
+    }
+
+    // CRC32
+    const uint32_t crc = ComputeCrc32(output, payloadSize);
+    detail::StoreU32(crc, &output[payloadSize]);
+
+    bytesWritten = required;
+    return true;
+}
 
 /// Encode a typed packet to vector (allocates)
 template<typename MsgType>
-bool EncodeTypedPacket(const TypedPacket<MsgType>& packet, std::vector<uint8_t>& output);
+bool EncodeTypedPacket(const TypedPacket<MsgType>& packet, std::vector<uint8_t>& output) {
+    if (packet.messages.size() > kMaxMessagesPerPacket) {
+        return false;
+    }
+    const std::size_t required = kHeaderSizeV3 + packet.messages.size() * MsgType::kWireSize + kChecksumSize;
+    output.resize(required);
+    std::size_t bytesWritten = 0;
+    if (!EncodeTypedPacket(packet, output.data(), output.size(), bytesWritten)) {
+        return false;
+    }
+    output.resize(bytesWritten);
+    return true;
+}
 
-/// Encode legacy Packet (DriveCmd) - WARNING: Allocates on heap
-bool EncodePacket(const Packet& packet, std::vector<uint8_t>& output);
-bool EncodePacket(const Packet& packet, uint8_t* output, std::size_t capacity, std::size_t& bytesWritten);
+/// Decode to typed packet from PacketView
+template<typename MsgType>
+std::optional<TypedPacket<MsgType>> DecodeTypedPacket(const PacketView& view) {
+    if (view.header.messageType != MsgType::kTypeId) {
+        return std::nullopt;
+    }
+    
+    TypedPacket<MsgType> packet;
+    packet.header = view.header;
+    packet.messages.reserve(view.header.messageCount);
+    
+    const uint8_t* ptr = view.payloadStart;
+    for (std::size_t i = 0; i < view.header.messageCount; ++i) {
+        auto msg = MsgType::Decode(ptr, MsgType::kWireSize);
+        if (!msg) {
+            return std::nullopt;
+        }
+        packet.messages.push_back(*msg);
+        ptr += MsgType::kWireSize;
+    }
+    
+    return packet;
+}
 
-// Decoding Functions
+// ============================================================================
+// Decoding Functions (Implemented in packet.cpp)
+// ============================================================================
 
-/// Decode packet view (zero-copy, validates header and CRC)
+/// Decode packet view with explicit wire size (when message type is known)
+DecodeViewResult DecodePacketViewWithSize(const uint8_t* data, std::size_t length, std::size_t wireSize);
+
+/// Decode packet view using registry lookup (requires registered message types)
 DecodeViewResult DecodePacketView(const uint8_t* data, std::size_t length);
 
-/// Decode packet (allocates, copies messages)
-DecodeResult DecodePacket(const uint8_t* data, std::size_t length);
-
-/// Decode to typed packet
+/// Type-safe packet view decode (uses message type's kWireSize)
 template<typename MsgType>
-std::optional<TypedPacket<MsgType>> DecodeTypedPacket(const PacketView& view);
-
-// CRC32 Utility (exposed for handshake)
-
-uint32_t ComputeCrc32(const uint8_t* data, std::size_t length);
+DecodeViewResult DecodePacketViewAs(const uint8_t* data, std::size_t length) {
+    return DecodePacketViewWithSize(data, length, MsgType::kWireSize);
+}
 
 } // namespace bcnp

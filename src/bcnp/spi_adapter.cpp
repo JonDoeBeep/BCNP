@@ -1,10 +1,9 @@
 #include "bcnp/spi_adapter.h"
-
+// WARNING: SPI transport is deprecated and will be removed in future versions.
 namespace bcnp {
 
 SpiStreamAdapter::SpiStreamAdapter(ReceiveChunkFn receive, SendBytesFn send, StreamParser& parser)
     : m_receive(std::move(receive)), m_send(std::move(send)), m_parser(parser) {
-    m_encodeScratch.reserve(kMaxPacketSize);
 }
 
 void SpiStreamAdapter::Poll() {
@@ -24,14 +23,6 @@ void SpiStreamAdapter::PushChunk(const uint8_t* data, std::size_t length) {
     m_parser.Push(data, length);
 }
 
-bool SpiStreamAdapter::SendPacket(const Packet& packet) {
-    if (!m_send) {
-        return false;
-    }
-    if (!EncodePacket(packet, m_encodeScratch)) {
-        return false;
-    }
-    return m_send(m_encodeScratch.data(), m_encodeScratch.size());
-}
+// SendPacket is now a template in the header
 
 } // namespace bcnp

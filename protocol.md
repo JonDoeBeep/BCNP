@@ -1,6 +1,7 @@
 # BCNP: Batched Command Network Protocol v3.0
 
 ## Version History:
+- **v3.2.0** (Minor): decouple command queue and genericize more things. (deprecate SPI)
 - **v3.0.1** (bugfix): fix silly
 - **v3.0.0** (Major): Registration-based serialization with JSON schema, message type IDs, schema hash handshake, and codegen for C++/Python. Breaking change from v2.x.
 - **v2.4.1** (Optimization): Implemented Zero-Copy packet parsing using `PacketView` and `CommandIterator`, and added batch locking to reduce mutex overhead on large packets.

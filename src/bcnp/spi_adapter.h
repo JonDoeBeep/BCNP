@@ -21,13 +21,20 @@ public:
 
     void PushChunk(const uint8_t* data, std::size_t length);
 
-    bool SendPacket(const Packet& packet);
+    /// Send a typed packet over SPI
+    template<typename MsgType>
+    bool SendPacket(const TypedPacket<MsgType>& packet) {
+        std::vector<uint8_t> buffer;
+        if (!EncodeTypedPacket(packet, buffer)) {
+            return false;
+        }
+        return m_send(buffer.data(), buffer.size());
+    }
 
 private:
     ReceiveChunkFn m_receive;
     SendBytesFn m_send;
     StreamParser& m_parser;
-    std::vector<uint8_t> m_encodeScratch;
 };
 
 } // namespace bcnp

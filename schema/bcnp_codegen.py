@@ -298,14 +298,15 @@ def generate_cpp_header(schema: dict, output_dir: Path) -> None:
         lines.append("};")
         lines.append("")
     
-    # Message variant type
-    lines.append("// ============================================================================")
-    lines.append("// Message Variant (for type-erased handling)")
-    lines.append("// ============================================================================")
-    lines.append("")
-    variant_types = ", ".join(msg["name"] for msg in schema["messages"])
-    lines.append(f"using Message = std::variant<{variant_types}>;")
-    lines.append("")
+    # Message variant type (only if messages exist)
+    if schema["messages"]:
+        lines.append("// ============================================================================")
+        lines.append("// Message Variant (for type-erased handling)")
+        lines.append("// ============================================================================")
+        lines.append("")
+        variant_types = ", ".join(msg["name"] for msg in schema["messages"])
+        lines.append(f"using Message = std::variant<{variant_types}>;")
+        lines.append("")
     
     # Message registry
     lines.append("// ============================================================================")
@@ -318,11 +319,16 @@ def generate_cpp_header(schema: dict, output_dir: Path) -> None:
     lines.append("    const char* name;")
     lines.append("};")
     lines.append("")
-    lines.append("inline constexpr std::array<MessageInfo, " + str(len(schema["messages"])) + "> kMessageRegistry = {{")
-    for msg in schema["messages"]:
-        size = compute_message_size(msg)
-        lines.append(f"    {{MessageTypeId::{msg['name']}, {size}, \"{msg['name']}\"}},")
-    lines.append("}};")
+    num_messages = len(schema["messages"])
+    if num_messages > 0:
+        lines.append(f"inline constexpr std::array<MessageInfo, {num_messages}> kMessageRegistry = {{{{")
+        for msg in schema["messages"]:
+            size = compute_message_size(msg)
+            lines.append(f"    {{MessageTypeId::{msg['name']}, {size}, \"{msg['name']}\"}},")
+        lines.append("}};")
+    else:
+        lines.append("// No messages defined - add message types to your schema and regenerate")
+        lines.append("inline constexpr std::array<MessageInfo, 0> kMessageRegistry = {{}};")
     lines.append("")
     lines.append("inline std::optional<MessageInfo> GetMessageInfo(MessageTypeId typeId) {")
     lines.append("    for (const auto& info : kMessageRegistry) {")
@@ -341,10 +347,19 @@ def generate_cpp_header(schema: dict, output_dir: Path) -> None:
     lines.append("// Handshake Utilities")
     lines.append("// ============================================================================")
     lines.append("")
+    lines.append("/// Encode handshake with default schema hash")
     lines.append("inline bool EncodeHandshake(uint8_t* out, std::size_t capacity) {")
     lines.append("    if (capacity < kHandshakeSize) return false;")
     lines.append("    std::memcpy(out, kHandshakeMagic.data(), 4);")
     lines.append("    detail::StoreU32(kSchemaHash, &out[4]);")
+    lines.append("    return true;")
+    lines.append("}")
+    lines.append("")
+    lines.append("/// Encode handshake with custom schema hash (for testing)")
+    lines.append("inline bool EncodeHandshakeWithHash(uint8_t* out, std::size_t capacity, uint32_t schemaHash) {")
+    lines.append("    if (capacity < kHandshakeSize) return false;")
+    lines.append("    std::memcpy(out, kHandshakeMagic.data(), 4);")
+    lines.append("    detail::StoreU32(schemaHash, &out[4]);")
     lines.append("    return true;")
     lines.append("}")
     lines.append("")
@@ -353,6 +368,14 @@ def generate_cpp_header(schema: dict, output_dir: Path) -> None:
     lines.append("    if (std::memcmp(data, kHandshakeMagic.data(), 4) != 0) return false;")
     lines.append("    const uint32_t remoteHash = detail::LoadU32(&data[4]);")
     lines.append("    return remoteHash == kSchemaHash;")
+    lines.append("}")
+    lines.append("")
+    lines.append("/// Validate handshake against custom expected hash (for testing)")
+    lines.append("inline bool ValidateHandshakeWithHash(const uint8_t* data, std::size_t length, uint32_t expectedHash) {")
+    lines.append("    if (length < kHandshakeSize) return false;")
+    lines.append("    if (std::memcmp(data, kHandshakeMagic.data(), 4) != 0) return false;")
+    lines.append("    const uint32_t remoteHash = detail::LoadU32(&data[4]);")
+    lines.append("    return remoteHash == expectedHash;")
     lines.append("}")
     lines.append("")
     lines.append("inline uint32_t ExtractSchemaHash(const uint8_t* data, std::size_t length) {")
@@ -484,16 +507,19 @@ def generate_python_bindings(schema: dict, output_dir: Path) -> None:
         lines.append(f"        return cls({decode_args})")
         lines.append("")
     
-    # Message union type
-    msg_names = ", ".join(f'"{msg["name"]}"' for msg in schema["messages"])
-    lines.append(f"Message = Union[{', '.join(msg['name'] for msg in schema['messages'])}]")
-    lines.append("")
-    
-    # Registry
-    lines.append("MESSAGE_REGISTRY = {")
-    for msg in schema["messages"]:
-        lines.append(f"    MessageTypeId.{msg['name']}: {msg['name']},")
-    lines.append("}")
+    # Message union type (only if messages exist)
+    if schema["messages"]:
+        lines.append(f"Message = Union[{', '.join(msg['name'] for msg in schema['messages'])}]")
+        lines.append("")
+        
+        # Registry
+        lines.append("MESSAGE_REGISTRY = {")
+        for msg in schema["messages"]:
+            lines.append(f"    MessageTypeId.{msg['name']}: {msg['name']},")
+        lines.append("}")
+    else:
+        lines.append("# No messages defined - add message types to your schema and regenerate")
+        lines.append("MESSAGE_REGISTRY = {}")
     lines.append("")
     
     # Handshake functions

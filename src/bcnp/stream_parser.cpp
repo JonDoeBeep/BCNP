@@ -125,8 +125,8 @@ void StreamParser::ParseBuffer(std::size_t& iterationBudget) {
         const uint16_t messageCount = detail::LoadU16(&m_decodeScratch[kHeaderMsgCountIndex]);
 
         // Lookup message type to get wire size
-        auto msgInfo = GetMessageInfo(static_cast<MessageTypeId>(msgTypeId));
-        if (!msgInfo) {
+        const std::size_t wireSize = LookupWireSize(static_cast<MessageTypeId>(msgTypeId));
+        if (wireSize == 0) {
             const auto offset = m_streamOffset;
             EmitError(PacketError::UnknownMessageType, offset);
             Discard(1);
@@ -140,11 +140,11 @@ void StreamParser::ParseBuffer(std::size_t& iterationBudget) {
             continue;
         }
 
-        const std::size_t expected = kHeaderSizeV3 + (messageCount * msgInfo->wireSize) + kChecksumSize;
+        const std::size_t expected = kHeaderSizeV3 + (messageCount * wireSize) + kChecksumSize;
 
         const std::size_t available = std::min(expected, m_size);
         CopyOut(0, available, m_decodeScratch.data());
-        auto result = DecodePacketView(m_decodeScratch.data(), available);
+        auto result = DecodePacketViewWithSize(m_decodeScratch.data(), available, wireSize);
 
         if (result.error == PacketError::Truncated) {
             break;
@@ -190,6 +190,16 @@ std::size_t StreamParser::FindNextHeaderCandidate() const {
         }
     }
     return 1;
+}
+
+std::size_t StreamParser::LookupWireSize(MessageTypeId typeId) const {
+    // Use custom lookup if provided
+    if (m_wireSizeLookup) {
+        return m_wireSizeLookup(typeId);
+    }
+    // Fall back to global registry
+    auto info = GetMessageInfo(typeId);
+    return info ? info->wireSize : 0;
 }
 
 void StreamParser::EmitPacket(const PacketView& packet) {

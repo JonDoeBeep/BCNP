@@ -428,8 +428,15 @@ bool TcpPosixAdapter::SendHandshake() {
     }
     
     uint8_t handshake[kHandshakeSize];
-    if (!EncodeHandshake(handshake, sizeof(handshake))) {
-        return false;
+    // Use custom hash if set, otherwise use default
+    if (m_expectedSchemaHash != 0) {
+        if (!EncodeHandshakeWithHash(handshake, sizeof(handshake), m_expectedSchemaHash)) {
+            return false;
+        }
+    } else {
+        if (!EncodeHandshake(handshake, sizeof(handshake))) {
+            return false;
+        }
     }
     
     // Queue handshake for sending
@@ -442,6 +449,10 @@ bool TcpPosixAdapter::SendHandshake() {
     return true;
 }
 
+uint32_t TcpPosixAdapter::GetExpectedSchemaHash() const {
+    return m_expectedSchemaHash != 0 ? m_expectedSchemaHash : kSchemaHash;
+}
+
 bool TcpPosixAdapter::ProcessHandshake(const uint8_t* data, std::size_t length) {
     // Accumulate handshake bytes
     std::size_t toRead = std::min(length, kHandshakeSize - m_handshakeReceived);
@@ -452,16 +463,18 @@ bool TcpPosixAdapter::ProcessHandshake(const uint8_t* data, std::size_t length) 
         return false; // Not complete yet
     }
     
-    if (!ValidateHandshake(m_handshakeBuffer, kHandshakeSize)) {
-        m_remoteSchemaHash = ExtractSchemaHash(m_handshakeBuffer, kHandshakeSize);
-        std::cerr << "TCP adapter: Schema mismatch! Local=0x" << std::hex << kSchemaHash 
+    // Extract and validate against expected hash
+    m_remoteSchemaHash = ExtractSchemaHash(m_handshakeBuffer, kHandshakeSize);
+    const uint32_t expected = GetExpectedSchemaHash();
+    
+    if (m_remoteSchemaHash != expected) {
+        std::cerr << "TCP adapter: Schema mismatch! Local=0x" << std::hex << expected 
                   << " Remote=0x" << m_remoteSchemaHash << std::dec << std::endl;
         m_schemaValidated = false;
         m_handshakeComplete = true;
         return true;
     }
     
-    m_remoteSchemaHash = kSchemaHash;
     m_schemaValidated = true;
     m_handshakeComplete = true;
     
