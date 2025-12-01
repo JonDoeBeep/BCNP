@@ -18,7 +18,7 @@ Edit `schema/messages.json` to define your robot's message types:
 
 ```json
 {
-  "version": "3.0",
+  "version": "3.1",
   "namespace": "bcnp",
   "messages": [
     {
