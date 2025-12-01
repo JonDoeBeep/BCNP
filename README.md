@@ -10,7 +10,43 @@ library. The codebase is split into two layers:
 	(UDP/SPI/etc.) to the core controller without leaking platform headers into
 	the protocol logic.
 
-## Building & Testing 
+## Quick Start
+
+### 1. Generate Message Types
+
+Define your messages in `schema/messages.json`, then generate the C++ header:
+
+```bash
+python schema/bcnp_codegen.py schema/messages.json --cpp generated --python examples
+```
+
+This creates `generated/bcnp/message_types.h`.
+
+### 2. Add Include Path
+
+Add the `generated/` folder to your include path so the library can find `<bcnp/message_types.h>`.
+
+**CMake:**
+```cmake
+target_include_directories(your_target PRIVATE path/to/generated)
+```
+
+**FRC Gradle (build.gradle):**
+```groovy
+model {
+    components {
+        frcUserProgram(NativeExecutableSpec) {
+            // ... existing config ...
+            binaries.all {
+                cppCompiler.args "-I${projectDir}/libraries/BCNP/generated"
+            }
+        }
+    }
+}
+```
+
+### 3. Build & Test
+
 ```bash
 cmake -S . -B build && cmake --build build && ctest --test-dir build
 ```

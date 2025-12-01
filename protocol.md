@@ -1,13 +1,14 @@
 # BCNP: Batched Command Network Protocol v3.0
 
 ## Version History:
+- **v3.0.1** (bugfix): fix silly
 - **v3.0.0** (Major): Registration-based serialization with JSON schema, message type IDs, schema hash handshake, and codegen for C++/Python. Breaking change from v2.x.
 - **v2.4.1** (Optimization): Implemented Zero-Copy packet parsing using `PacketView` and `CommandIterator`, and added batch locking to reduce mutex overhead on large packets.
-- **v2.4.0** (Major): Expanded command count to 16-bit (65k commands/packet), increased packet size limit, and switched to dynamic memory allocation.
+- **v2.4.0** (Minor, deprecated): Expanded command count to 16-bit (65k commands/packet), increased packet size limit, and switched to dynamic memory allocation.
 - **v2.3.2** (bugfix): Fix bloat, safety, and optimize.
 - **v2.3.1** (bugfix): Fix several critical issues.
-- **v2.3.0** (Minor): Adds CRC32 integrity trailer, fixed-point command encoding, UDP pairing handshake, and buffered TCP send path.
-- **v2.2.1** (Minor): Security bugfixes. 
+- **v2.3.0** (Minor, deprecated): Adds CRC32 integrity trailer, fixed-point command encoding, UDP pairing handshake, and buffered TCP send path.
+- **v2.2.1** (bugfix): Security bugfixes. 
 - **v2.2.0** (Minor, deprecated): Security bugfixes, optimization. 
 - **v2.1.1** (Bugfix): TCP improvements.
 - **v2.1.0** (Minor, deprecated): TCP Optimization/Adapter support.
@@ -28,7 +29,9 @@ Instead of hardcoded vx/omega commands, v3 introduces a **Message Type System** 
 ### Schema-Driven Development
 1. Define messages in `schema/messages.json`
 2. Run codegen: `python schema/bcnp_codegen.py schema/messages.json --cpp generated --python examples`
-3. Use generated types in your code: `DriveCmd`, or your custom types
+3. Add `generated/` to your include path (see README.md for CMake/Gradle examples)
+4. Include in your code: `#include <bcnp/message_types.h>`
+5. Use generated types: `bcnp::DriveCmd`, or your custom types
 
 ### Handshake Requirement
 All connections must complete a schema handshake before streaming packets. The handshake validates that both endpoints are using the same schema version.

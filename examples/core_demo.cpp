@@ -1,4 +1,4 @@
-#include "message_types.h"
+#include <bcnp/message_types.h>
 #include "bcnp/controller.h"
 #include "bcnp/transport/tcp_posix.h"
 #include "bcnp/transport/controller_driver.h"

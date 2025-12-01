@@ -83,9 +83,15 @@ def compute_message_size(msg: dict) -> int:
 
 
 def generate_cpp_header(schema: dict, output_dir: Path) -> None:
-    """Generate C++ header with message types and serialization."""
-    output_dir.mkdir(parents=True, exist_ok=True)
-    output_file = output_dir / "message_types.h"
+    """Generate C++ header with message types and serialization.
+    
+    The file is written to output_dir/bcnp/message_types.h so that
+    users can add output_dir to their include path and use:
+        #include <bcnp/message_types.h>
+    """
+    bcnp_dir = output_dir / "bcnp"
+    bcnp_dir.mkdir(parents=True, exist_ok=True)
+    output_file = bcnp_dir / "message_types.h"
     
     namespace = schema.get("namespace", "bcnp")
     version_parts = schema["version"].split(".")

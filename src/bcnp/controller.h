@@ -2,7 +2,7 @@
 
 #include "bcnp/command_queue.h"
 #include "bcnp/stream_parser.h"
-#include "message_types.h"
+#include <bcnp/message_types.h>
 #include <cstdint>
 #include <functional>
 #include <mutex>

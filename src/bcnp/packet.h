@@ -1,6 +1,6 @@
 #pragma once
 
-#include "message_types.h"
+#include <bcnp/message_types.h>
 #include "bcnp/static_vector.h"
 
 #include <cstddef>

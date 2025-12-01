@@ -1,7 +1,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 
-#include "message_types.h"
+#include <bcnp/message_types.h>
 #include "bcnp/command_queue.h"
 #include "bcnp/controller.h"
 #include "bcnp/packet.h"

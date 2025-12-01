@@ -2,7 +2,7 @@
 
 #include "bcnp/packet.h"
 #include "bcnp/transport/adapter.h"
-#include "message_types.h"
+#include <bcnp/message_types.h>
 
 #include <chrono>
 #include <memory>
