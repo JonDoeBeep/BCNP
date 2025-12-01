@@ -1,0 +1,35 @@
+{
+  "$schema": "./bcnp_schema.json",
+  "version": "3.0",
+  "namespace": "bcnp",
+  "description": "BCNP message schema. Define your robot's message types here and regenerate with bcnp_codegen.py",
+  "messages": [
+    {
+      "id": 1,
+      "name": "DriveCmd",
+      "description": "Differential drive velocity command",
+      "fields": [
+        {
+          "name": "vx",
+          "type": "float32",
+          "scale": 10000,
+          "unit": "m/s",
+          "description": "Linear velocity"
+        },
+        {
+          "name": "omega",
+          "type": "float32",
+          "scale": 10000,
+          "unit": "rad/s",
+          "description": "Angular velocity"
+        },
+        {
+          "name": "durationMs",
+          "type": "uint16",
+          "unit": "ms",
+          "description": "Command duration in milliseconds"
+        }
+      ]
+    }
+  ]
+}

@@ -21,7 +21,7 @@ endif()
 
 add_library(bcnp_core ${BCNP_CORE_SOURCES})
 
-target_include_directories(bcnp_core PUBLIC src)
+target_include_directories(bcnp_core PUBLIC src ${CMAKE_SOURCE_DIR}/generated)
 
 target_compile_features(bcnp_core PUBLIC cxx_std_17)
 

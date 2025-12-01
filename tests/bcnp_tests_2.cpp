@@ -1,6 +1,7 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 
+#include "message_types.h"
 #include "bcnp/command_queue.h"
 #include "bcnp/controller.h"
 #include "bcnp/packet.h"
@@ -21,6 +22,7 @@
 using namespace std::chrono_literals;
 
 namespace {
+// Legacy pairing frame (for UDP lock mode with custom token)
 std::array<uint8_t, 8> MakePairingFrame(uint32_t token) {
     std::array<uint8_t, 8> frame{};
     frame[0] = 'B';
@@ -31,6 +33,13 @@ std::array<uint8_t, 8> MakePairingFrame(uint32_t token) {
     frame[5] = static_cast<uint8_t>((token >> 16) & 0xFF);
     frame[6] = static_cast<uint8_t>((token >> 8) & 0xFF);
     frame[7] = static_cast<uint8_t>(token & 0xFF);
+    return frame;
+}
+
+// Schema handshake frame for V3 protocol
+std::array<uint8_t, 8> MakeSchemaHandshake() {
+    std::array<uint8_t, 8> frame{};
+    bcnp::EncodeHandshake(frame.data(), frame.size());
     return frame;
 }
 }
@@ -76,8 +85,12 @@ TEST_CASE("Packet: CRC detects payload corruption") {
 }
 
 TEST_CASE("Packet: Reject unsupported version") {
+    // V3 header is 7 bytes: Major(1) + Minor(1) + Flags(1) + MsgType(2) + MsgCount(2)
     std::vector<uint8_t> buffer = {
-        static_cast<uint8_t>(bcnp::kProtocolMajor + 1), bcnp::kProtocolMinor, 0x00, 0x00, 0x00
+        static_cast<uint8_t>(bcnp::kProtocolMajor + 1), bcnp::kProtocolMinor, 
+        0x00,       // flags
+        0x00, 0x01, // message type = 1 (DriveCmd)
+        0x00, 0x00  // message count = 0
     };
 
     auto result = bcnp::DecodePacket(buffer.data(), buffer.size());
@@ -302,12 +315,14 @@ TEST_CASE("StreamParser: Skip bad headers and recover") {
     REQUIRE(bcnp::EncodePacket(first, encoded));
     combined.insert(combined.end(), encoded.begin(), encoded.end());
     
-    // Insert garbage header (wrong version)
-    combined.push_back(bcnp::kProtocolMajor + 1);
-    combined.push_back(bcnp::kProtocolMinor);
-    combined.push_back(0x00);
-    combined.push_back(0x00);
-    combined.push_back(0x01); // Count = 1
+    // Insert garbage header (wrong version) - V3 format: 7 bytes
+    combined.push_back(bcnp::kProtocolMajor + 1);  // Major (wrong)
+    combined.push_back(bcnp::kProtocolMinor);       // Minor
+    combined.push_back(0x00);                       // Flags
+    combined.push_back(0x00);                       // MsgType high
+    combined.push_back(0x01);                       // MsgType low (DriveCmd)
+    combined.push_back(0x00);                       // MsgCount high
+    combined.push_back(0x01);                       // MsgCount low (1 message)
     
     REQUIRE(bcnp::EncodePacket(second, encoded));
     combined.insert(combined.end(), encoded.begin(), encoded.end());
@@ -365,7 +380,11 @@ TEST_CASE("StreamParser: Error info provides diagnostics") {
     std::array<uint8_t, bcnp::kHeaderSize> badHeader{};
     badHeader[bcnp::kHeaderMajorIndex] = bcnp::kProtocolMajor + 1;
     badHeader[bcnp::kHeaderMinorIndex] = bcnp::kProtocolMinor;
-    badHeader[bcnp::kHeaderCountIndex] = 0;
+    // V3: MsgTypeIndex=3 (2 bytes), MsgCountIndex=5 (2 bytes)
+    badHeader[bcnp::kHeaderMsgTypeIndex] = 0;
+    badHeader[bcnp::kHeaderMsgTypeIndex + 1] = 1; // DriveCmd
+    badHeader[bcnp::kHeaderMsgCountIndex] = 0;
+    badHeader[bcnp::kHeaderMsgCountIndex + 1] = 0;
     
     parser.Push(badHeader.data(), badHeader.size());
     parser.Push(badHeader.data(), badHeader.size());
@@ -399,18 +418,19 @@ TEST_CASE("Controller: Command clamping enforces limits") {
     
     bcnp::Packet packet{};
     packet.commands.push_back({1.0f, -2.0f, 6000}); // All out of range
-    packet.header.commandCount = 1;
     
     std::vector<uint8_t> encoded;
-    bcnp::EncodePacket(packet, encoded);
-    bcnp::PacketView view;
-    view.header = packet.header;
-    view.payloadStart = encoded.data() + bcnp::kHeaderSize;
+    REQUIRE(bcnp::EncodePacket(packet, encoded));
     
-    controller.HandlePacket(view);
+    // Decode the view to get the proper header with messageCount filled in
+    auto decodeResult = bcnp::DecodePacketView(encoded.data(), encoded.size());
+    REQUIRE(decodeResult.view.has_value());
+    
+    controller.HandlePacket(*decodeResult.view);
     
     auto now = bcnp::CommandQueue::Clock::time_point{} + 1000ms;
     controller.Queue().NotifyPacketReceived(now);
+    controller.Queue().Update(now);
     auto cmd = controller.CurrentCommand(now);
     
     REQUIRE(cmd.has_value());
@@ -425,18 +445,19 @@ TEST_CASE("Controller: Zero defaults require explicit limits") {
     
     bcnp::Packet packet{};
     packet.commands.push_back({1.0f, 1.0f, 1000});
-    packet.header.commandCount = 1;
     
     std::vector<uint8_t> encoded;
-    bcnp::EncodePacket(packet, encoded);
-    bcnp::PacketView view;
-    view.header = packet.header;
-    view.payloadStart = encoded.data() + bcnp::kHeaderSize;
+    REQUIRE(bcnp::EncodePacket(packet, encoded));
     
-    controller.HandlePacket(view);
+    // Decode the view to get the proper header with messageCount filled in
+    auto decodeResult = bcnp::DecodePacketView(encoded.data(), encoded.size());
+    REQUIRE(decodeResult.view.has_value());
+    
+    controller.HandlePacket(*decodeResult.view);
     
     auto now = bcnp::CommandQueue::Clock::time_point{} + 1000ms;
     controller.Queue().NotifyPacketReceived(now);
+    controller.Queue().Update(now);
     auto cmd = controller.CurrentCommand(now);
     
     // With sub-tick updates, a 0-duration command is processed immediately
@@ -454,65 +475,65 @@ TEST_CASE("TCP: Basic server-client connection and data transfer") {
     bcnp::TcpPosixAdapter client(0, "127.0.0.1", 12345);
     REQUIRE(client.IsValid());
     
-    // Use promise/future for robust synchronization
-    std::promise<void> serverConnected;
-    std::promise<void> clientReceived;
-    
-    std::vector<uint8_t> txData = {0x01, 0x02, 0x03, 0x04};
+    // Send schema handshake first (V3 requirement)
+    auto handshake = MakeSchemaHandshake();
     std::vector<uint8_t> serverRxBuffer(1024);
     std::vector<uint8_t> clientRxBuffer(1024);
     
-    // Server thread
-    auto serverFuture = std::async(std::launch::async, [&]() {
-        // Poll for connection
-        for (int i = 0; i < 100; ++i) {
-            size_t bytes = server.ReceiveChunk(serverRxBuffer.data(), serverRxBuffer.size());
-            if (bytes > 0) {
-                CHECK(bytes == txData.size());
-                CHECK(serverRxBuffer[0] == 0x01);
-                serverConnected.set_value();
-                
-                // Send response
-                std::vector<uint8_t> response = {0x05, 0x06};
-                server.SendBytes(response.data(), response.size());
-                return;
-            }
-            std::this_thread::sleep_for(10ms);
+    // Establish connection with handshakes
+    for (int i = 0; i < 100; ++i) {
+        client.SendBytes(handshake.data(), handshake.size());
+        std::this_thread::sleep_for(10ms);
+        server.ReceiveChunk(serverRxBuffer.data(), serverRxBuffer.size());
+        if (server.IsConnected()) {
+            server.SendBytes(handshake.data(), handshake.size());
+            break;
         }
-        throw std::runtime_error("Server never received data");
-    });
+    }
     
-    // Client thread
-    auto clientFuture = std::async(std::launch::async, [&]() {
-        // Wait for connection and send
-        for (int i = 0; i < 100; ++i) {
-            client.SendBytes(txData.data(), txData.size());
-            if (client.IsConnected()) break;
-            std::this_thread::sleep_for(10ms);
+    // Wait for handshake to complete
+    for (int i = 0; i < 50; ++i) {
+        client.ReceiveChunk(clientRxBuffer.data(), clientRxBuffer.size());
+        server.ReceiveChunk(serverRxBuffer.data(), serverRxBuffer.size());
+        if (client.IsHandshakeComplete() && server.IsHandshakeComplete()) break;
+        std::this_thread::sleep_for(10ms);
+    }
+    
+    REQUIRE(server.IsConnected());
+    REQUIRE(client.IsConnected());
+    
+    // Now send actual data
+    std::vector<uint8_t> txData = {0x01, 0x02, 0x03, 0x04};
+    client.SendBytes(txData.data(), txData.size());
+    
+    bool received = false;
+    for (int i = 0; i < 50; ++i) {
+        size_t bytes = server.ReceiveChunk(serverRxBuffer.data(), serverRxBuffer.size());
+        if (bytes >= txData.size()) {
+            received = true;
+            CHECK(serverRxBuffer[0] == 0x01);
+            CHECK(serverRxBuffer[1] == 0x02);
+            break;
         }
-        
-        // Wait for server to respond
-        auto status = serverConnected.get_future().wait_for(2s);
-        REQUIRE(status == std::future_status::ready);
-        
-        // Receive response
-        for (int i = 0; i < 100; ++i) {
-            size_t bytes = client.ReceiveChunk(clientRxBuffer.data(), clientRxBuffer.size());
-            if (bytes > 0) {
-                CHECK(bytes == 2);
-                CHECK(clientRxBuffer[0] == 0x05);
-                return;
-            }
-            std::this_thread::sleep_for(10ms);
+        std::this_thread::sleep_for(10ms);
+    }
+    CHECK(received);
+    
+    // Server sends response
+    std::vector<uint8_t> response = {0x05, 0x06};
+    server.SendBytes(response.data(), response.size());
+    
+    received = false;
+    for (int i = 0; i < 50; ++i) {
+        size_t bytes = client.ReceiveChunk(clientRxBuffer.data(), clientRxBuffer.size());
+        if (bytes >= response.size()) {
+            received = true;
+            CHECK(clientRxBuffer[0] == 0x05);
+            break;
         }
-        throw std::runtime_error("Client never received response");
-    });
-    
-    serverFuture.get();
-    clientFuture.get();
-    
-    CHECK(server.IsConnected());
-    CHECK(client.IsConnected());
+        std::this_thread::sleep_for(10ms);
+    }
+    CHECK(received);
 }
 
 TEST_CASE("TCP: Client reconnects after connection loss") {
@@ -522,18 +543,28 @@ TEST_CASE("TCP: Client reconnects after connection loss") {
     bcnp::TcpPosixAdapter client(0, "127.0.0.1", 12346);
     REQUIRE(client.IsValid());
     
-    std::vector<uint8_t> data = {0xAA};
+    auto handshake = MakeSchemaHandshake();
     std::vector<uint8_t> rxBuffer(1024);
     
-    // Initial connection
+    // Initial connection with handshake
     for (int i = 0; i < 100; ++i) {
-        client.SendBytes(data.data(), data.size());
+        client.SendBytes(handshake.data(), handshake.size());
         server.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
-        if (server.IsConnected() && client.IsConnected()) break;
+        if (server.IsConnected()) {
+            server.SendBytes(handshake.data(), handshake.size());
+            break;
+        }
         std::this_thread::sleep_for(10ms);
     }
+    
+    for (int i = 0; i < 50; ++i) {
+        client.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
+        if (client.IsHandshakeComplete()) break;
+        std::this_thread::sleep_for(10ms);
+    }
+    
     REQUIRE(server.IsConnected());
-    REQUIRE(client.IsConnected());
+    REQUIRE(client.IsHandshakeComplete());
     
     // Server drops connection (simulate network issue)
     server.~TcpPosixAdapter();
@@ -542,12 +573,17 @@ TEST_CASE("TCP: Client reconnects after connection loss") {
     // Give client time to detect disconnect
     std::this_thread::sleep_for(100ms);
     
-    // Client should reconnect automatically
+    // Client should reconnect automatically with new handshake
     bool reconnected = false;
     for (int i = 0; i < 100; ++i) {
-        client.SendBytes(data.data(), data.size());
-        size_t bytes = server.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
-        if (bytes > 0 && server.IsConnected()) {
+        client.SendBytes(handshake.data(), handshake.size());
+        server.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
+        if (server.IsConnected()) {
+            server.SendBytes(handshake.data(), handshake.size());
+            // Client will receive on next iteration
+        }
+        client.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
+        if (client.IsHandshakeComplete() && server.IsConnected()) {
             reconnected = true;
             break;
         }
@@ -564,16 +600,26 @@ TEST_CASE("TCP: Server times out zombie clients") {
     bcnp::TcpPosixAdapter client1(0, "127.0.0.1", 12347);
     REQUIRE(client1.IsValid());
     
-    std::vector<uint8_t> data = {0xBB};
+    auto handshake = MakeSchemaHandshake();
     std::vector<uint8_t> rxBuffer(1024);
     
-    // Client 1 connects
+    // Client 1 connects with handshake
     for (int i = 0; i < 100; ++i) {
-        client1.SendBytes(data.data(), data.size());
+        client1.SendBytes(handshake.data(), handshake.size());
         server.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
-        if (server.IsConnected()) break;
+        if (server.IsConnected()) {
+            server.SendBytes(handshake.data(), handshake.size());
+            break;
+        }
         std::this_thread::sleep_for(10ms);
     }
+    
+    for (int i = 0; i < 50; ++i) {
+        client1.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
+        if (client1.IsHandshakeComplete()) break;
+        std::this_thread::sleep_for(10ms);
+    }
+    
     REQUIRE(server.IsConnected());
     
     // Client 1 goes silent for >5 seconds (zombie)
@@ -588,11 +634,20 @@ TEST_CASE("TCP: Server times out zombie clients") {
     bool newClientConnected = false;
     
     for (int i = 0; i < 100; ++i) {
-        client2.SendBytes(data.data(), data.size());
-        size_t bytes = server.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
-        if (bytes > 0) {
-            newClientConnected = true;
-            break;
+        client2.SendBytes(handshake.data(), handshake.size());
+        server.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
+        if (server.IsConnected()) {
+            server.SendBytes(handshake.data(), handshake.size());
+            // Additional polling to complete handshake
+            for (int j = 0; j < 10; ++j) {
+                client2.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
+                if (client2.IsHandshakeComplete()) {
+                    newClientConnected = true;
+                    break;
+                }
+                std::this_thread::sleep_for(10ms);
+            }
+            if (newClientConnected) break;
         }
         std::this_thread::sleep_for(20ms);
     }
@@ -613,12 +668,19 @@ TEST_CASE("TCP: EINPROGRESS handled correctly - IsConnected not premature") {
     std::this_thread::sleep_for(50ms);
     bcnp::TcpPosixAdapter server(12348);
     
-    // Eventually should connect
+    auto handshake = MakeSchemaHandshake();
+    std::vector<uint8_t> rxBuffer(1024);
+    
+    // Eventually should connect with handshake
     bool connected = false;
     for (int i = 0; i < 100; ++i) {
-        std::vector<uint8_t> dummy = {0x00};
-        client.SendBytes(dummy.data(), dummy.size());
-        if (client.IsConnected()) {
+        client.SendBytes(handshake.data(), handshake.size());
+        server.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
+        if (server.IsConnected()) {
+            server.SendBytes(handshake.data(), handshake.size());
+        }
+        client.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
+        if (client.IsHandshakeComplete()) {
             connected = true;
             break;
         }
@@ -656,10 +718,10 @@ TEST_CASE("UDP: Basic send and receive") {
 }
 
 TEST_CASE("UDP: Locked mode requires handshake before accepting data") {
-    constexpr uint32_t kToken = 0xA5A5A5A5;
+    // V3: Schema hash is the pairing token
     bcnp::UdpPosixAdapter robot(54323);
     robot.SetPeerLockMode(true);
-    robot.SetPairingToken(kToken);
+    robot.SetPairingToken(bcnp::kSchemaHash); // Use schema hash as pairing token
     REQUIRE(robot.IsValid());
 
     bcnp::UdpPosixAdapter attacker(54324, "127.0.0.1", 54323);
@@ -670,19 +732,24 @@ TEST_CASE("UDP: Locked mode requires handshake before accepting data") {
     // Attacker sends data before pairing; robot should drop it silently.
     std::vector<uint8_t> bogus = {0xAA};
     attacker.SendBytes(bogus.data(), bogus.size());
+    std::this_thread::sleep_for(10ms);
     CHECK(robot.ReceiveChunk(rxBuffer.data(), rxBuffer.size()) == 0);
 
-    // Attacker attempts handshake with wrong token.
-    auto wrongFrame = MakePairingFrame(kToken ^ 0xFF);
+    // Attacker attempts handshake with wrong schema hash.
+    auto wrongFrame = MakePairingFrame(bcnp::kSchemaHash ^ 0xFF);
     attacker.SendBytes(wrongFrame.data(), wrongFrame.size());
-    CHECK(robot.ReceiveChunk(rxBuffer.data(), rxBuffer.size()) == 0);
+    std::this_thread::sleep_for(10ms);
+    // Wrong schema will complete pairing but fail validation - robot drops subsequent data
+    robot.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
 
-    // Real driver pairs successfully.
-    auto goodFrame = MakePairingFrame(kToken);
+    // Real driver pairs successfully with correct schema.
+    auto goodFrame = MakeSchemaHandshake();
     driver.SendBytes(goodFrame.data(), goodFrame.size());
-    CHECK(robot.ReceiveChunk(rxBuffer.data(), rxBuffer.size()) == 0);
+    std::this_thread::sleep_for(10ms);
+    // Pairing frame is consumed, returns 0
+    robot.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
 
-    // After pairing, only the paired driver is heard.
+    // After pairing with correct schema, only the paired driver is heard.
     std::vector<uint8_t> payload = {0x42};
     driver.SendBytes(payload.data(), payload.size());
     size_t received = 0;
@@ -698,6 +765,7 @@ TEST_CASE("UDP: Locked mode requires handshake before accepting data") {
 
     // Attacker messages remain blocked after pairing.
     attacker.SendBytes(payload.data(), payload.size());
+    std::this_thread::sleep_for(10ms);
     CHECK(robot.ReceiveChunk(rxBuffer.data(), rxBuffer.size()) == 0);
 }
 

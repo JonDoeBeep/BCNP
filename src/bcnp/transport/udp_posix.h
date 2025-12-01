@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bcnp/transport/adapter.h"
+#include "message_types.h"
 
 #include <chrono>
 #include <cstdint>
@@ -22,6 +23,11 @@ public:
     void SetPeerLockMode(bool locked);
     void SetPairingToken(uint32_t token);
     void UnlockPeer();
+    
+    // V3 Schema handshake
+    bool IsHandshakeComplete() const { return m_pairingComplete && m_schemaValidated; }
+    bool SendHandshake();  // Send schema hash to peer
+    uint32_t GetRemoteSchemaHash() const { return m_remoteSchemaHash; }
 
 private:
     bool ProcessPairingPacket(const uint8_t* buffer, std::size_t length, const sockaddr_in& src);
@@ -32,9 +38,11 @@ private:
     bool m_hasPeer{false};
     bool m_peerLocked{false};
     bool m_pairingComplete{false};
+    bool m_schemaValidated{false};
     bool m_requirePairing{false};
     bool m_fixedPeerConfigured{false};
     uint32_t m_pairingToken{0x42434E50U};
+    uint32_t m_remoteSchemaHash{0};
     sockaddr_in m_initialPeer{};
     std::chrono::steady_clock::time_point m_lastPeerRx{};
     static constexpr std::chrono::milliseconds kPeerTimeout{5000};

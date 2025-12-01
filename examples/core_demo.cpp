@@ -1,3 +1,4 @@
+#include "message_types.h"
 #include "bcnp/controller.h"
 #include "bcnp/transport/tcp_posix.h"
 #include "bcnp/transport/controller_driver.h"
@@ -10,6 +11,7 @@
 #include <cmath>
 #include <csignal>
 #include <atomic>
+#include <iomanip>
 
 using namespace std::chrono_literals;
 
@@ -43,13 +45,19 @@ int main() {
 
     constexpr uint16_t kPort = 5800;
     
-    std::cout << "[Server] Starting BCNP TCP Demo on port " << kPort << "...\n";
-    std::cout << "[Server] Press Ctrl+C to stop.\n";
+    std::cout << "[Server] BCNP v" << int(bcnp::kProtocolMajorV3) << "." 
+              << int(bcnp::kProtocolMinorV3) << " TCP Demo\n";
+    std::cout << "[Server] Schema hash: 0x" << std::hex << std::setfill('0') 
+              << std::setw(8) << bcnp::kSchemaHash << std::dec << "\n";
+    std::cout << "[Server] Message types: DriveCmd(id=" << int(bcnp::MessageTypeId::DriveCmd)
+              << ", " << bcnp::kDriveCmdSize << "B)\n";
+    std::cout << "[Server] Listening on port " << kPort << "...\n";
+    std::cout << "[Server] Press Ctrl+C to stop.\n\n";
 
     // 1. Setup Controller
     bcnp::Controller controller(MakeDemoConfig());
 
-    // 2. Setup Transport (Server)
+    // 2. Setup Transport (Server) - handshake enabled by default
     bcnp::TcpPosixAdapter serverAdapter(kPort);
     
     // 3. Setup Driver (Connects Transport -> Controller)
@@ -79,7 +87,8 @@ int main() {
             // Only print occasionally to avoid spamming
             static int counter = 0;
             if (counter++ % 10 == 0) {
-                std::cout << "[Server] Waiting for connection...\n";
+                std::cout << "[Server] Waiting for connection (schema 0x" 
+                          << std::hex << bcnp::kSchemaHash << std::dec << ")...\n";
             }
         }
 

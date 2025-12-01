@@ -2,8 +2,11 @@
 
 #include "bcnp/command_queue.h"
 #include "bcnp/stream_parser.h"
+#include "message_types.h"
 #include <cstdint>
+#include <functional>
 #include <mutex>
+#include <unordered_map>
 
 namespace bcnp {
 
@@ -21,6 +24,9 @@ struct ControllerConfig {
     CommandLimits limits{};
     std::size_t parserBufferSize{4096};
 };
+
+/// Callback for handling arbitrary message types
+using MessageHandler = std::function<void(const PacketView&)>;
 
 class Controller {
 public:
@@ -40,6 +46,12 @@ public:
 
     StreamParser& Parser() { return m_parser; }
     const StreamParser& Parser() const { return m_parser; }
+    
+    /// Register a handler for a specific message type
+    void RegisterHandler(MessageTypeId typeId, MessageHandler handler);
+    
+    /// Remove a handler for a message type
+    void UnregisterHandler(MessageTypeId typeId);
 
 private:
     Command ClampCommand(const Command& cmd) const;
@@ -48,6 +60,7 @@ private:
     CommandQueue m_queue;
     StreamParser m_parser;
     mutable std::mutex m_parserMutex; // Protects m_parser from concurrent PushBytes calls
+    std::unordered_map<uint16_t, MessageHandler> m_handlers;
 };
 
 } // namespace bcnp

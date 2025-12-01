@@ -209,6 +209,11 @@ void TcpPosixAdapter::PollConnection() {
 
 void TcpPosixAdapter::HandleConnectionLoss() {
     m_isConnected = false;
+    m_handshakeComplete = false;
+    m_handshakeSent = false;
+    m_schemaValidated = false;
+    m_handshakeReceived = 0;
+    m_remoteSchemaHash = 0;
     DropPendingTx();
 
     if (m_isServer) {
@@ -267,6 +272,11 @@ std::size_t TcpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength
     }
 
     TryFlushTxBuffer(targetSock);
+    
+    // Send handshake if connected but not sent yet
+    if (!m_handshakeSent) {
+        SendHandshake();
+    }
 
     ssize_t received;
     do {
@@ -277,6 +287,24 @@ std::size_t TcpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength
         if (m_isServer) {
             m_lastServerRx = std::chrono::steady_clock::now();
         }
+        
+        // Process handshake if not complete
+        if (!m_handshakeComplete) {
+            std::size_t consumed = std::min(static_cast<std::size_t>(received), 
+                                            kHandshakeSize - m_handshakeReceived);
+            ProcessHandshake(buffer, consumed);
+            
+            // If handshake consumed all data, return 0
+            if (consumed >= static_cast<std::size_t>(received)) {
+                return 0;
+            }
+            
+            // Move remaining data to start of buffer
+            std::size_t remaining = static_cast<std::size_t>(received) - consumed;
+            std::memmove(buffer, buffer + consumed, remaining);
+            return remaining;
+        }
+        
         return static_cast<std::size_t>(received);
     } else if (received == 0) {
         HandleConnectionLoss();
@@ -391,6 +419,57 @@ void TcpPosixAdapter::DropPendingTx() {
     m_txHead = 0;
     m_txTail = 0;
     m_txSize = 0;
+}
+
+bool TcpPosixAdapter::SendHandshake() {
+    int targetSock = m_isServer ? m_clientSocket : m_socket;
+    if (targetSock < 0 || !m_isConnected) {
+        return false;
+    }
+    
+    uint8_t handshake[kHandshakeSize];
+    if (!EncodeHandshake(handshake, sizeof(handshake))) {
+        return false;
+    }
+    
+    // Queue handshake for sending
+    if (!EnqueueTx(handshake, sizeof(handshake))) {
+        return false;
+    }
+    
+    TryFlushTxBuffer(targetSock);
+    m_handshakeSent = true;
+    return true;
+}
+
+bool TcpPosixAdapter::ProcessHandshake(const uint8_t* data, std::size_t length) {
+    // Accumulate handshake bytes
+    std::size_t toRead = std::min(length, kHandshakeSize - m_handshakeReceived);
+    std::memcpy(m_handshakeBuffer + m_handshakeReceived, data, toRead);
+    m_handshakeReceived += toRead;
+    
+    if (m_handshakeReceived < kHandshakeSize) {
+        return false; // Not complete yet
+    }
+    
+    if (!ValidateHandshake(m_handshakeBuffer, kHandshakeSize)) {
+        m_remoteSchemaHash = ExtractSchemaHash(m_handshakeBuffer, kHandshakeSize);
+        std::cerr << "TCP adapter: Schema mismatch! Local=0x" << std::hex << kSchemaHash 
+                  << " Remote=0x" << m_remoteSchemaHash << std::dec << std::endl;
+        m_schemaValidated = false;
+        m_handshakeComplete = true;
+        return true;
+    }
+    
+    m_remoteSchemaHash = kSchemaHash;
+    m_schemaValidated = true;
+    m_handshakeComplete = true;
+    
+    if (!m_handshakeSent) {
+        SendHandshake();
+    }
+    
+    return true;
 }
 
 } // namespace bcnp

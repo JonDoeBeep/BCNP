@@ -105,13 +105,14 @@ void StreamParser::Discard(std::size_t count) {
 }
 
 void StreamParser::ParseBuffer(std::size_t& iterationBudget) {
-    while (iterationBudget > 0 && m_size >= kHeaderSize) {
+    while (iterationBudget > 0 && m_size >= kHeaderSizeV3) {
         --iterationBudget;
 
-        CopyOut(0, kHeaderSize, m_decodeScratch.data());
+        CopyOut(0, kHeaderSizeV3, m_decodeScratch.data());
 
-        if (m_decodeScratch[kHeaderMajorIndex] != kProtocolMajor ||
-            m_decodeScratch[kHeaderMinorIndex] != kProtocolMinor) {
+        // V3 version check
+        if (m_decodeScratch[kHeaderMajorIndex] != kProtocolMajorV3 ||
+            m_decodeScratch[kHeaderMinorIndex] != kProtocolMinorV3) {
             const auto offset = m_streamOffset;
             EmitError(PacketError::UnsupportedVersion, offset);
             const std::size_t skip = FindNextHeaderCandidate();
@@ -119,18 +120,27 @@ void StreamParser::ParseBuffer(std::size_t& iterationBudget) {
             continue;
         }
 
-        const uint16_t commandCount = (static_cast<uint16_t>(m_decodeScratch[kHeaderCountIndex]) << 8) |
-                                      static_cast<uint16_t>(m_decodeScratch[kHeaderCountIndex + 1]);
+        // Parse message type and count from V3 header (big-endian)
+        const uint16_t msgTypeId = detail::LoadU16(&m_decodeScratch[kHeaderMsgTypeIndex]);
+        const uint16_t messageCount = detail::LoadU16(&m_decodeScratch[kHeaderMsgCountIndex]);
 
-        if (commandCount > kMaxCommandsPerPacket) {
+        // Lookup message type to get wire size
+        auto msgInfo = GetMessageInfo(static_cast<MessageTypeId>(msgTypeId));
+        if (!msgInfo) {
+            const auto offset = m_streamOffset;
+            EmitError(PacketError::UnknownMessageType, offset);
+            Discard(1);
+            continue;
+        }
+
+        if (messageCount > kMaxMessagesPerPacket) {
             const auto offset = m_streamOffset;
             EmitError(PacketError::TooManyCommands, offset);
             Discard(1);
             continue;
         }
 
-        // commandCount already validated against kMaxCommandsPerPacket above
-        const std::size_t expected = kHeaderSize + (commandCount * kCommandSize) + kChecksumSize;
+        const std::size_t expected = kHeaderSizeV3 + (messageCount * msgInfo->wireSize) + kChecksumSize;
 
         const std::size_t available = std::min(expected, m_size);
         CopyOut(0, available, m_decodeScratch.data());
@@ -166,7 +176,7 @@ std::size_t StreamParser::FindNextHeaderCandidate() const {
 
     for (std::size_t offset = 1; offset < m_size; ++offset) {
         const std::size_t firstIndex = (m_head + offset) % m_buffer.size();
-        if (m_buffer[firstIndex] != kProtocolMajor) {
+        if (m_buffer[firstIndex] != kProtocolMajorV3) {
             continue;
         }
 
@@ -175,7 +185,7 @@ std::size_t StreamParser::FindNextHeaderCandidate() const {
         }
 
         const std::size_t secondIndex = (m_head + offset + 1) % m_buffer.size();
-        if (m_buffer[secondIndex] == kProtocolMinor) {
+        if (m_buffer[secondIndex] == kProtocolMinorV3) {
             return offset;
         }
     }

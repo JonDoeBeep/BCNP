@@ -18,6 +18,19 @@ void Controller::PushBytes(const uint8_t* data, std::size_t length) {
 void Controller::HandlePacket(const PacketView& packet) {
     m_queue.NotifyPacketReceived(CommandQueue::Clock::now());
 
+    // Check for registered handler for this message type
+    auto it = m_handlers.find(static_cast<uint16_t>(packet.header.messageType));
+    if (it != m_handlers.end()) {
+        it->second(packet);
+        return;
+    }
+
+    // Default handling for DriveCmd (backwards compatibility)
+    if (packet.header.messageType != MessageTypeId::DriveCmd) {
+        // Unknown message type with no handler - ignore
+        return;
+    }
+
     auto txn = m_queue.BeginTransaction();
 
     if (packet.header.flags & kFlagClearQueue) {
@@ -30,6 +43,16 @@ void Controller::HandlePacket(const PacketView& packet) {
             break;
         }
     }
+}
+
+void Controller::RegisterHandler(MessageTypeId typeId, MessageHandler handler) {
+    std::lock_guard<std::mutex> lock(m_parserMutex);
+    m_handlers[static_cast<uint16_t>(typeId)] = std::move(handler);
+}
+
+void Controller::UnregisterHandler(MessageTypeId typeId) {
+    std::lock_guard<std::mutex> lock(m_parserMutex);
+    m_handlers.erase(static_cast<uint16_t>(typeId));
 }
 
 std::optional<Command> Controller::CurrentCommand(CommandQueue::Clock::time_point now) {
