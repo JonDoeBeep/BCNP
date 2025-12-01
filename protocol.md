@@ -1,4 +1,4 @@
-# BCNP: Batched Command Network Protocol v3.2.0
+# BCNP: Batched Command Network Protocol v3.1.0
 
 ## Version History:
 - **v3.1.0** (Minor): decouple command queue and genericize more things. (deprecate SPI)
