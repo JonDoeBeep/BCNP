@@ -486,3 +486,5 @@ bool TcpPosixAdapter::ProcessHandshake(const uint8_t* data, std::size_t length) 
 }
 
 } // namespace bcnp
+
+//todo: COMMENT BETTER!

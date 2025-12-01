@@ -26,12 +26,7 @@ using ErrorHandler = std::function<void(const StreamParser::ErrorInfo&)>;
 /**
  * @brief Parses BCNP stream and dispatches packets to registered handlers.
  * 
- * This class handles:
- * - Stream parsing and packet validation
- * - Handshake management (for transports)
- * - Dispatching packets to type-specific handlers
- * 
- * PacketDispatcher does NOT own any queues. Robot code creates queues per 
+ * PacketDispatcher doesn't own any queues. Robot code creates queues per 
  * subsystem and registers handlers to fill them.
  * 
  * Usage:

@@ -39,10 +39,7 @@ struct HasDurationMs {
  * @brief Generic timed message queue for any message type with durationMs field.
  * 
  * This queue manages timed execution of messages, ensuring each message runs
- * for its specified duration before the next one starts. It handles:
- * - Connection timeouts (clears queue if no messages received)
- * - Lag compensation (skips stale messages if queue falls behind)
- * - Thread-safe access via mutex
+ * for its specified duration before the next one starts. It handles connection timeouts, lag compensation
  * 
  * @tparam MsgType Message struct with a uint16_t durationMs field
  * 
