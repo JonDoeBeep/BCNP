@@ -105,6 +105,7 @@ def generate_cpp_header(schema: dict, output_dir: Path) -> None:
     lines.append(f"// Schema hash: 0x{schema_hash:08X}")
     lines.append("#pragma once")
     lines.append("")
+    lines.append("#include <algorithm>")
     lines.append("#include <array>")
     lines.append("#include <cstddef>")
     lines.append("#include <cstdint>")
