@@ -14,7 +14,7 @@ library. The codebase is split into two layers:
 
 ### 1. Define Your Message Types
 
-Edit `schema/messages.json` to define your robot's message types:
+Create a `messages.json` file for your project:
 
 ```json
 {
@@ -34,15 +34,34 @@ Edit `schema/messages.json` to define your robot's message types:
 }
 ```
 
-### 2. Build (CMake auto-generates message_types.h)
+### 2. Integration Options
+
+#### Option A: BCNP as a subdirectory (recommended)
+
+If BCNP lives in `libraries/BCNP`, define your schema in your project root (e.g., `src/messages.json`):
+
+```cmake
+# In your top-level CMakeLists.txt
+set(BCNP_SCHEMA_FILE "${CMAKE_SOURCE_DIR}/src/messages.json" CACHE FILEPATH "")
+set(BCNP_GENERATED_DIR "${CMAKE_BINARY_DIR}/generated" CACHE PATH "")
+add_subdirectory(libraries/BCNP)
+
+# Your executable links to bcnp_core and gets the generated types
+add_executable(robot src/main.cpp)
+target_link_libraries(robot PRIVATE bcnp_core)
+```
+
+#### Option B: Standalone build
+
+Edit `schema/messages.json` directly and build:
 
 ```bash
 cmake -S . -B build && cmake --build build && ctest --test-dir build
 ```
 
-CMake automatically runs `bcnp_codegen.py` when the schema changes, generating `generated/bcnp/message_types.h`.
+CMake automatically runs `bcnp_codegen.py` when the schema changes, generating headers in the build directory.
 
-### 3. For FRC Projects
+### 3. For FRC Projects (GradleRIO)
 
 Add the BCNP library and generated folder to your include path in `build.gradle`:
 
@@ -52,15 +71,17 @@ model {
         frcUserProgram(NativeExecutableSpec) {
             binaries.all {
                 cppCompiler.args "-I${projectDir}/libraries/BCNP/src"
-                cppCompiler.args "-I${projectDir}/libraries/BCNP/generated"
+                cppCompiler.args "-I${projectDir}/generated"
             }
         }
     }
 }
 ```
 
+Run codegen manually before building:
+
 ```bash
-python libraries/BCNP/schema/bcnp_codegen.py libraries/BCNP/schema/messages.json --cpp libraries/BCNP/generated
+python libraries/BCNP/schema/bcnp_codegen.py src/messages.json --cpp generated
 ```
 
 ### Diagnostics

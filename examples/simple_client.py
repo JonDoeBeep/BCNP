@@ -11,7 +11,7 @@ import struct
 import time
 
 # Import generated BCNP message types
-from examples.generated.bcnp_messages import (
+from bcnp_messages import (
     DriveCmd,
     MessageTypeId, SCHEMA_HASH,
     encode_handshake, validate_handshake,

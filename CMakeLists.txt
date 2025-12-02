@@ -5,14 +5,14 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-set(BCNP_SCHEMA_FILE "${CMAKE_SOURCE_DIR}/schema/messages.json")
-set(BCNP_CODEGEN_SCRIPT "${CMAKE_SOURCE_DIR}/schema/bcnp_codegen.py")
-set(BCNP_GENERATED_DIR "${CMAKE_SOURCE_DIR}/generated")
+set(BCNP_SCHEMA_FILE "${CMAKE_CURRENT_SOURCE_DIR}/schema/messages.json" CACHE FILEPATH "Path to BCNP message schema JSON file")
+set(BCNP_CODEGEN_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/schema/bcnp_codegen.py")
+set(BCNP_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/generated" CACHE PATH "Output directory for generated BCNP headers")
 set(BCNP_GENERATED_HEADER "${BCNP_GENERATED_DIR}/bcnp/message_types.h")
 
 # Test schema generates test message types
-set(BCNP_TEST_SCHEMA_FILE "${CMAKE_SOURCE_DIR}/tests/test_schema.json")
-set(BCNP_TEST_GENERATED_DIR "${CMAKE_SOURCE_DIR}/tests/generated")
+set(BCNP_TEST_SCHEMA_FILE "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_schema.json")
+set(BCNP_TEST_GENERATED_DIR "${CMAKE_CURRENT_BINARY_DIR}/tests/generated")
 set(BCNP_TEST_GENERATED_HEADER "${BCNP_TEST_GENERATED_DIR}/bcnp/message_types.h")
 
 find_package(Python3 COMPONENTS Interpreter REQUIRED)
