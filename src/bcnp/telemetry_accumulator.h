@@ -202,15 +202,15 @@ private:
         packet.messages = std::move(m_buffer);
         m_buffer = Storage{};  // Reset buffer
         
-        // Encode to wire format
-        std::vector<uint8_t> wireBuffer;
-        if (!EncodeTypedPacket(packet, wireBuffer)) {
+        // Encode to wire format (reuse buffer to avoid malloc per flush)
+        m_wireBuffer.clear();
+        if (!EncodeTypedPacket(packet, m_wireBuffer)) {
             ++m_metrics.sendFailures;
             return false;
         }
 
         // Send
-        if (!adapter.SendBytes(wireBuffer.data(), wireBuffer.size())) {
+        if (!adapter.SendBytes(m_wireBuffer.data(), m_wireBuffer.size())) {
             ++m_metrics.sendFailures;
             return false;
         }
@@ -222,6 +222,7 @@ private:
 
     TelemetryAccumulatorConfig m_config;
     Storage m_buffer{};
+    std::vector<uint8_t> m_wireBuffer;  // Persistent buffer, capacity retained across flushes
     std::size_t m_tickCount{0};
     Metrics m_metrics{};
     mutable std::mutex m_mutex;

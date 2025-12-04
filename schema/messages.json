@@ -1,6 +1,6 @@
 {
-  "$schema": "./bcnp_schema.json",
-  "version": "3.1",
+  "$schema": "bcnp_schema.json",
+  "version": "3.2",
   "namespace": "bcnp",
   "description": "BCNP message schema. Define your robot's message types here. Run codegen to generate C++/Python bindings.",
   "messages": []
