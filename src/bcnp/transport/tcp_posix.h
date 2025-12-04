@@ -10,10 +10,23 @@
 
 namespace bcnp {
 
+/**
+ * @brief TCP transport adapter for BCNP over POSIX sockets.
+ * 
+ * Supports both server and client modes with automatic reconnection,
+ * non-blocking I/O, and V3 schema handshake validation.
+ * 
+ * Server mode: Listens on a port, accepts one client at a time.
+ * Client mode: Connects to a remote server, auto-reconnects on disconnect.
+ */
 class TcpPosixAdapter : public DuplexAdapter {
 public:
-    // Server mode: provide listenPort. targetIp/targetPort are ignored.
-    // Client mode: provide targetIp/targetPort. listenPort is ignored (0).
+    /**
+     * @brief Construct TCP adapter.
+     * @param listenPort Port to listen on (server mode) or 0 (client mode)
+     * @param targetIp Remote IP address (client mode only)
+     * @param targetPort Remote port (client mode only)
+     */
     explicit TcpPosixAdapter(uint16_t listenPort, const char* targetIp = nullptr, uint16_t targetPort = 0);
     ~TcpPosixAdapter() override;
 
@@ -75,5 +88,3 @@ private:
 };
 
 } // namespace bcnp
-
-//todo make brief

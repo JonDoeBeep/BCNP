@@ -10,7 +10,13 @@
 
 namespace bcnp {
 
-class SpiStreamAdapter {
+/**
+ * @brief SPI transport adapter (deprecated).
+ * 
+ * @deprecated Use TcpPosixAdapter or UdpPosixAdapter instead.
+ * This class will be removed in a future version.
+ */
+class [[deprecated("Use TcpPosixAdapter instead")]] SpiStreamAdapter {
 public:
     using ReceiveChunkFn = std::function<std::size_t(uint8_t* dst, std::size_t maxLen)>;
     using SendBytesFn = std::function<bool(const uint8_t* data, std::size_t length)>;

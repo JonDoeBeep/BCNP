@@ -11,28 +11,19 @@
 
 namespace bcnp {
 
-// Primary constants from message_types.h:
-// kProtocolMajorV3, kProtocolMinorV3, kSchemaHash, kHeaderSizeV3,
-// kHeaderMsgTypeIndex, kHeaderMsgCountIndex
-
-// Common constants
+// Protocol constants (V3)
 constexpr std::size_t kChecksumSize = 4;
 constexpr std::size_t kMaxMessagesPerPacket = 65535;
 constexpr uint8_t kFlagClearQueue = 0x01;
-
-// Use V3 as the active protocol
 constexpr uint8_t kProtocolMajor = kProtocolMajorV3;
 constexpr uint8_t kProtocolMinor = kProtocolMinorV3;
 constexpr std::size_t kHeaderSize = kHeaderSizeV3;
 
-// Header field indices
+// Header byte offsets
 constexpr std::size_t kHeaderMajorIndex = 0;
 constexpr std::size_t kHeaderMinorIndex = 1;
 constexpr std::size_t kHeaderFlagsIndex = 2;
-// kHeaderMsgTypeIndex = 3 (from generated)
-// kHeaderMsgCountIndex = 5 (from generated)
-
-// Packet Header
+// kHeaderMsgTypeIndex = 3, kHeaderMsgCountIndex = 5 (from generated header)
 
 struct PacketHeader {
     uint8_t major{kProtocolMajorV3};
@@ -42,9 +33,7 @@ struct PacketHeader {
     uint16_t messageCount{0};
 };
 
-// Message Iterators (Zero-Copy Parsing)
-
-/// Generic iterator for typed messages in a packet view
+/// Forward iterator for zero-copy message access.
 template<typename MsgType>
 class MessageIterator {
 public:
@@ -93,8 +82,7 @@ private:
     std::size_t m_count;
 };
 
-// Packet View (Zero-Copy)
-
+/// Zero-copy view into a decoded packet buffer.
 struct PacketView {
     PacketHeader header{};
     const uint8_t* payloadStart{nullptr};
@@ -188,10 +176,6 @@ struct DecodeViewResult {
 
 // CRC32 Utility - declared first so template functions can use it
 uint32_t ComputeCrc32(const uint8_t* data, std::size_t length);
-
-// ============================================================================
-// Encoding Functions (Template-based, header-only)
-// ============================================================================
 
 /// Encode a typed packet to buffer (works with any storage type)
 template<typename MsgType, typename Storage>
@@ -295,10 +279,6 @@ std::optional<TypedPacket<MsgType, Storage>> DecodeTypedPacketAs(const PacketVie
     
     return packet;
 }
-
-// ============================================================================
-// Decoding Functions (Implemented in packet.cpp)
-// ============================================================================
 
 /// Decode packet view with explicit wire size (when message type is known)
 DecodeViewResult DecodePacketViewWithSize(const uint8_t* data, std::size_t length, std::size_t wireSize);

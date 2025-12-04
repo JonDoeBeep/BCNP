@@ -1,5 +1,5 @@
 #include "bcnp/spi_adapter.h"
-// WARNING: SPI transport is deprecated and will be removed in future versions.
+
 namespace bcnp {
 
 SpiStreamAdapter::SpiStreamAdapter(ReceiveChunkFn receive, SendBytesFn send, StreamParser& parser)

@@ -1,7 +1,6 @@
 #pragma once
 
 // Legacy header - use message_queue.h for new code
-// This file provides backward compatibility for code using CommandQueue
 
 #include "bcnp/message_queue.h"
 #include <bcnp/message_types.h>

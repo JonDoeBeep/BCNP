@@ -47,4 +47,7 @@ private:
     std::vector<uint8_t> m_rxScratch;
 };
 
+/// Backward-compatible alias (prefer DispatcherDriver for new code).
+using ControllerDriver = DispatcherDriver;
+
 } // namespace bcnp

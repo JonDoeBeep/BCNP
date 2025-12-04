@@ -314,3 +314,5 @@ template<typename MsgType>
 using TimedQueue = MessageQueue<MsgType>;
 
 } // namespace bcnp
+
+// todo improve comments

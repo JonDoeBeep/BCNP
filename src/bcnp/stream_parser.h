@@ -10,6 +10,14 @@
 
 namespace bcnp {
 
+/**
+ * @brief Parses a byte stream into BCNP packets.
+ * 
+ * Handles stream reassembly, framing, CRC validation, and error recovery.
+ * Uses a ring buffer internally for efficient parsing of partial packets.
+ * 
+ * Thread-safety: Not thread-safe. Caller must synchronize access.
+ */
 class StreamParser {
 public:
     using PacketCallback = std::function<void(const PacketView&)>;

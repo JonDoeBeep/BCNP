@@ -9,8 +9,22 @@
 
 namespace bcnp {
 
+/**
+ * @brief UDP transport adapter for BCNP over POSIX sockets.
+ * 
+ * Connectionless transport with optional peer locking for security.
+ * Supports pairing tokens and schema handshake validation.
+ * 
+ * Note: UDP does not guarantee delivery. Use TCP for reliable transport.
+ */
 class UdpPosixAdapter : public DuplexAdapter {
 public:
+    /**
+     * @brief Construct UDP adapter.
+     * @param listenPort Port to bind for receiving
+     * @param targetIp Fixed target IP (optional, can learn from first packet)
+     * @param targetPort Fixed target port (optional)
+     */
     explicit UdpPosixAdapter(uint16_t listenPort, const char* targetIp = nullptr, uint16_t targetPort = 0);
     ~UdpPosixAdapter() override;
 
@@ -49,5 +63,3 @@ private:
 };
 
 } // namespace bcnp
-
-//todo make brief
