@@ -28,6 +28,92 @@
           "description": "Command duration in milliseconds"
         }
       ]
+    },
+    {
+      "id": 10,
+      "name": "DrivetrainState",
+      "description": "Drivetrain telemetry - absolute state snapshot",
+      "fields": [
+        {
+          "name": "vxActual",
+          "type": "float32",
+          "scale": 10000,
+          "unit": "m/s",
+          "description": "Actual linear velocity"
+        },
+        {
+          "name": "omegaActual",
+          "type": "float32",
+          "scale": 10000,
+          "unit": "rad/s",
+          "description": "Actual angular velocity"
+        },
+        {
+          "name": "leftPos",
+          "type": "int32",
+          "unit": "ticks",
+          "description": "Left encoder position (absolute)"
+        },
+        {
+          "name": "rightPos",
+          "type": "int32",
+          "unit": "ticks",
+          "description": "Right encoder position (absolute)"
+        },
+        {
+          "name": "timestampMs",
+          "type": "uint32",
+          "unit": "ms",
+          "description": "Robot timestamp (FPGA time)"
+        }
+      ]
+    },
+    {
+      "id": 11,
+      "name": "EncoderData",
+      "description": "Generic encoder telemetry - batch multiple in one packet",
+      "fields": [
+        {
+          "name": "moduleId",
+          "type": "uint8",
+          "description": "Module/motor identifier (0-255)"
+        },
+        {
+          "name": "position",
+          "type": "int32",
+          "unit": "ticks",
+          "description": "Absolute encoder position"
+        },
+        {
+          "name": "velocity",
+          "type": "int32",
+          "unit": "ticks/100ms",
+          "description": "Encoder velocity"
+        }
+      ]
+    },
+    {
+      "id": 12,
+      "name": "ProximityAlert",
+      "description": "Proximity sensor telemetry",
+      "fields": [
+        {
+          "name": "sensorId",
+          "type": "uint8",
+          "description": "Sensor identifier"
+        },
+        {
+          "name": "distanceMm",
+          "type": "uint16",
+          "unit": "mm",
+          "description": "Distance reading in millimeters"
+        },
+        {
+          "name": "triggered",
+          "type": "uint8",
+          "description": "Boolean: 1 if below threshold, 0 otherwise"
+        }
+      ]
     }
   ]
 }

@@ -1,6 +1,7 @@
-# BCNP: Batched Command Network Protocol v3.1.0
+# BCNP: Batched Command Network Protocol v3.2.0
 
 ## Version History:
+- **v3.2.0** (Minor): Full Duplex Communication.
 - **v3.1.0** (Minor): decouple command queue and genericize more things. (deprecate SPI)
 - **v3.0.1** (bugfix): fix silly
 - **v3.0.0** (Major): Registration-based serialization with JSON schema, message type IDs, schema hash handshake, and codegen for C++/Python. Breaking change from v2.x.
@@ -92,7 +93,7 @@ All multi-byte integers use **big-endian** byte order.
 ### Header Fields (V3)
 
 - **Major** (1 byte): Protocol major version. Current: `3`
-- **Minor** (1 byte): Protocol minor version. Current: `0`
+- **Minor** (1 byte): Protocol minor version. Current: `1`
   - Robot rejects packets with mismatched major.minor version
 - **Flags** (1 byte): Bit flags for special operations:
   - Bit 0: `CLEAR_QUEUE` - If set, clears the existing command queue before adding new messages
@@ -102,6 +103,27 @@ All multi-byte integers use **big-endian** byte order.
   - 1: DriveCmd (default, see schema)
   - 2-65535: User-defined in schema/messages.json
 - **Message Count** (2 bytes, uint16, big-endian): Number of messages in this packet (0-65535)
+
+### Homogeneous Packets
+
+**Important Design Constraint**: Each BCNP packet contains messages of a **single type**. The `MsgTypeId` in the header applies to all messages in that packet.
+
+To send commands to multiple subsystems (e.g., DriveCmd + ArmCmd), you must send **separate packets**:
+
+```
+Packet 1: [Header: MsgType=DriveCmd, Count=10] [DriveCmd×10] [CRC]
+Packet 2: [Header: MsgType=ArmCmd, Count=5]   [ArmCmd×5]    [CRC]
+```
+
+**Rationale**:
+- Simpler parsing: All messages in a packet have identical wire size
+- Zero-copy iteration: `begin_as<T>()` / `end_as<T>()` can use pointer arithmetic
+- Type safety: Decoder knows the exact type without per-message headers
+
+**Impact for FRC**:
+- Overhead is negligible (7-byte header + 4-byte CRC per packet type)
+- Dispatcher handles multiple packet types per control loop tick
+- Register separate handlers for each message type
 
 ### Default Message Type
 

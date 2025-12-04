@@ -457,3 +457,252 @@ TEST_CASE("TCP: Basic server-client connection and data transfer") {
     }
     CHECK(received);
 }
+
+// ============================================================================
+// Test Suite: StaticVector (Rule of Five)
+// ============================================================================
+
+#include "bcnp/static_vector.h"
+#include <string>
+
+TEST_CASE("StaticVector: Basic operations") {
+    bcnp::StaticVector<int, 10> vec;
+    CHECK(vec.empty());
+    CHECK(vec.size() == 0);
+    CHECK(vec.capacity() == 10);
+    
+    vec.push_back(1);
+    vec.push_back(2);
+    vec.push_back(3);
+    
+    CHECK(vec.size() == 3);
+    CHECK(vec[0] == 1);
+    CHECK(vec[1] == 2);
+    CHECK(vec[2] == 3);
+    CHECK(vec.front() == 1);
+    CHECK(vec.back() == 3);
+}
+
+TEST_CASE("StaticVector: Copy constructor with non-trivial type") {
+    bcnp::StaticVector<std::string, 5> original;
+    original.push_back("Hello");
+    original.push_back("World");
+    original.push_back("Test");
+    
+    // Copy construct
+    bcnp::StaticVector<std::string, 5> copy(original);
+    
+    CHECK(copy.size() == 3);
+    CHECK(copy[0] == "Hello");
+    CHECK(copy[1] == "World");
+    CHECK(copy[2] == "Test");
+    
+    // Modify original - should not affect copy
+    original[0] = "Modified";
+    CHECK(copy[0] == "Hello");
+    
+    // Modify copy - should not affect original
+    copy[1] = "Changed";
+    CHECK(original[1] == "World");
+}
+
+TEST_CASE("StaticVector: Copy assignment with non-trivial type") {
+    bcnp::StaticVector<std::string, 5> original;
+    original.push_back("One");
+    original.push_back("Two");
+    
+    bcnp::StaticVector<std::string, 5> assigned;
+    assigned.push_back("Existing");
+    
+    // Copy assign
+    assigned = original;
+    
+    CHECK(assigned.size() == 2);
+    CHECK(assigned[0] == "One");
+    CHECK(assigned[1] == "Two");
+    
+    // Modify original - should not affect assigned
+    original[0] = "Changed";
+    CHECK(assigned[0] == "One");
+}
+
+TEST_CASE("StaticVector: Move constructor with non-trivial type") {
+    bcnp::StaticVector<std::string, 5> original;
+    original.push_back("Move");
+    original.push_back("Me");
+    
+    // Move construct
+    bcnp::StaticVector<std::string, 5> moved(std::move(original));
+    
+    CHECK(moved.size() == 2);
+    CHECK(moved[0] == "Move");
+    CHECK(moved[1] == "Me");
+    
+    // Original should be empty after move
+    CHECK(original.empty());
+}
+
+TEST_CASE("StaticVector: Move assignment with non-trivial type") {
+    bcnp::StaticVector<std::string, 5> original;
+    original.push_back("Transfer");
+    
+    bcnp::StaticVector<std::string, 5> target;
+    target.push_back("Old");
+    target.push_back("Data");
+    
+    // Move assign
+    target = std::move(original);
+    
+    CHECK(target.size() == 1);
+    CHECK(target[0] == "Transfer");
+    CHECK(original.empty());
+}
+
+TEST_CASE("StaticVector: Self-assignment safety") {
+    bcnp::StaticVector<std::string, 5> vec;
+    vec.push_back("Self");
+    vec.push_back("Assign");
+    
+    // Self copy assign
+    vec = vec;
+    
+    CHECK(vec.size() == 2);
+    CHECK(vec[0] == "Self");
+    CHECK(vec[1] == "Assign");
+    
+    // Self move assign (technically UB for std containers, but we handle it)
+    vec = std::move(vec);
+    
+    CHECK(vec.size() == 2);
+    CHECK(vec[0] == "Self");
+}
+
+TEST_CASE("StaticVector: pop_back and resize") {
+    bcnp::StaticVector<std::string, 5> vec;
+    vec.push_back("A");
+    vec.push_back("B");
+    vec.push_back("C");
+    
+    vec.pop_back();
+    CHECK(vec.size() == 2);
+    CHECK(vec.back() == "B");
+    
+    vec.resize(4, "X");
+    CHECK(vec.size() == 4);
+    CHECK(vec[2] == "X");
+    CHECK(vec[3] == "X");
+    
+    vec.resize(1);
+    CHECK(vec.size() == 1);
+    CHECK(vec[0] == "A");
+}
+
+TEST_CASE("StaticVector: at() bounds checking") {
+    bcnp::StaticVector<int, 5> vec;
+    vec.push_back(10);
+    vec.push_back(20);
+    
+    CHECK(vec.at(0) == 10);
+    CHECK(vec.at(1) == 20);
+    
+    CHECK_THROWS_AS(vec.at(2), std::out_of_range);
+    CHECK_THROWS_AS(vec.at(100), std::out_of_range);
+}
+
+TEST_CASE("StaticVector: Emplace and initializer list") {
+    bcnp::StaticVector<std::string, 5> vec{"First", "Second"};
+    CHECK(vec.size() == 2);
+    
+    vec.emplace_back("Third");
+    CHECK(vec.size() == 3);
+    CHECK(vec[2] == "Third");
+}
+
+TEST_CASE("StaticVector: Iterator support") {
+    bcnp::StaticVector<int, 5> vec{1, 2, 3, 4};
+    
+    int sum = 0;
+    for (int v : vec) {
+        sum += v;
+    }
+    CHECK(sum == 10);
+    
+    // Modify through iterator
+    for (int& v : vec) {
+        v *= 2;
+    }
+    CHECK(vec[0] == 2);
+    CHECK(vec[3] == 8);
+}
+
+// Struct with destructor tracking for leak detection
+struct TrackedObject {
+    static int constructions;
+    static int destructions;
+    
+    int value;
+    TrackedObject(int v = 0) : value(v) { ++constructions; }
+    TrackedObject(const TrackedObject& o) : value(o.value) { ++constructions; }
+    TrackedObject(TrackedObject&& o) noexcept : value(o.value) { ++constructions; o.value = -1; }
+    ~TrackedObject() { ++destructions; }
+    
+    static void reset() { constructions = destructions = 0; }
+};
+
+int TrackedObject::constructions = 0;
+int TrackedObject::destructions = 0;
+
+TEST_CASE("StaticVector: No memory leaks on destruction") {
+    TrackedObject::reset();
+    
+    {
+        bcnp::StaticVector<TrackedObject, 10> vec;
+        vec.emplace_back(1);
+        vec.emplace_back(2);
+        vec.emplace_back(3);
+    }
+    
+    CHECK(TrackedObject::constructions == TrackedObject::destructions);
+}
+
+TEST_CASE("StaticVector: No memory leaks on copy") {
+    TrackedObject::reset();
+    
+    {
+        bcnp::StaticVector<TrackedObject, 10> original;
+        original.emplace_back(1);
+        original.emplace_back(2);
+        
+        bcnp::StaticVector<TrackedObject, 10> copy(original);
+    }
+    
+    CHECK(TrackedObject::constructions == TrackedObject::destructions);
+}
+
+TEST_CASE("StaticVector: No memory leaks on move") {
+    TrackedObject::reset();
+    
+    {
+        bcnp::StaticVector<TrackedObject, 10> original;
+        original.emplace_back(1);
+        original.emplace_back(2);
+        
+        bcnp::StaticVector<TrackedObject, 10> moved(std::move(original));
+    }
+    
+    CHECK(TrackedObject::constructions == TrackedObject::destructions);
+}
+
+TEST_CASE("StaticVector: No memory leaks on clear") {
+    TrackedObject::reset();
+    
+    bcnp::StaticVector<TrackedObject, 10> vec;
+    vec.emplace_back(1);
+    vec.emplace_back(2);
+    vec.emplace_back(3);
+    
+    vec.clear();
+    
+    CHECK(TrackedObject::constructions == TrackedObject::destructions);
+    CHECK(vec.empty());
+}

@@ -5,7 +5,10 @@
 #include "bcnp/message_queue.h"
 #include "bcnp/dispatcher.h"
 #include "bcnp/packet.h"
+#include "bcnp/packet_storage.h"
+#include "bcnp/static_vector.h"
 #include "bcnp/stream_parser.h"
+#include "bcnp/telemetry_accumulator.h"
 #include "bcnp/transport/tcp_posix.h"
 #include "bcnp/transport/udp_posix.h"
 
@@ -554,4 +557,293 @@ TEST_CASE("TCP: Client reconnects after connection loss") {
     }
     
     CHECK(reconnected);
+}
+
+// ============================================================================
+// Test Suite: StaticVector (Rule of Five & API)
+// ============================================================================
+
+TEST_CASE("StaticVector: reserve() no-op for API compatibility") {
+    bcnp::StaticVector<int, 64> vec;
+    vec.reserve(32);  // Should be no-op (less than capacity)
+    CHECK(vec.capacity() == 64);
+    CHECK(vec.size() == 0);
+    
+    // Reserve at capacity is also fine
+    vec.reserve(64);
+    CHECK(vec.capacity() == 64);
+    
+    // Reserve beyond capacity throws (matches std::vector::reserve() semantic)
+    CHECK_THROWS_AS(vec.reserve(128), std::out_of_range);
+}
+
+TEST_CASE("StaticVector: Move semantics") {
+    bcnp::StaticVector<std::string, 8> vec1;
+    vec1.push_back("hello");
+    vec1.push_back("world");
+    
+    // Move construct
+    bcnp::StaticVector<std::string, 8> vec2(std::move(vec1));
+    CHECK(vec2.size() == 2);
+    CHECK(vec2[0] == "hello");
+    CHECK(vec2[1] == "world");
+    CHECK(vec1.size() == 0);
+    
+    // Move assign
+    bcnp::StaticVector<std::string, 8> vec3;
+    vec3.push_back("existing");
+    vec3 = std::move(vec2);
+    CHECK(vec3.size() == 2);
+    CHECK(vec3[0] == "hello");
+    CHECK(vec2.size() == 0);
+}
+
+TEST_CASE("StaticVector: Copy semantics") {
+    bcnp::StaticVector<int, 16> vec1;
+    for (int i = 0; i < 5; ++i) vec1.push_back(i * 10);
+    
+    // Copy construct
+    bcnp::StaticVector<int, 16> vec2(vec1);
+    CHECK(vec2.size() == 5);
+    CHECK(vec2[0] == 0);
+    CHECK(vec2[4] == 40);
+    CHECK(vec1.size() == 5);  // Original unchanged
+    
+    // Copy assign
+    bcnp::StaticVector<int, 16> vec3;
+    vec3.push_back(999);
+    vec3 = vec1;
+    CHECK(vec3.size() == 5);
+    CHECK(vec3[2] == 20);
+}
+
+// ============================================================================
+// Test Suite: Flexible Packet Storage
+// ============================================================================
+
+TEST_CASE("Packet Storage: StaticTypedPacket encode/decode round-trip") {
+    // Use StaticTypedPacket (stack-allocated, 64 messages max)
+    bcnp::StaticTypedPacket<bcnp::DrivetrainState, 64> packet;
+    packet.messages.push_back({0.5f, -0.25f, 1000, 2000, 12345});
+    packet.messages.push_back({-0.1f, 0.8f, 1500, 2500, 12346});
+    
+    std::vector<uint8_t> buffer;
+    REQUIRE(bcnp::EncodeTypedPacket(packet, buffer));
+    
+    auto result = bcnp::DecodePacketViewAs<bcnp::DrivetrainState>(buffer.data(), buffer.size());
+    REQUIRE(result.view.has_value());
+    
+    // Decode into std::vector (dynamic)
+    auto decoded = bcnp::DecodeTypedPacket<bcnp::DrivetrainState>(*result.view);
+    REQUIRE(decoded.has_value());
+    CHECK(decoded->messages.size() == 2);
+    CHECK(decoded->messages[0].vxActual == doctest::Approx(0.5f).epsilon(0.0001));
+    CHECK(decoded->messages[1].timestampMs == 12346);
+}
+
+TEST_CASE("Packet Storage: StaticVector encode with many messages") {
+    // Pack up to capacity
+    bcnp::StaticTypedPacket<bcnp::EncoderData, 32> packet;
+    for (int i = 0; i < 32; ++i) {
+        packet.messages.push_back({static_cast<uint8_t>(i), i * 100, i * -10});
+    }
+    CHECK(packet.messages.size() == 32);
+    
+    std::vector<uint8_t> buffer;
+    REQUIRE(bcnp::EncodeTypedPacket(packet, buffer));
+    
+    // Expected size: header(7) + 32 * 9 bytes + CRC(4) = 299 bytes
+    CHECK(buffer.size() == 7 + 32 * 9 + 4);
+    
+    auto result = bcnp::DecodePacketViewAs<bcnp::EncoderData>(buffer.data(), buffer.size());
+    REQUIRE(result.view.has_value());
+    CHECK(result.view->header.messageCount == 32);
+}
+
+TEST_CASE("Packet Storage: Mixed storage types interoperability") {
+    // Encode with StaticVector
+    bcnp::StaticTypedPacket<bcnp::ProximityAlert, 8> staticPacket;
+    staticPacket.messages.push_back({1, 500, 0});
+    staticPacket.messages.push_back({2, 150, 1});
+    
+    std::vector<uint8_t> wire;
+    REQUIRE(bcnp::EncodeTypedPacket(staticPacket, wire));
+    
+    // Decode into std::vector
+    auto result = bcnp::DecodePacketViewAs<bcnp::ProximityAlert>(wire.data(), wire.size());
+    REQUIRE(result.view.has_value());
+    
+    auto dynamicPacket = bcnp::DecodeTypedPacket<bcnp::ProximityAlert>(*result.view);
+    REQUIRE(dynamicPacket.has_value());
+    CHECK(dynamicPacket->messages.size() == 2);
+    CHECK(dynamicPacket->messages[0].sensorId == 1);
+    CHECK(dynamicPacket->messages[1].triggered == 1);
+}
+
+// ============================================================================
+// Test Suite: TelemetryAccumulator
+// ============================================================================
+
+namespace {
+    // Mock adapter for testing (captures sent bytes)
+    struct MockAdapter {
+        std::vector<uint8_t> sentBytes;
+        bool sendSucceeds{true};
+        
+        bool SendBytes(const uint8_t* data, std::size_t len) {
+            if (!sendSucceeds) return false;
+            sentBytes.insert(sentBytes.end(), data, data + len);
+            return true;
+        }
+        
+        bool IsConnected() const { return true; }
+    };
+}
+
+TEST_CASE("TelemetryAccumulator: Record and flush") {
+    bcnp::TelemetryAccumulator<bcnp::DrivetrainState> accum;
+    MockAdapter adapter;
+    
+    // Record some messages
+    accum.Record({0.5f, 0.1f, 100, 200, 1000});
+    accum.Record({0.6f, 0.2f, 110, 210, 1020});
+    CHECK(accum.BufferedCount() == 2);
+    
+    // Force flush
+    REQUIRE(accum.ForceFlush(adapter));
+    CHECK(accum.BufferedCount() == 0);
+    CHECK(!adapter.sentBytes.empty());
+    
+    // Verify metrics
+    auto metrics = accum.GetMetrics();
+    CHECK(metrics.messagesRecorded == 2);
+    CHECK(metrics.messagesSent == 2);
+    CHECK(metrics.packetsSent == 1);
+}
+
+TEST_CASE("TelemetryAccumulator: MaybeFlush respects interval") {
+    bcnp::TelemetryAccumulatorConfig config;
+    config.flushIntervalTicks = 3;
+    
+    bcnp::TelemetryAccumulator<bcnp::EncoderData> accum(config);
+    MockAdapter adapter;
+    
+    accum.Record({0, 1000, 50});
+    
+    // First two ticks: no flush
+    CHECK(!accum.MaybeFlush(adapter));
+    CHECK(!accum.MaybeFlush(adapter));
+    CHECK(adapter.sentBytes.empty());
+    
+    // Third tick: flush
+    CHECK(accum.MaybeFlush(adapter));
+    CHECK(!adapter.sentBytes.empty());
+    CHECK(accum.BufferedCount() == 0);
+}
+
+TEST_CASE("TelemetryAccumulator: Empty buffer does not send") {
+    bcnp::TelemetryAccumulator<bcnp::ProximityAlert> accum;
+    MockAdapter adapter;
+    
+    CHECK(!accum.ForceFlush(adapter));  // Empty buffer
+    CHECK(adapter.sentBytes.empty());
+}
+
+TEST_CASE("TelemetryAccumulator: Buffer overflow clears and continues") {
+    bcnp::TelemetryAccumulatorConfig config;
+    config.maxBufferedMessages = 4;
+    
+    bcnp::TelemetryAccumulator<bcnp::EncoderData> accum(config);
+    
+    // Fill beyond capacity
+    for (int i = 0; i < 10; ++i) {
+        accum.Record({static_cast<uint8_t>(i), i * 100, 0});
+    }
+    
+    // Buffer should have been cleared when it hit capacity, then re-filled
+    // Exact behavior depends on implementation; check we didn't crash
+    auto metrics = accum.GetMetrics();
+    CHECK(metrics.messagesRecorded == 10);
+    CHECK(metrics.bufferOverflows >= 1);
+}
+
+TEST_CASE("TelemetryAccumulator: Send failure increments counter") {
+    bcnp::TelemetryAccumulator<bcnp::DrivetrainState> accum;
+    MockAdapter adapter;
+    adapter.sendSucceeds = false;
+    
+    accum.Record({1.0f, 0.5f, 0, 0, 0});
+    
+    REQUIRE(!accum.ForceFlush(adapter));  // Should fail
+    
+    auto metrics = accum.GetMetrics();
+    CHECK(metrics.sendFailures == 1);
+}
+
+TEST_CASE("TelemetryAccumulator: Verify encoded packet is decodable") {
+    bcnp::TelemetryAccumulator<bcnp::DrivetrainState> accum;
+    MockAdapter adapter;
+    
+    // Record telemetry
+    accum.Record({0.75f, -0.25f, 5000, 5100, 999});
+    accum.Record({0.80f, -0.20f, 5010, 5110, 1000});
+    
+    REQUIRE(accum.ForceFlush(adapter));
+    
+    // Decode what was sent
+    auto result = bcnp::DecodePacketViewAs<bcnp::DrivetrainState>(
+        adapter.sentBytes.data(), adapter.sentBytes.size()
+    );
+    REQUIRE(result.view.has_value());
+    
+    auto packet = bcnp::DecodeTypedPacket<bcnp::DrivetrainState>(*result.view);
+    REQUIRE(packet.has_value());
+    CHECK(packet->messages.size() == 2);
+    CHECK(packet->messages[0].vxActual == doctest::Approx(0.75f).epsilon(0.0001));
+    CHECK(packet->messages[1].timestampMs == 1000);
+}
+
+// ============================================================================
+// Test Suite: Telemetry Message Types
+// ============================================================================
+
+TEST_CASE("DrivetrainState: Encode and decode") {
+    bcnp::DrivetrainState state{1.5f, -0.75f, 12345, -9876, 50000};
+    
+    std::array<uint8_t, 20> buffer{};
+    REQUIRE(state.Encode(buffer.data(), buffer.size()));
+    
+    auto decoded = bcnp::DrivetrainState::Decode(buffer.data(), buffer.size());
+    REQUIRE(decoded.has_value());
+    CHECK(decoded->vxActual == doctest::Approx(1.5f).epsilon(0.0001));
+    CHECK(decoded->omegaActual == doctest::Approx(-0.75f).epsilon(0.0001));
+    CHECK(decoded->leftPos == 12345);
+    CHECK(decoded->rightPos == -9876);
+    CHECK(decoded->timestampMs == 50000);
+}
+
+TEST_CASE("EncoderData: Encode and decode") {
+    bcnp::EncoderData data{3, -50000, 250};
+    
+    std::array<uint8_t, 9> buffer{};
+    REQUIRE(data.Encode(buffer.data(), buffer.size()));
+    
+    auto decoded = bcnp::EncoderData::Decode(buffer.data(), buffer.size());
+    REQUIRE(decoded.has_value());
+    CHECK(decoded->moduleId == 3);
+    CHECK(decoded->position == -50000);
+    CHECK(decoded->velocity == 250);
+}
+
+TEST_CASE("ProximityAlert: Encode and decode") {
+    bcnp::ProximityAlert alert{7, 150, 1};
+    
+    std::array<uint8_t, 4> buffer{};
+    REQUIRE(alert.Encode(buffer.data(), buffer.size()));
+    
+    auto decoded = bcnp::ProximityAlert::Decode(buffer.data(), buffer.size());
+    REQUIRE(decoded.has_value());
+    CHECK(decoded->sensorId == 7);
+    CHECK(decoded->distanceMm == 150);
+    CHECK(decoded->triggered == 1);
 }
