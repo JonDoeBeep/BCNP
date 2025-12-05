@@ -179,7 +179,7 @@ socket.send(packet)
 | Document | Description |
 |----------|-------------|
 | [protocol.md](protocol.md) | Full protocol specification and wire format |
-| [schema/README.md](schema/README.md) | Schema format and code generation guide |
+| [schema/schema.md](schema/schema.md) | Schema format and code generation guide |
 
 ---
 
