@@ -29,7 +29,7 @@ using ErrorHandler = std::function<void(const StreamParser::ErrorInfo&)>;
  * PacketDispatcher doesn't own any queues. Robot code creates queues per 
  * subsystem and registers handlers to fill them.
  * 
- * Usage:
+ * @code{cpp}
  *   PacketDispatcher dispatcher;
  *   MessageQueue<MyMotorCmd> motorQueue;
  *   MessageQueue<MyServoCmd> servoQueue;
@@ -44,6 +44,7 @@ using ErrorHandler = std::function<void(const StreamParser::ErrorInfo&)>;
  *   dispatcher.RegisterHandler<MyServoCmd>([&](const PacketView& pkt) {
  *       // Handle servo commands...
  *   });
+ * @endcode
  */
 class PacketDispatcher {
 public:

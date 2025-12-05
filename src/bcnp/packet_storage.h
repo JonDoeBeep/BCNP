@@ -10,14 +10,14 @@ namespace bcnp {
 /**
  * @brief Type traits to detect container capabilities for packet storage.
  * 
- * A valid packet storage must support:
- * - push_back(const T&) or push_back(T&&)
- * - size() -> size_type
- * - empty() -> bool
- * - clear()
- * - begin() / end() iterators
- * - operator[](size_type) -> T&
- * - reserve(size_type) (can be no-op for fixed storage)
+ * A valid packet storage must support all of the following.
+ * push_back(const T&) or push_back(T&&)
+ * size() -> size_type
+ * empty() -> bool
+ * clear()
+ * begin() / end() iterators
+ * operator[](size_type) -> T&
+ * reserve(size_type) (can be no-op for fixed storage)
  */
 
 namespace detail {
@@ -89,9 +89,8 @@ inline constexpr bool IsValidPacketStorage_v = IsValidPacketStorage<Container>::
 /**
  * @brief Default packet storage using heap allocation.
  * 
- * Use for: Large batches, trajectory uploads, config dumps.
- * Pros: Unlimited size, familiar API.
- * Cons: Heap allocation, potential fragmentation in tight loops.
+ * Use for Large batches, trajectory uploads or config dumps.
+ * 
  */
 template<typename T>
 using DynamicPacketStorage = std::vector<T>;
@@ -99,13 +98,11 @@ using DynamicPacketStorage = std::vector<T>;
 /**
  * @brief Real-time packet storage using stack allocation.
  * 
- * Use for: Control loop telemetry, command batches.
- * Pros: No heap allocation, predictable performance.
- * Cons: Fixed capacity, throws on overflow.
+ * Use for Control loop telemetry or command batches.
  * 
- * Default capacity of 64 covers all FRC use cases:
- * - 64 × 12 bytes (EncoderData) = 768 bytes (safe for stack)
- * - 64 × 32 bytes (TrajectoryPoint) = 2 KB (safe for stack)
+ * Default capacity of 64 covers most FRC use cases:
+ * 64 × 12 bytes (EncoderData) = 768 bytes (safe for stack)
+ * 64 × 32 bytes (TrajectoryPoint) = 2 KB (safe for stack)
  */
 template<typename T, std::size_t Capacity = 64>
 using StaticPacketStorage = StaticVector<T, Capacity>;

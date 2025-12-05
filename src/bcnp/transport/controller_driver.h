@@ -13,13 +13,14 @@ namespace bcnp {
  * Connects a network transport (TCP, UDP, etc.) to a PacketDispatcher,
  * polling for incoming data and feeding it to the parser.
  * 
- * Usage:
- *   PacketDispatcher dispatcher;
- *   TcpPosixAdapter adapter(5800);
- *   DispatcherDriver driver(dispatcher, adapter);
- *   
- *   // In main loop:
- *   driver.PollOnce();
+ * @code{cpp}
+ * PacketDispatcher dispatcher;
+ * TcpPosixAdapter adapter(5800);
+ * DispatcherDriver driver(dispatcher, adapter);
+ * 
+ * // In main loop:
+ * driver.PollOnce();
+ * @endcode
  */
 class DispatcherDriver {
 public:

@@ -1,3 +1,8 @@
+/**
+ * @file spi_adapter.cpp
+ * @brief Implementation of the deprecated SPI transport adapter.
+ */
+
 #include "bcnp/spi_adapter.h"
 
 namespace bcnp {
@@ -11,6 +16,7 @@ void SpiStreamAdapter::Poll() {
         return;
     }
 
+    // Read chunks until no more data available
     uint8_t buffer[256];
     std::size_t received = m_receive(buffer, sizeof(buffer));
     while (received > 0) {
@@ -23,6 +29,6 @@ void SpiStreamAdapter::PushChunk(const uint8_t* data, std::size_t length) {
     m_parser.Push(data, length);
 }
 
-// SendPacket is now a template in the header
+// SendPacket<T> is implemented as a template in the header
 
 } // namespace bcnp

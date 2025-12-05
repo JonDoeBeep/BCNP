@@ -18,11 +18,9 @@ namespace bcnp {
  */
 struct TelemetryAccumulatorConfig {
     /// Flush interval: send telemetry every N control loop ticks
-    /// Default: 2 ticks = 25Hz telemetry at 50Hz control loop
     std::size_t flushIntervalTicks{2};
     
     /// Maximum messages to accumulate before forcing a flush
-    /// Default: 64 (matches StaticVector default capacity)
     std::size_t maxBufferedMessages{64};
 };
 
@@ -33,16 +31,11 @@ struct TelemetryAccumulatorConfig {
  * sends them as batched BCNP packets at a configurable rate. This avoids 
  * the overhead of a send() syscall per reading.
  * 
- * Design principles:
- * - **Absolute snapshots**: Always send current state, not deltas. Self-correcting if packets drop.
- * - **Latest-wins semantics**: Dashboard grabs messages.back(). Loggers iterate all.
- * - **Real-time safe**: Uses StaticVector by default (no heap allocation in control loop).
- * 
  * @tparam MsgType The message struct type (e.g., DrivetrainState, EncoderData)
  * @tparam Storage Container type (default: StaticVector<MsgType, 64>)
  * 
  * Usage (robot side):
- * @code
+ * @code{cpp}
  *   TelemetryAccumulator<DrivetrainState> drivetrainTelem;
  *   
  *   // In TeleopPeriodic (50Hz):
@@ -81,8 +74,6 @@ public:
         // If at capacity, we need to make room
         // For real-time, we just clear and start fresh (latest-wins philosophy)
         if (m_buffer.size() >= m_config.maxBufferedMessages) {
-            // Keep the most recent half to preserve some history
-            // Or just clear - simpler and fits "latest-wins" better
             m_buffer.clear();
             ++m_metrics.bufferOverflows;
         }
@@ -200,7 +191,7 @@ private:
         // Build packet from buffer
         TypedPacket<MsgType, Storage> packet;
         packet.messages = std::move(m_buffer);
-        m_buffer = Storage{};  // Reset buffer
+        m_buffer = Storage{};  
         
         // Encode to wire format (reuse buffer to avoid malloc per flush)
         m_wireBuffer.clear();

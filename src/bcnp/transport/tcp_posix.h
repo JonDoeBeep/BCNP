@@ -36,7 +36,6 @@ public:
     bool IsValid() const { return m_socket >= 0 || (!m_isServer && m_peerAddrValid); }
     bool IsConnected() const { return m_isConnected && m_handshakeComplete; }
     
-    // V3 Schema handshake
     bool IsHandshakeComplete() const { return m_handshakeComplete && m_schemaValidated; }
     bool SendHandshake();
     uint32_t GetRemoteSchemaHash() const { return m_remoteSchemaHash; }
@@ -73,7 +72,6 @@ private:
     std::chrono::steady_clock::time_point m_lastServerRx{};
     std::chrono::milliseconds m_serverClientTimeout{5000}; // 5 second zombie timeout
     // Max packet size: header + largest reasonable message payload + CRC
-    // 64KB should be sufficient for most use cases
     static constexpr std::size_t kMaxPacketSize = 65536;
     static constexpr std::size_t kTxBufferCapacity = kMaxPacketSize * 8; // Real-time: limit buffering
     std::unique_ptr<uint8_t[]> m_txBuffer;

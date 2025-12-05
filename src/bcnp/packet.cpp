@@ -1,3 +1,11 @@
+/**
+ * @file packet.cpp
+ * @brief Implementation of BCNP packet encoding and decoding functions.
+ * 
+ * Contains the CRC32 computation, packet view decoding, and payload size
+ * calculation. Encoding is handled by template functions in the header.
+ */
+
 #include "bcnp/packet.h"
 
 #include <algorithm>
@@ -9,6 +17,14 @@
 namespace bcnp {
 namespace {
 
+/**
+ * @brief Generate CRC32 lookup table at compile time.
+ * 
+ * Uses the standard CRC32 polynomial (reversed: 0xEDB88320).
+ * The table is computed once at compile time using constexpr.
+ * 
+ * @return 256-entry lookup table for byte-at-a-time CRC computation
+ */
 constexpr std::array<uint32_t, 256> MakeCrcTable() {
     std::array<uint32_t, 256> table{};
     for (uint32_t i = 0; i < 256; ++i) {
@@ -25,6 +41,7 @@ constexpr std::array<uint32_t, 256> MakeCrcTable() {
     return table;
 }
 
+/// @brief Compile-time CRC32 lookup table.
 constexpr auto kCrc32Table = MakeCrcTable();
 
 } // namespace
@@ -38,16 +55,24 @@ uint32_t ComputeCrc32(const uint8_t* data, std::size_t length) {
     return crc ^ 0xFFFFFFFFU;
 }
 
-// PacketView Helper
-
 std::size_t PacketView::GetPayloadSize() const {
     auto info = GetMessageInfo(header.messageType);
     if (!info) return 0;
     return info->wireSize * header.messageCount;
 }
 
-// V3 Decoding with explicit wire size (for when message type is known)
 
+/**
+ * @brief Decode a packet with explicitly provided message wire size.
+ * 
+ * This is the core decoding function used by all other decode variants.
+ * Validates the header, checks CRC, and constructs a PacketView on success.
+ * 
+ * @param data Pointer to raw packet bytes
+ * @param length Available bytes in buffer
+ * @param wireSize Size of each message in bytes (from schema or lookup)
+ * @return DecodeViewResult with validation status and optional view
+ */
 DecodeViewResult DecodePacketViewWithSize(const uint8_t* data, std::size_t length, std::size_t wireSize) {
     DecodeViewResult result{};
 
@@ -104,8 +129,17 @@ DecodeViewResult DecodePacketViewWithSize(const uint8_t* data, std::size_t lengt
     return result;
 }
 
-// V3 Decoding using registry lookup
-
+/**
+ * @brief Decode a packet using the global message type registry.
+ * 
+ * Extracts the message type ID from the header and looks up the wire size
+ * from GetMessageInfo(). Returns UnknownMessageType error if the type is
+ * not registered.
+ * 
+ * @param data Pointer to raw packet bytes
+ * @param length Available bytes in buffer
+ * @return DecodeViewResult with validation status and optional view
+ */
 DecodeViewResult DecodePacketView(const uint8_t* data, std::size_t length) {
     DecodeViewResult result{};
 

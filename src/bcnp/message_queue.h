@@ -1,5 +1,17 @@
 #pragma once
 
+/**
+ * @file message_queue.h
+ * @brief Timed message queue for executing duration-based commands.
+ * 
+ * Provides a generic queue that manages timed execution of messages,
+ * ensuring each message runs for its specified duration before advancing
+ * to the next. Handles connection timeouts, lag compensation, and queue
+ * overflow scenarios.
+ * 
+ * All public methods use mutex synchronization.
+ */
+
 #include <algorithm>
 #include <chrono>
 #include <cstddef>
@@ -10,22 +22,32 @@
 
 namespace bcnp {
 
-/// Configuration for a message queue
+/**
+ * @brief Configuration parameters for a message queue.
+ */
 struct MessageQueueConfig {
-    std::size_t capacity{200};
-    std::chrono::milliseconds connectionTimeout{200};
-    std::chrono::milliseconds maxCommandLag{100}; // Max lag before clamping virtual time
+    std::size_t capacity{200};                          ///< Maximum messages in queue
+    std::chrono::milliseconds connectionTimeout{200};    ///< Time before declaring disconnect
+    std::chrono::milliseconds maxCommandLag{100};        ///< Max lag before clamping virtual time
 };
 
-/// Metrics for queue diagnostics
+/**
+ * @brief Runtime metrics for queue diagnostics.
+ */
 struct MessageQueueMetrics {
-    uint64_t messagesReceived{0};
-    uint64_t queueOverflows{0};
-    uint64_t messagesSkipped{0};
+    uint64_t messagesReceived{0};    ///< Total messages pushed to queue
+    uint64_t queueOverflows{0};      ///< Push attempts when queue was full
+    uint64_t messagesSkipped{0};     ///< Messages skipped due to lag compensation
 };
 
-/// Concept-like check for messages with duration
-/// Message type must have a durationMs field of type uint16_t
+/**
+ * @brief Type trait to detect messages with a durationMs field.
+ * 
+ * Messages used with MessageQueue must have a uint16_t durationMs field
+ * that specifies how long the message should be "active" in milliseconds.
+ * 
+ * @tparam T The type to check
+ */
 template<typename T>
 struct HasDurationMs {
     template<typename U>
@@ -43,7 +65,7 @@ struct HasDurationMs {
  * 
  * @tparam MsgType Message struct with a uint16_t durationMs field
  * 
- * Usage:
+ * @code{cpp}
  *   MessageQueue<DriveCmd> driveQueue;
  *   MessageQueue<ElevatorCmd> elevatorQueue;
  * 
@@ -56,6 +78,7 @@ struct HasDurationMs {
  *   if (auto cmd = driveQueue.ActiveMessage()) {
  *       drivetrain.execute(*cmd);
  *   }
+ * @endcode
  */
 template<typename MsgType>
 class MessageQueue {
@@ -71,13 +94,25 @@ public:
         m_storage.resize(m_config.capacity);
     }
 
-    /// Clear all messages from the queue
+    /**
+     * @brief Remove all messages from the queue.
+     * 
+     * Also clears the active message and resets virtual cursor.
+     * Thread-safe.
+     */
     void Clear() {
         std::lock_guard<std::mutex> lock(m_mutex);
         ClearUnlocked();
     }
 
-    /// Push a message to the queue (thread-safe)
+    /**
+     * @brief Add a message to the back of the queue.
+     * 
+     * @param message The message to enqueue
+     * @return true if successfully added, false if queue was full
+     * 
+     * @note Increments queueOverflows metric on failure.
+     */
     bool Push(const MsgType& message) {
         std::lock_guard<std::mutex> lock(m_mutex);
         if (!PushUnlocked(message)) {
@@ -88,19 +123,40 @@ public:
         return true;
     }
 
-    /// Get current queue size
+    /**
+     * @brief Get the current number of queued messages.
+     * @return Number of messages waiting (excludes active message)
+     */
     std::size_t Size() const {
         std::lock_guard<std::mutex> lock(m_mutex);
         return m_count;
     }
 
-    /// Notify that a message was received (updates connection timeout)
+    /**
+     * @brief Notify that messages were received from the network.
+     * 
+     * Call this after pushing messages to update the connection timeout.
+     * The queue will clear itself if no notifications occur within
+     * the configured connectionTimeout period.
+     * 
+     * @param now Current timestamp (typically steady_clock::now())
+     */
     void NotifyReceived(Clock::time_point now) {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_lastRx = now;
     }
 
-    /// Update queue state - call once per control loop iteration
+    /**
+     * @brief Update queue state - call once per control loop iteration.
+     * 
+     * Performs the following:
+     * Checks connection timeout - clears queue if timed out
+     * Checks if active message duration has elapsed
+     * Promotes next message from queue if ready
+     * Handles lag compensation by skipping stale messages
+     * 
+     * @param now Current timestamp for timing calculations
+     */
     void Update(Clock::time_point now) {
         std::lock_guard<std::mutex> lock(m_mutex);
         if (!IsConnectedUnlocked(now)) {
@@ -133,7 +189,14 @@ public:
         }
     }
 
-    /// Get the currently active message (non-blocking, returns nullopt if mutex busy)
+    /**
+     * @brief Get the currently executing message.
+     * 
+     * Returns the message whose duration is currently being executed.
+     * Non-blocking: returns nullopt immediately if mutex is busy.
+     * 
+     * @return The active message, or nullopt if none active or mutex busy
+     */
     std::optional<MsgType> ActiveMessage() const {
         std::unique_lock<std::mutex> lock(m_mutex, std::try_to_lock);
         if (!lock.owns_lock()) {
@@ -145,25 +208,41 @@ public:
         return std::nullopt;
     }
 
-    /// Check if queue is connected (received messages recently)
+    /**
+     * @brief Check if the connection is still active.
+     * 
+     * @param now Current timestamp for timeout calculation
+     * @return true if packets received within connectionTimeout, false otherwise
+     */
     bool IsConnected(Clock::time_point now) const {
         std::lock_guard<std::mutex> lock(m_mutex);
         return IsConnectedUnlocked(now);
     }
 
-    /// Get queue metrics
+    /**
+     * @brief Get current queue metrics.
+     * @return Snapshot of queue statistics
+     */
     MessageQueueMetrics GetMetrics() const {
         std::lock_guard<std::mutex> lock(m_mutex);
         return m_metrics;
     }
 
-    /// Reset metrics
+    /**
+     * @brief Reset all metrics to zero.
+     */
     void ResetMetrics() {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_metrics = {};
     }
 
-    /// Update configuration (clears queue if capacity changes)
+    /**
+     * @brief Update queue configuration.
+     * 
+     * @note Clears the queue if capacity changes.
+     * 
+     * @param config New configuration to apply
+     */
     void SetConfig(const MessageQueueConfig& config) {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_config = config;
@@ -179,7 +258,22 @@ public:
         return m_config;
     }
 
-    /// RAII transaction for batch operations
+    /**
+     * @brief RAII transaction for atomic batch operations.
+     * 
+     * Holds the queue mutex for the lifetime of the transaction,
+     * allowing multiple Push() or Clear() calls without interleaving.
+     * 
+     * @code{cpp}
+     * {
+     *     auto tx = queue.BeginTransaction();
+     *     tx.Clear();
+     *     for (const auto& cmd : commands) {
+     *         tx.Push(cmd);
+     *     }
+     * } // Lock released here
+     * @endcode
+     */
     class Transaction {
     public:
         explicit Transaction(MessageQueue& queue) 
@@ -309,10 +403,11 @@ private:
     mutable std::mutex m_mutex;
 };
 
-// Convenience alias for backward compatibility
+/**
+ * @brief Convenience alias for MessageQueue (backward compatibility).
+ * @tparam MsgType Message type with durationMs field
+ */
 template<typename MsgType>
 using TimedQueue = MessageQueue<MsgType>;
 
 } // namespace bcnp
-
-// todo improve comments
