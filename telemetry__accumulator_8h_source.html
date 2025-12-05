@@ -140,196 +140,207 @@ $(function(){initNavTree('telemetry__accumulator_8h_source.html',''); initResiza
 <div class="foldopen" id="foldopen00071" data-start="{" data-end="}">
 <div class="line"><a id="l00071" name="l00071"></a><span class="lineno"><a class="line" href="classbcnp_1_1TelemetryAccumulator.html#a0051e7e4432f900f0d88193a74f2ce3c">   71</a></span>    <span class="keywordtype">bool</span> <a class="code hl_function" href="classbcnp_1_1TelemetryAccumulator.html#a0051e7e4432f900f0d88193a74f2ce3c">Record</a>(<span class="keyword">const</span> MsgType&amp; msg) {</div>
 <div class="line"><a id="l00072" name="l00072"></a><span class="lineno">   72</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
-<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span>        </div>
-<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>        <span class="comment">// If at capacity, we need to make room</span></div>
-<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>        <span class="comment">// For real-time, we just clear and start fresh (latest-wins philosophy)</span></div>
-<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>        <span class="keywordflow">if</span> (m_buffer.size() &gt;= m_config.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulatorConfig.html#ab97ec854cfa0860124450d33b87df52a">maxBufferedMessages</a>) {</div>
-<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>            m_buffer.clear();</div>
-<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>            ++m_metrics.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a42484ae15ed6b5280c4d37bd5f7cfd2f">bufferOverflows</a>;</div>
-<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span>        }</div>
-<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>        </div>
-<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>        m_buffer.push_back(msg);</div>
-<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>        ++m_metrics.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a341440966ee63adac3de093b8e759849">messagesRecorded</a>;</div>
-<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span>    }</div>
+<div class="line"><a id="l00073" name="l00073"></a><span class="lineno">   73</span> </div>
+<div class="line"><a id="l00074" name="l00074"></a><span class="lineno">   74</span>        <span class="comment">// Ring-buffer behavior: drop oldest when full</span></div>
+<div class="line"><a id="l00075" name="l00075"></a><span class="lineno">   75</span>        <span class="keywordflow">if</span> (m_buffer.size() &gt;= m_config.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulatorConfig.html#ab97ec854cfa0860124450d33b87df52a">maxBufferedMessages</a>) {</div>
+<div class="line"><a id="l00076" name="l00076"></a><span class="lineno">   76</span>            DropOldestUnlocked();</div>
+<div class="line"><a id="l00077" name="l00077"></a><span class="lineno">   77</span>            ++m_metrics.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a42484ae15ed6b5280c4d37bd5f7cfd2f">bufferOverflows</a>;</div>
+<div class="line"><a id="l00078" name="l00078"></a><span class="lineno">   78</span>        }</div>
+<div class="line"><a id="l00079" name="l00079"></a><span class="lineno">   79</span> </div>
+<div class="line"><a id="l00080" name="l00080"></a><span class="lineno">   80</span>        m_buffer.push_back(msg);</div>
+<div class="line"><a id="l00081" name="l00081"></a><span class="lineno">   81</span>        ++m_metrics.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a341440966ee63adac3de093b8e759849">messagesRecorded</a>;</div>
+<div class="line"><a id="l00082" name="l00082"></a><span class="lineno">   82</span>        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00083" name="l00083"></a><span class="lineno">   83</span>    }</div>
 </div>
-<div class="line"><a id="l00085" name="l00085"></a><span class="lineno">   85</span> </div>
-<div class="line"><a id="l00091" name="l00091"></a><span class="lineno">   91</span>    <span class="keyword">template</span>&lt;<span class="keyword">typename</span> InputIt&gt;</div>
-<div class="foldopen" id="foldopen00092" data-start="{" data-end="}">
-<div class="line"><a id="l00092" name="l00092"></a><span class="lineno"><a class="line" href="classbcnp_1_1TelemetryAccumulator.html#a3bcae01a0060ae7e988b8720e2addbfc">   92</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classbcnp_1_1TelemetryAccumulator.html#a3bcae01a0060ae7e988b8720e2addbfc">RecordBatch</a>(InputIt first, InputIt last) {</div>
-<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
-<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>        <span class="keywordflow">for</span> (<span class="keyword">auto</span> it = first; it != last; ++it) {</div>
-<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>            <span class="keywordflow">if</span> (m_buffer.size() &gt;= m_config.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulatorConfig.html#ab97ec854cfa0860124450d33b87df52a">maxBufferedMessages</a>) {</div>
-<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>                m_buffer.clear();</div>
-<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>                ++m_metrics.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a42484ae15ed6b5280c4d37bd5f7cfd2f">bufferOverflows</a>;</div>
-<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>            }</div>
-<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>            m_buffer.push_back(*it);</div>
-<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>            ++m_metrics.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a341440966ee63adac3de093b8e759849">messagesRecorded</a>;</div>
-<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>        }</div>
-<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span>    }</div>
+<div class="line"><a id="l00084" name="l00084"></a><span class="lineno">   84</span> </div>
+<div class="line"><a id="l00090" name="l00090"></a><span class="lineno">   90</span>    <span class="keyword">template</span>&lt;<span class="keyword">typename</span> InputIt&gt;</div>
+<div class="foldopen" id="foldopen00091" data-start="{" data-end="}">
+<div class="line"><a id="l00091" name="l00091"></a><span class="lineno"><a class="line" href="classbcnp_1_1TelemetryAccumulator.html#a3bcae01a0060ae7e988b8720e2addbfc">   91</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classbcnp_1_1TelemetryAccumulator.html#a3bcae01a0060ae7e988b8720e2addbfc">RecordBatch</a>(InputIt first, InputIt last) {</div>
+<div class="line"><a id="l00092" name="l00092"></a><span class="lineno">   92</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
+<div class="line"><a id="l00093" name="l00093"></a><span class="lineno">   93</span>        <span class="keywordflow">for</span> (<span class="keyword">auto</span> it = first; it != last; ++it) {</div>
+<div class="line"><a id="l00094" name="l00094"></a><span class="lineno">   94</span>            <span class="keywordflow">if</span> (m_buffer.size() &gt;= m_config.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulatorConfig.html#ab97ec854cfa0860124450d33b87df52a">maxBufferedMessages</a>) {</div>
+<div class="line"><a id="l00095" name="l00095"></a><span class="lineno">   95</span>                DropOldestUnlocked();</div>
+<div class="line"><a id="l00096" name="l00096"></a><span class="lineno">   96</span>                ++m_metrics.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a42484ae15ed6b5280c4d37bd5f7cfd2f">bufferOverflows</a>;</div>
+<div class="line"><a id="l00097" name="l00097"></a><span class="lineno">   97</span>            }</div>
+<div class="line"><a id="l00098" name="l00098"></a><span class="lineno">   98</span>            m_buffer.push_back(*it);</div>
+<div class="line"><a id="l00099" name="l00099"></a><span class="lineno">   99</span>            ++m_metrics.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a341440966ee63adac3de093b8e759849">messagesRecorded</a>;</div>
+<div class="line"><a id="l00100" name="l00100"></a><span class="lineno">  100</span>        }</div>
+<div class="line"><a id="l00101" name="l00101"></a><span class="lineno">  101</span>    }</div>
 </div>
-<div class="line"><a id="l00103" name="l00103"></a><span class="lineno">  103</span> </div>
-<div class="line"><a id="l00112" name="l00112"></a><span class="lineno">  112</span>    <span class="keyword">template</span>&lt;<span class="keyword">typename</span> Adapter&gt;</div>
-<div class="foldopen" id="foldopen00113" data-start="{" data-end="}">
-<div class="line"><a id="l00113" name="l00113"></a><span class="lineno"><a class="line" href="classbcnp_1_1TelemetryAccumulator.html#a5096551c39d53f9fd6a1da6684722687">  113</a></span>    <span class="keywordtype">bool</span> <a class="code hl_function" href="classbcnp_1_1TelemetryAccumulator.html#a5096551c39d53f9fd6a1da6684722687">MaybeFlush</a>(Adapter&amp; adapter) {</div>
-<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>        Storage localBuffer;</div>
-<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>        std::size_t messageCount = 0;</div>
-<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>        </div>
-<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>        {</div>
-<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>            std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
-<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>            </div>
-<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>            ++m_tickCount;</div>
-<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>            <span class="keywordflow">if</span> (m_tickCount &lt; m_config.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulatorConfig.html#af801745b61c63f3d2ed50d31c1b65cdd">flushIntervalTicks</a>) {</div>
-<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>            }</div>
-<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>            </div>
-<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>            m_tickCount = 0;</div>
-<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>            </div>
-<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>            <span class="keywordflow">if</span> (m_buffer.empty()) {</div>
-<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>            }</div>
-<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>            </div>
-<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>            <span class="comment">// Swap buffer out while holding lock</span></div>
-<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>            localBuffer = std::move(m_buffer);</div>
-<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>            m_buffer = Storage{};</div>
-<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>            messageCount = localBuffer.size();</div>
-<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>        }</div>
-<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>        <span class="comment">// Lock released - now safe to do blocking I/O</span></div>
-<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>        </div>
-<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>        <span class="keywordflow">return</span> SendBuffer(adapter, std::move(localBuffer), messageCount);</div>
-<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span>    }</div>
+<div class="line"><a id="l00102" name="l00102"></a><span class="lineno">  102</span> </div>
+<div class="line"><a id="l00111" name="l00111"></a><span class="lineno">  111</span>    <span class="keyword">template</span>&lt;<span class="keyword">typename</span> Adapter&gt;</div>
+<div class="foldopen" id="foldopen00112" data-start="{" data-end="}">
+<div class="line"><a id="l00112" name="l00112"></a><span class="lineno"><a class="line" href="classbcnp_1_1TelemetryAccumulator.html#a5096551c39d53f9fd6a1da6684722687">  112</a></span>    <span class="keywordtype">bool</span> <a class="code hl_function" href="classbcnp_1_1TelemetryAccumulator.html#a5096551c39d53f9fd6a1da6684722687">MaybeFlush</a>(Adapter&amp; adapter) {</div>
+<div class="line"><a id="l00113" name="l00113"></a><span class="lineno">  113</span>        Storage localBuffer;</div>
+<div class="line"><a id="l00114" name="l00114"></a><span class="lineno">  114</span>        std::size_t messageCount = 0;</div>
+<div class="line"><a id="l00115" name="l00115"></a><span class="lineno">  115</span>        </div>
+<div class="line"><a id="l00116" name="l00116"></a><span class="lineno">  116</span>        {</div>
+<div class="line"><a id="l00117" name="l00117"></a><span class="lineno">  117</span>            std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
+<div class="line"><a id="l00118" name="l00118"></a><span class="lineno">  118</span>            </div>
+<div class="line"><a id="l00119" name="l00119"></a><span class="lineno">  119</span>            ++m_tickCount;</div>
+<div class="line"><a id="l00120" name="l00120"></a><span class="lineno">  120</span>            <span class="keywordflow">if</span> (m_tickCount &lt; m_config.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulatorConfig.html#af801745b61c63f3d2ed50d31c1b65cdd">flushIntervalTicks</a>) {</div>
+<div class="line"><a id="l00121" name="l00121"></a><span class="lineno">  121</span>                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00122" name="l00122"></a><span class="lineno">  122</span>            }</div>
+<div class="line"><a id="l00123" name="l00123"></a><span class="lineno">  123</span>            </div>
+<div class="line"><a id="l00124" name="l00124"></a><span class="lineno">  124</span>            m_tickCount = 0;</div>
+<div class="line"><a id="l00125" name="l00125"></a><span class="lineno">  125</span>            </div>
+<div class="line"><a id="l00126" name="l00126"></a><span class="lineno">  126</span>            <span class="keywordflow">if</span> (m_buffer.empty()) {</div>
+<div class="line"><a id="l00127" name="l00127"></a><span class="lineno">  127</span>                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00128" name="l00128"></a><span class="lineno">  128</span>            }</div>
+<div class="line"><a id="l00129" name="l00129"></a><span class="lineno">  129</span>            </div>
+<div class="line"><a id="l00130" name="l00130"></a><span class="lineno">  130</span>            <span class="comment">// Swap buffer out while holding lock</span></div>
+<div class="line"><a id="l00131" name="l00131"></a><span class="lineno">  131</span>            localBuffer = std::move(m_buffer);</div>
+<div class="line"><a id="l00132" name="l00132"></a><span class="lineno">  132</span>            m_buffer = Storage{};</div>
+<div class="line"><a id="l00133" name="l00133"></a><span class="lineno">  133</span>            messageCount = localBuffer.size();</div>
+<div class="line"><a id="l00134" name="l00134"></a><span class="lineno">  134</span>        }</div>
+<div class="line"><a id="l00135" name="l00135"></a><span class="lineno">  135</span>        <span class="comment">// Lock released - now safe to do blocking I/O</span></div>
+<div class="line"><a id="l00136" name="l00136"></a><span class="lineno">  136</span>        </div>
+<div class="line"><a id="l00137" name="l00137"></a><span class="lineno">  137</span>        <span class="keywordflow">return</span> SendBuffer(adapter, std::move(localBuffer), messageCount);</div>
+<div class="line"><a id="l00138" name="l00138"></a><span class="lineno">  138</span>    }</div>
 </div>
-<div class="line"><a id="l00140" name="l00140"></a><span class="lineno">  140</span> </div>
-<div class="line"><a id="l00147" name="l00147"></a><span class="lineno">  147</span>    <span class="keyword">template</span>&lt;<span class="keyword">typename</span> Adapter&gt;</div>
-<div class="foldopen" id="foldopen00148" data-start="{" data-end="}">
-<div class="line"><a id="l00148" name="l00148"></a><span class="lineno"><a class="line" href="classbcnp_1_1TelemetryAccumulator.html#ab5fdf625a1eb2431f4180f53af2ac4ea">  148</a></span>    <span class="keywordtype">bool</span> <a class="code hl_function" href="classbcnp_1_1TelemetryAccumulator.html#ab5fdf625a1eb2431f4180f53af2ac4ea">ForceFlush</a>(Adapter&amp; adapter) {</div>
-<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>        Storage localBuffer;</div>
-<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>        std::size_t messageCount = 0;</div>
-<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>        </div>
-<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>        {</div>
-<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>            std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
-<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>            m_tickCount = 0;</div>
-<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>            </div>
-<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>            <span class="keywordflow">if</span> (m_buffer.empty()) {</div>
-<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>            }</div>
-<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>            </div>
-<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>            <span class="comment">// Swap buffer out while holding lock</span></div>
-<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>            localBuffer = std::move(m_buffer);</div>
-<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>            m_buffer = Storage{};</div>
-<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>            messageCount = localBuffer.size();</div>
-<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>        }</div>
-<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>        <span class="comment">// Lock released - now safe to do blocking I/O</span></div>
-<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>        </div>
-<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>        <span class="keywordflow">return</span> SendBuffer(adapter, std::move(localBuffer), messageCount);</div>
-<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span>    }</div>
+<div class="line"><a id="l00139" name="l00139"></a><span class="lineno">  139</span> </div>
+<div class="line"><a id="l00146" name="l00146"></a><span class="lineno">  146</span>    <span class="keyword">template</span>&lt;<span class="keyword">typename</span> Adapter&gt;</div>
+<div class="foldopen" id="foldopen00147" data-start="{" data-end="}">
+<div class="line"><a id="l00147" name="l00147"></a><span class="lineno"><a class="line" href="classbcnp_1_1TelemetryAccumulator.html#ab5fdf625a1eb2431f4180f53af2ac4ea">  147</a></span>    <span class="keywordtype">bool</span> <a class="code hl_function" href="classbcnp_1_1TelemetryAccumulator.html#ab5fdf625a1eb2431f4180f53af2ac4ea">ForceFlush</a>(Adapter&amp; adapter) {</div>
+<div class="line"><a id="l00148" name="l00148"></a><span class="lineno">  148</span>        Storage localBuffer;</div>
+<div class="line"><a id="l00149" name="l00149"></a><span class="lineno">  149</span>        std::size_t messageCount = 0;</div>
+<div class="line"><a id="l00150" name="l00150"></a><span class="lineno">  150</span>        </div>
+<div class="line"><a id="l00151" name="l00151"></a><span class="lineno">  151</span>        {</div>
+<div class="line"><a id="l00152" name="l00152"></a><span class="lineno">  152</span>            std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
+<div class="line"><a id="l00153" name="l00153"></a><span class="lineno">  153</span>            m_tickCount = 0;</div>
+<div class="line"><a id="l00154" name="l00154"></a><span class="lineno">  154</span>            </div>
+<div class="line"><a id="l00155" name="l00155"></a><span class="lineno">  155</span>            <span class="keywordflow">if</span> (m_buffer.empty()) {</div>
+<div class="line"><a id="l00156" name="l00156"></a><span class="lineno">  156</span>                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00157" name="l00157"></a><span class="lineno">  157</span>            }</div>
+<div class="line"><a id="l00158" name="l00158"></a><span class="lineno">  158</span>            </div>
+<div class="line"><a id="l00159" name="l00159"></a><span class="lineno">  159</span>            <span class="comment">// Swap buffer out while holding lock</span></div>
+<div class="line"><a id="l00160" name="l00160"></a><span class="lineno">  160</span>            localBuffer = std::move(m_buffer);</div>
+<div class="line"><a id="l00161" name="l00161"></a><span class="lineno">  161</span>            m_buffer = Storage{};</div>
+<div class="line"><a id="l00162" name="l00162"></a><span class="lineno">  162</span>            messageCount = localBuffer.size();</div>
+<div class="line"><a id="l00163" name="l00163"></a><span class="lineno">  163</span>        }</div>
+<div class="line"><a id="l00164" name="l00164"></a><span class="lineno">  164</span>        <span class="comment">// Lock released - now safe to do blocking I/O</span></div>
+<div class="line"><a id="l00165" name="l00165"></a><span class="lineno">  165</span>        </div>
+<div class="line"><a id="l00166" name="l00166"></a><span class="lineno">  166</span>        <span class="keywordflow">return</span> SendBuffer(adapter, std::move(localBuffer), messageCount);</div>
+<div class="line"><a id="l00167" name="l00167"></a><span class="lineno">  167</span>    }</div>
 </div>
-<div class="line"><a id="l00169" name="l00169"></a><span class="lineno">  169</span> </div>
-<div class="foldopen" id="foldopen00173" data-start="{" data-end="}">
-<div class="line"><a id="l00173" name="l00173"></a><span class="lineno"><a class="line" href="classbcnp_1_1TelemetryAccumulator.html#a9718eed6ccfb084e59052dcc64dd5863">  173</a></span>    std::size_t <a class="code hl_function" href="classbcnp_1_1TelemetryAccumulator.html#a9718eed6ccfb084e59052dcc64dd5863">BufferedCount</a>()<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
-<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>        <span class="keywordflow">return</span> m_buffer.size();</div>
-<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span>    }</div>
+<div class="line"><a id="l00168" name="l00168"></a><span class="lineno">  168</span> </div>
+<div class="foldopen" id="foldopen00172" data-start="{" data-end="}">
+<div class="line"><a id="l00172" name="l00172"></a><span class="lineno"><a class="line" href="classbcnp_1_1TelemetryAccumulator.html#a9718eed6ccfb084e59052dcc64dd5863">  172</a></span>    std::size_t <a class="code hl_function" href="classbcnp_1_1TelemetryAccumulator.html#a9718eed6ccfb084e59052dcc64dd5863">BufferedCount</a>()<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00173" name="l00173"></a><span class="lineno">  173</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
+<div class="line"><a id="l00174" name="l00174"></a><span class="lineno">  174</span>        <span class="keywordflow">return</span> m_buffer.size();</div>
+<div class="line"><a id="l00175" name="l00175"></a><span class="lineno">  175</span>    }</div>
 </div>
-<div class="line"><a id="l00177" name="l00177"></a><span class="lineno">  177</span> </div>
-<div class="foldopen" id="foldopen00181" data-start="{" data-end="}">
-<div class="line"><a id="l00181" name="l00181"></a><span class="lineno"><a class="line" href="classbcnp_1_1TelemetryAccumulator.html#a8db67f62ae023f9976f56f9d8869a47b">  181</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classbcnp_1_1TelemetryAccumulator.html#a8db67f62ae023f9976f56f9d8869a47b">Clear</a>() {</div>
-<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
-<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>        m_buffer.clear();</div>
-<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>        m_tickCount = 0;</div>
-<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span>    }</div>
+<div class="line"><a id="l00176" name="l00176"></a><span class="lineno">  176</span> </div>
+<div class="foldopen" id="foldopen00180" data-start="{" data-end="}">
+<div class="line"><a id="l00180" name="l00180"></a><span class="lineno"><a class="line" href="classbcnp_1_1TelemetryAccumulator.html#a8db67f62ae023f9976f56f9d8869a47b">  180</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classbcnp_1_1TelemetryAccumulator.html#a8db67f62ae023f9976f56f9d8869a47b">Clear</a>() {</div>
+<div class="line"><a id="l00181" name="l00181"></a><span class="lineno">  181</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
+<div class="line"><a id="l00182" name="l00182"></a><span class="lineno">  182</span>        m_buffer.clear();</div>
+<div class="line"><a id="l00183" name="l00183"></a><span class="lineno">  183</span>        m_tickCount = 0;</div>
+<div class="line"><a id="l00184" name="l00184"></a><span class="lineno">  184</span>    }</div>
 </div>
-<div class="line"><a id="l00186" name="l00186"></a><span class="lineno">  186</span> </div>
-<div class="foldopen" id="foldopen00190" data-start="{" data-end="};">
-<div class="line"><a id="l00190" name="l00190"></a><span class="lineno"><a class="line" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html">  190</a></span>    <span class="keyword">struct </span><a class="code hl_struct" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html">Metrics</a> {</div>
-<div class="line"><a id="l00191" name="l00191"></a><span class="lineno"><a class="line" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a341440966ee63adac3de093b8e759849">  191</a></span>        uint64_t <a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a341440966ee63adac3de093b8e759849">messagesRecorded</a>{0};</div>
-<div class="line"><a id="l00192" name="l00192"></a><span class="lineno"><a class="line" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a9adba78686282d45d3d7ff763bb64ae7">  192</a></span>        uint64_t <a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a9adba78686282d45d3d7ff763bb64ae7">messagesSent</a>{0};</div>
-<div class="line"><a id="l00193" name="l00193"></a><span class="lineno"><a class="line" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a6b8bac43a799c9fafe650e31ee571e74">  193</a></span>        uint64_t <a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a6b8bac43a799c9fafe650e31ee571e74">packetsSent</a>{0};</div>
-<div class="line"><a id="l00194" name="l00194"></a><span class="lineno"><a class="line" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a42484ae15ed6b5280c4d37bd5f7cfd2f">  194</a></span>        uint64_t <a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a42484ae15ed6b5280c4d37bd5f7cfd2f">bufferOverflows</a>{0};</div>
-<div class="line"><a id="l00195" name="l00195"></a><span class="lineno"><a class="line" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a23989fb719470722e2bddc6039eff647">  195</a></span>        uint64_t <a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a23989fb719470722e2bddc6039eff647">sendFailures</a>{0};</div>
-<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span>    };</div>
+<div class="line"><a id="l00185" name="l00185"></a><span class="lineno">  185</span> </div>
+<div class="foldopen" id="foldopen00189" data-start="{" data-end="};">
+<div class="line"><a id="l00189" name="l00189"></a><span class="lineno"><a class="line" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html">  189</a></span>    <span class="keyword">struct </span><a class="code hl_struct" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html">Metrics</a> {</div>
+<div class="line"><a id="l00190" name="l00190"></a><span class="lineno"><a class="line" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a341440966ee63adac3de093b8e759849">  190</a></span>        uint64_t <a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a341440966ee63adac3de093b8e759849">messagesRecorded</a>{0};</div>
+<div class="line"><a id="l00191" name="l00191"></a><span class="lineno"><a class="line" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a9adba78686282d45d3d7ff763bb64ae7">  191</a></span>        uint64_t <a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a9adba78686282d45d3d7ff763bb64ae7">messagesSent</a>{0};</div>
+<div class="line"><a id="l00192" name="l00192"></a><span class="lineno"><a class="line" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a6b8bac43a799c9fafe650e31ee571e74">  192</a></span>        uint64_t <a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a6b8bac43a799c9fafe650e31ee571e74">packetsSent</a>{0};</div>
+<div class="line"><a id="l00193" name="l00193"></a><span class="lineno"><a class="line" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a42484ae15ed6b5280c4d37bd5f7cfd2f">  193</a></span>        uint64_t <a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a42484ae15ed6b5280c4d37bd5f7cfd2f">bufferOverflows</a>{0};</div>
+<div class="line"><a id="l00194" name="l00194"></a><span class="lineno"><a class="line" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a23989fb719470722e2bddc6039eff647">  194</a></span>        uint64_t <a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a23989fb719470722e2bddc6039eff647">sendFailures</a>{0};</div>
+<div class="line"><a id="l00195" name="l00195"></a><span class="lineno">  195</span>    };</div>
 </div>
-<div class="line"><a id="l00197" name="l00197"></a><span class="lineno">  197</span> </div>
-<div class="foldopen" id="foldopen00198" data-start="{" data-end="}">
-<div class="line"><a id="l00198" name="l00198"></a><span class="lineno"><a class="line" href="classbcnp_1_1TelemetryAccumulator.html#a7f495f8836e61241693ab8c7173455b6">  198</a></span>    <a class="code hl_struct" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html">Metrics</a> <a class="code hl_function" href="classbcnp_1_1TelemetryAccumulator.html#a7f495f8836e61241693ab8c7173455b6">GetMetrics</a>()<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
-<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>        <span class="keywordflow">return</span> m_metrics;</div>
-<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>    }</div>
+<div class="line"><a id="l00196" name="l00196"></a><span class="lineno">  196</span> </div>
+<div class="foldopen" id="foldopen00197" data-start="{" data-end="}">
+<div class="line"><a id="l00197" name="l00197"></a><span class="lineno"><a class="line" href="classbcnp_1_1TelemetryAccumulator.html#a7f495f8836e61241693ab8c7173455b6">  197</a></span>    <a class="code hl_struct" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html">Metrics</a> <a class="code hl_function" href="classbcnp_1_1TelemetryAccumulator.html#a7f495f8836e61241693ab8c7173455b6">GetMetrics</a>()<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00198" name="l00198"></a><span class="lineno">  198</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
+<div class="line"><a id="l00199" name="l00199"></a><span class="lineno">  199</span>        <span class="keywordflow">return</span> m_metrics;</div>
+<div class="line"><a id="l00200" name="l00200"></a><span class="lineno">  200</span>    }</div>
 </div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span> </div>
-<div class="foldopen" id="foldopen00203" data-start="{" data-end="}">
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno"><a class="line" href="classbcnp_1_1TelemetryAccumulator.html#a14c2551273f2cb125d71168649ddb03f">  203</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classbcnp_1_1TelemetryAccumulator.html#a14c2551273f2cb125d71168649ddb03f">ResetMetrics</a>() {</div>
-<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
-<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>        m_metrics = {};</div>
-<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>    }</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span> </div>
+<div class="foldopen" id="foldopen00202" data-start="{" data-end="}">
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno"><a class="line" href="classbcnp_1_1TelemetryAccumulator.html#a14c2551273f2cb125d71168649ddb03f">  202</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classbcnp_1_1TelemetryAccumulator.html#a14c2551273f2cb125d71168649ddb03f">ResetMetrics</a>() {</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
+<div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>        m_metrics = {};</div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>    }</div>
 </div>
-<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span> </div>
-<div class="foldopen" id="foldopen00211" data-start="{" data-end="}">
-<div class="line"><a id="l00211" name="l00211"></a><span class="lineno"><a class="line" href="classbcnp_1_1TelemetryAccumulator.html#a8959a3350126de9de05f08d2eb65fc32">  211</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classbcnp_1_1TelemetryAccumulator.html#a8959a3350126de9de05f08d2eb65fc32">SetConfig</a>(<span class="keyword">const</span> <a class="code hl_struct" href="structbcnp_1_1TelemetryAccumulatorConfig.html">TelemetryAccumulatorConfig</a>&amp; config) {</div>
-<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
-<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>        m_config = config;</div>
-<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span>    }</div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span> </div>
+<div class="foldopen" id="foldopen00210" data-start="{" data-end="}">
+<div class="line"><a id="l00210" name="l00210"></a><span class="lineno"><a class="line" href="classbcnp_1_1TelemetryAccumulator.html#a8959a3350126de9de05f08d2eb65fc32">  210</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classbcnp_1_1TelemetryAccumulator.html#a8959a3350126de9de05f08d2eb65fc32">SetConfig</a>(<span class="keyword">const</span> <a class="code hl_struct" href="structbcnp_1_1TelemetryAccumulatorConfig.html">TelemetryAccumulatorConfig</a>&amp; config) {</div>
+<div class="line"><a id="l00211" name="l00211"></a><span class="lineno">  211</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
+<div class="line"><a id="l00212" name="l00212"></a><span class="lineno">  212</span>        m_config = config;</div>
+<div class="line"><a id="l00213" name="l00213"></a><span class="lineno">  213</span>    }</div>
 </div>
-<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span> </div>
-<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>    <span class="keyword">template</span>&lt;<span class="keyword">typename</span> Adapter&gt;</div>
-<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>    <span class="keywordtype">bool</span> SendBuffer(Adapter&amp; adapter, Storage&amp;&amp; buffer, std::size_t messageCount) {</div>
-<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>        <span class="comment">// Build packet from extracted buffer</span></div>
-<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>        <a class="code hl_struct" href="structbcnp_1_1TypedPacket.html">TypedPacket&lt;MsgType, Storage&gt;</a> packet;</div>
-<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>        packet.<a class="code hl_variable" href="structbcnp_1_1TypedPacket.html#a1d95bebf260db58542716eabbe3e67af">messages</a> = std::move(buffer);</div>
-<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>        </div>
-<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>        <span class="comment">// Encode to wire format</span></div>
-<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>        m_wireBuffer.clear();</div>
-<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>        <span class="keywordflow">if</span> (!<a class="code hl_function" href="namespacebcnp.html#a7230ac0a91ddcc20ac446c0699119779">EncodeTypedPacket</a>(packet, m_wireBuffer)) {</div>
-<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>            std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
-<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>            ++m_metrics.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a23989fb719470722e2bddc6039eff647">sendFailures</a>;</div>
-<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>        }</div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span> </div>
-<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>        <span class="comment">// Send (potentially blocking syscall - but we don&#39;t hold the lock!)</span></div>
-<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>        <span class="keywordflow">if</span> (!adapter.SendBytes(m_wireBuffer.data(), m_wireBuffer.size())) {</div>
-<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>            std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
-<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>            ++m_metrics.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a23989fb719470722e2bddc6039eff647">sendFailures</a>;</div>
-<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span>        }</div>
-<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span> </div>
-<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>        <span class="comment">// Update metrics</span></div>
-<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>        {</div>
-<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>            std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
-<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>            m_metrics.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a9adba78686282d45d3d7ff763bb64ae7">messagesSent</a> += messageCount;</div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>            ++m_metrics.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a6b8bac43a799c9fafe650e31ee571e74">packetsSent</a>;</div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>        }</div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>    }</div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span> </div>
-<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>    TelemetryAccumulatorConfig m_config;</div>
-<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>    Storage m_buffer{};</div>
-<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>    std::vector&lt;uint8_t&gt; m_wireBuffer;  <span class="comment">// Persistent buffer, capacity retained across flushes</span></div>
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>    std::size_t m_tickCount{0};</div>
-<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>    Metrics m_metrics{};</div>
-<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>    <span class="keyword">mutable</span> std::mutex m_mutex;</div>
-<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>};</div>
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno">  214</span> </div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00222" name="l00222"></a><span class="lineno">  222</span>    <span class="keyword">template</span>&lt;<span class="keyword">typename</span> Adapter&gt;</div>
+<div class="line"><a id="l00223" name="l00223"></a><span class="lineno">  223</span>    <span class="keywordtype">bool</span> SendBuffer(Adapter&amp; adapter, Storage&amp;&amp; buffer, std::size_t messageCount) {</div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>        <span class="comment">// Build packet from extracted buffer</span></div>
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>        <a class="code hl_struct" href="structbcnp_1_1TypedPacket.html">TypedPacket&lt;MsgType, Storage&gt;</a> packet;</div>
+<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>        packet.<a class="code hl_variable" href="structbcnp_1_1TypedPacket.html#a1d95bebf260db58542716eabbe3e67af">messages</a> = std::move(buffer);</div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>        </div>
+<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>        <span class="comment">// Encode to wire format</span></div>
+<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>        m_wireBuffer.clear();</div>
+<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span>        <span class="keywordflow">if</span> (!<a class="code hl_function" href="namespacebcnp.html#a7230ac0a91ddcc20ac446c0699119779">EncodeTypedPacket</a>(packet, m_wireBuffer)) {</div>
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno">  231</span>            std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>            ++m_metrics.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a23989fb719470722e2bddc6039eff647">sendFailures</a>;</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>        }</div>
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span> </div>
+<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>        <span class="comment">// Send (potentially blocking syscall - but we don&#39;t hold the lock!)</span></div>
+<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>        <span class="keywordflow">if</span> (!adapter.SendBytes(m_wireBuffer.data(), m_wireBuffer.size())) {</div>
+<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span>            std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
+<div class="line"><a id="l00239" name="l00239"></a><span class="lineno">  239</span>            ++m_metrics.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a23989fb719470722e2bddc6039eff647">sendFailures</a>;</div>
+<div class="line"><a id="l00240" name="l00240"></a><span class="lineno">  240</span>            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00241" name="l00241"></a><span class="lineno">  241</span>        }</div>
+<div class="line"><a id="l00242" name="l00242"></a><span class="lineno">  242</span> </div>
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno">  243</span>        <span class="comment">// Update metrics</span></div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>        {</div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>            std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>            m_metrics.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a9adba78686282d45d3d7ff763bb64ae7">messagesSent</a> += messageCount;</div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>            ++m_metrics.<a class="code hl_variable" href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a6b8bac43a799c9fafe650e31ee571e74">packetsSent</a>;</div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>        }</div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>    }</div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span> </div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>    TelemetryAccumulatorConfig m_config;</div>
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>    Storage m_buffer{};</div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>    std::vector&lt;uint8_t&gt; m_wireBuffer;  <span class="comment">// Persistent buffer, capacity retained across flushes</span></div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>    std::size_t m_tickCount{0};</div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>    Metrics m_metrics{};</div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>    <span class="keyword">mutable</span> std::mutex m_mutex;</div>
+<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span> </div>
+<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>    <span class="keywordtype">void</span> DropOldestUnlocked() {</div>
+<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span>        <span class="keywordflow">if</span> (m_buffer.empty()) {</div>
+<div class="line"><a id="l00261" name="l00261"></a><span class="lineno">  261</span>            <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00262" name="l00262"></a><span class="lineno">  262</span>        }</div>
+<div class="line"><a id="l00263" name="l00263"></a><span class="lineno">  263</span> </div>
+<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span>        <span class="comment">// Shift everything left by one; O(n) but small (default 64)</span></div>
+<div class="line"><a id="l00265" name="l00265"></a><span class="lineno">  265</span>        <span class="keywordflow">for</span> (std::size_t i = 1; i &lt; m_buffer.size(); ++i) {</div>
+<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span>            m_buffer[i - 1] = std::move(m_buffer[i]);</div>
+<div class="line"><a id="l00267" name="l00267"></a><span class="lineno">  267</span>        }</div>
+<div class="line"><a id="l00268" name="l00268"></a><span class="lineno">  268</span>        m_buffer.pop_back();</div>
+<div class="line"><a id="l00269" name="l00269"></a><span class="lineno">  269</span>    }</div>
+<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span>};</div>
 </div>
-<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span> </div>
-<div class="line"><a id="l00264" name="l00264"></a><span class="lineno">  264</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> MsgType&gt;</div>
-<div class="line"><a id="l00265" name="l00265"></a><span class="lineno"><a class="line" href="namespacebcnp.html#ac8553d2e38f76528d31eaf5c4a044b70">  265</a></span><span class="keyword">using </span><a class="code hl_class" href="classbcnp_1_1TelemetryAccumulator.html">DynamicTelemetryAccumulator</a> = <a class="code hl_class" href="classbcnp_1_1TelemetryAccumulator.html">TelemetryAccumulator&lt;MsgType, std::vector&lt;MsgType&gt;</a>&gt;;</div>
-<div class="line"><a id="l00266" name="l00266"></a><span class="lineno">  266</span> </div>
-<div class="line"><a id="l00270" name="l00270"></a><span class="lineno">  270</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> MsgType, std::<span class="keywordtype">size_t</span> Capacity = 64&gt;</div>
-<div class="line"><a id="l00271" name="l00271"></a><span class="lineno"><a class="line" href="namespacebcnp.html#ab340ecaeb2a7c2b2e6e6ae492f8ee135">  271</a></span><span class="keyword">using </span><a class="code hl_class" href="classbcnp_1_1TelemetryAccumulator.html">StaticTelemetryAccumulator</a> = <a class="code hl_class" href="classbcnp_1_1TelemetryAccumulator.html">TelemetryAccumulator&lt;MsgType, StaticVector&lt;MsgType, Capacity&gt;</a>&gt;;</div>
-<div class="line"><a id="l00272" name="l00272"></a><span class="lineno">  272</span> </div>
-<div class="line"><a id="l00273" name="l00273"></a><span class="lineno">  273</span>} <span class="comment">// namespace bcnp</span></div>
+<div class="line"><a id="l00271" name="l00271"></a><span class="lineno">  271</span> </div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> MsgType&gt;</div>
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno"><a class="line" href="namespacebcnp.html#ac8553d2e38f76528d31eaf5c4a044b70">  276</a></span><span class="keyword">using </span><a class="code hl_class" href="classbcnp_1_1TelemetryAccumulator.html">DynamicTelemetryAccumulator</a> = <a class="code hl_class" href="classbcnp_1_1TelemetryAccumulator.html">TelemetryAccumulator&lt;MsgType, std::vector&lt;MsgType&gt;</a>&gt;;</div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span> </div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> MsgType, std::<span class="keywordtype">size_t</span> Capacity = 64&gt;</div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno"><a class="line" href="namespacebcnp.html#ab340ecaeb2a7c2b2e6e6ae492f8ee135">  282</a></span><span class="keyword">using </span><a class="code hl_class" href="classbcnp_1_1TelemetryAccumulator.html">StaticTelemetryAccumulator</a> = <a class="code hl_class" href="classbcnp_1_1TelemetryAccumulator.html">TelemetryAccumulator&lt;MsgType, StaticVector&lt;MsgType, Capacity&gt;</a>&gt;;</div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span> </div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>} <span class="comment">// namespace bcnp</span></div>
 <div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html">bcnp::TelemetryAccumulator</a></div><div class="ttdoc">Accumulates high-frequency telemetry data and batches into packets.</div><div class="ttdef"><b>Definition</b> <a href="#l00055">telemetry_accumulator.h:55</a></div></div>
 <div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html_a0051e7e4432f900f0d88193a74f2ce3c"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html#a0051e7e4432f900f0d88193a74f2ce3c">bcnp::TelemetryAccumulator::Record</a></div><div class="ttdeci">bool Record(const MsgType &amp;msg)</div><div class="ttdoc">Record a telemetry reading.</div><div class="ttdef"><b>Definition</b> <a href="#l00071">telemetry_accumulator.h:71</a></div></div>
 <div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html_a12521794322893dac86fc63a4cfb8d24"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html#a12521794322893dac86fc63a4cfb8d24">bcnp::TelemetryAccumulator::Clock</a></div><div class="ttdeci">std::chrono::steady_clock Clock</div><div class="ttdef"><b>Definition</b> <a href="#l00057">telemetry_accumulator.h:57</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html_a14c2551273f2cb125d71168649ddb03f"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html#a14c2551273f2cb125d71168649ddb03f">bcnp::TelemetryAccumulator::ResetMetrics</a></div><div class="ttdeci">void ResetMetrics()</div><div class="ttdef"><b>Definition</b> <a href="#l00203">telemetry_accumulator.h:203</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html_a3bcae01a0060ae7e988b8720e2addbfc"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html#a3bcae01a0060ae7e988b8720e2addbfc">bcnp::TelemetryAccumulator::RecordBatch</a></div><div class="ttdeci">void RecordBatch(InputIt first, InputIt last)</div><div class="ttdoc">Record multiple telemetry readings at once.</div><div class="ttdef"><b>Definition</b> <a href="#l00092">telemetry_accumulator.h:92</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html_a5096551c39d53f9fd6a1da6684722687"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html#a5096551c39d53f9fd6a1da6684722687">bcnp::TelemetryAccumulator::MaybeFlush</a></div><div class="ttdeci">bool MaybeFlush(Adapter &amp;adapter)</div><div class="ttdoc">Flush if interval has elapsed.</div><div class="ttdef"><b>Definition</b> <a href="#l00113">telemetry_accumulator.h:113</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html_a7f495f8836e61241693ab8c7173455b6"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html#a7f495f8836e61241693ab8c7173455b6">bcnp::TelemetryAccumulator::GetMetrics</a></div><div class="ttdeci">Metrics GetMetrics() const</div><div class="ttdef"><b>Definition</b> <a href="#l00198">telemetry_accumulator.h:198</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html_a8959a3350126de9de05f08d2eb65fc32"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html#a8959a3350126de9de05f08d2eb65fc32">bcnp::TelemetryAccumulator::SetConfig</a></div><div class="ttdeci">void SetConfig(const TelemetryAccumulatorConfig &amp;config)</div><div class="ttdoc">Update configuration.</div><div class="ttdef"><b>Definition</b> <a href="#l00211">telemetry_accumulator.h:211</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html_a8db67f62ae023f9976f56f9d8869a47b"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html#a8db67f62ae023f9976f56f9d8869a47b">bcnp::TelemetryAccumulator::Clear</a></div><div class="ttdeci">void Clear()</div><div class="ttdoc">Clear all buffered messages without sending.</div><div class="ttdef"><b>Definition</b> <a href="#l00181">telemetry_accumulator.h:181</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html_a9718eed6ccfb084e59052dcc64dd5863"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html#a9718eed6ccfb084e59052dcc64dd5863">bcnp::TelemetryAccumulator::BufferedCount</a></div><div class="ttdeci">std::size_t BufferedCount() const</div><div class="ttdoc">Get the number of buffered messages waiting to be sent.</div><div class="ttdef"><b>Definition</b> <a href="#l00173">telemetry_accumulator.h:173</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html_a14c2551273f2cb125d71168649ddb03f"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html#a14c2551273f2cb125d71168649ddb03f">bcnp::TelemetryAccumulator::ResetMetrics</a></div><div class="ttdeci">void ResetMetrics()</div><div class="ttdef"><b>Definition</b> <a href="#l00202">telemetry_accumulator.h:202</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html_a3bcae01a0060ae7e988b8720e2addbfc"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html#a3bcae01a0060ae7e988b8720e2addbfc">bcnp::TelemetryAccumulator::RecordBatch</a></div><div class="ttdeci">void RecordBatch(InputIt first, InputIt last)</div><div class="ttdoc">Record multiple telemetry readings at once.</div><div class="ttdef"><b>Definition</b> <a href="#l00091">telemetry_accumulator.h:91</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html_a5096551c39d53f9fd6a1da6684722687"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html#a5096551c39d53f9fd6a1da6684722687">bcnp::TelemetryAccumulator::MaybeFlush</a></div><div class="ttdeci">bool MaybeFlush(Adapter &amp;adapter)</div><div class="ttdoc">Flush if interval has elapsed.</div><div class="ttdef"><b>Definition</b> <a href="#l00112">telemetry_accumulator.h:112</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html_a7f495f8836e61241693ab8c7173455b6"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html#a7f495f8836e61241693ab8c7173455b6">bcnp::TelemetryAccumulator::GetMetrics</a></div><div class="ttdeci">Metrics GetMetrics() const</div><div class="ttdef"><b>Definition</b> <a href="#l00197">telemetry_accumulator.h:197</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html_a8959a3350126de9de05f08d2eb65fc32"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html#a8959a3350126de9de05f08d2eb65fc32">bcnp::TelemetryAccumulator::SetConfig</a></div><div class="ttdeci">void SetConfig(const TelemetryAccumulatorConfig &amp;config)</div><div class="ttdoc">Update configuration.</div><div class="ttdef"><b>Definition</b> <a href="#l00210">telemetry_accumulator.h:210</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html_a8db67f62ae023f9976f56f9d8869a47b"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html#a8db67f62ae023f9976f56f9d8869a47b">bcnp::TelemetryAccumulator::Clear</a></div><div class="ttdeci">void Clear()</div><div class="ttdoc">Clear all buffered messages without sending.</div><div class="ttdef"><b>Definition</b> <a href="#l00180">telemetry_accumulator.h:180</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html_a9718eed6ccfb084e59052dcc64dd5863"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html#a9718eed6ccfb084e59052dcc64dd5863">bcnp::TelemetryAccumulator::BufferedCount</a></div><div class="ttdeci">std::size_t BufferedCount() const</div><div class="ttdoc">Get the number of buffered messages waiting to be sent.</div><div class="ttdef"><b>Definition</b> <a href="#l00172">telemetry_accumulator.h:172</a></div></div>
 <div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html_aaa738bdf71baa2de497d528e4bb51c68"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html#aaa738bdf71baa2de497d528e4bb51c68">bcnp::TelemetryAccumulator::TelemetryAccumulator</a></div><div class="ttdeci">TelemetryAccumulator(TelemetryAccumulatorConfig config={})</div><div class="ttdef"><b>Definition</b> <a href="#l00059">telemetry_accumulator.h:59</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html_ab5fdf625a1eb2431f4180f53af2ac4ea"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html#ab5fdf625a1eb2431f4180f53af2ac4ea">bcnp::TelemetryAccumulator::ForceFlush</a></div><div class="ttdeci">bool ForceFlush(Adapter &amp;adapter)</div><div class="ttdoc">Force an immediate flush regardless of interval.</div><div class="ttdef"><b>Definition</b> <a href="#l00148">telemetry_accumulator.h:148</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1TelemetryAccumulator_html_ab5fdf625a1eb2431f4180f53af2ac4ea"><div class="ttname"><a href="classbcnp_1_1TelemetryAccumulator.html#ab5fdf625a1eb2431f4180f53af2ac4ea">bcnp::TelemetryAccumulator::ForceFlush</a></div><div class="ttdeci">bool ForceFlush(Adapter &amp;adapter)</div><div class="ttdoc">Force an immediate flush regardless of interval.</div><div class="ttdef"><b>Definition</b> <a href="#l00147">telemetry_accumulator.h:147</a></div></div>
 <div class="ttc" id="anamespacebcnp_html"><div class="ttname"><a href="namespacebcnp.html">bcnp</a></div><div class="ttdef"><b>Definition</b> <a href="command__queue_8h_source.html#l00008">command_queue.h:8</a></div></div>
 <div class="ttc" id="anamespacebcnp_html_a7230ac0a91ddcc20ac446c0699119779"><div class="ttname"><a href="namespacebcnp.html#a7230ac0a91ddcc20ac446c0699119779">bcnp::EncodeTypedPacket</a></div><div class="ttdeci">bool EncodeTypedPacket(const TypedPacket&lt; MsgType, Storage &gt; &amp;packet, uint8_t *output, std::size_t capacity, std::size_t &amp;bytesWritten)</div><div class="ttdoc">Encode a typed packet to a pre-allocated buffer.</div><div class="ttdef"><b>Definition</b> <a href="packet_8h_source.html#l00322">packet.h:322</a></div></div>
 <div class="ttc" id="apacket_8h_html"><div class="ttname"><a href="packet_8h.html">packet.h</a></div><div class="ttdoc">BCNP packet structures, encoding, and decoding utilities.</div></div>
@@ -338,12 +349,12 @@ $(function(){initNavTree('telemetry__accumulator_8h_source.html',''); initResiza
 <div class="ttc" id="astructbcnp_1_1TelemetryAccumulatorConfig_html"><div class="ttname"><a href="structbcnp_1_1TelemetryAccumulatorConfig.html">bcnp::TelemetryAccumulatorConfig</a></div><div class="ttdoc">Configuration for telemetry accumulator.</div><div class="ttdef"><b>Definition</b> <a href="#l00019">telemetry_accumulator.h:19</a></div></div>
 <div class="ttc" id="astructbcnp_1_1TelemetryAccumulatorConfig_html_ab97ec854cfa0860124450d33b87df52a"><div class="ttname"><a href="structbcnp_1_1TelemetryAccumulatorConfig.html#ab97ec854cfa0860124450d33b87df52a">bcnp::TelemetryAccumulatorConfig::maxBufferedMessages</a></div><div class="ttdeci">std::size_t maxBufferedMessages</div><div class="ttdoc">Maximum messages to accumulate before forcing a flush.</div><div class="ttdef"><b>Definition</b> <a href="#l00024">telemetry_accumulator.h:24</a></div></div>
 <div class="ttc" id="astructbcnp_1_1TelemetryAccumulatorConfig_html_af801745b61c63f3d2ed50d31c1b65cdd"><div class="ttname"><a href="structbcnp_1_1TelemetryAccumulatorConfig.html#af801745b61c63f3d2ed50d31c1b65cdd">bcnp::TelemetryAccumulatorConfig::flushIntervalTicks</a></div><div class="ttdeci">std::size_t flushIntervalTicks</div><div class="ttdoc">Flush interval: send telemetry every N control loop ticks.</div><div class="ttdef"><b>Definition</b> <a href="#l00021">telemetry_accumulator.h:21</a></div></div>
-<div class="ttc" id="astructbcnp_1_1TelemetryAccumulator_1_1Metrics_html"><div class="ttname"><a href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html">bcnp::TelemetryAccumulator::Metrics</a></div><div class="ttdoc">Metrics for diagnostics.</div><div class="ttdef"><b>Definition</b> <a href="#l00190">telemetry_accumulator.h:190</a></div></div>
-<div class="ttc" id="astructbcnp_1_1TelemetryAccumulator_1_1Metrics_html_a23989fb719470722e2bddc6039eff647"><div class="ttname"><a href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a23989fb719470722e2bddc6039eff647">bcnp::TelemetryAccumulator::Metrics::sendFailures</a></div><div class="ttdeci">uint64_t sendFailures</div><div class="ttdef"><b>Definition</b> <a href="#l00195">telemetry_accumulator.h:195</a></div></div>
-<div class="ttc" id="astructbcnp_1_1TelemetryAccumulator_1_1Metrics_html_a341440966ee63adac3de093b8e759849"><div class="ttname"><a href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a341440966ee63adac3de093b8e759849">bcnp::TelemetryAccumulator::Metrics::messagesRecorded</a></div><div class="ttdeci">uint64_t messagesRecorded</div><div class="ttdef"><b>Definition</b> <a href="#l00191">telemetry_accumulator.h:191</a></div></div>
-<div class="ttc" id="astructbcnp_1_1TelemetryAccumulator_1_1Metrics_html_a42484ae15ed6b5280c4d37bd5f7cfd2f"><div class="ttname"><a href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a42484ae15ed6b5280c4d37bd5f7cfd2f">bcnp::TelemetryAccumulator::Metrics::bufferOverflows</a></div><div class="ttdeci">uint64_t bufferOverflows</div><div class="ttdef"><b>Definition</b> <a href="#l00194">telemetry_accumulator.h:194</a></div></div>
-<div class="ttc" id="astructbcnp_1_1TelemetryAccumulator_1_1Metrics_html_a6b8bac43a799c9fafe650e31ee571e74"><div class="ttname"><a href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a6b8bac43a799c9fafe650e31ee571e74">bcnp::TelemetryAccumulator::Metrics::packetsSent</a></div><div class="ttdeci">uint64_t packetsSent</div><div class="ttdef"><b>Definition</b> <a href="#l00193">telemetry_accumulator.h:193</a></div></div>
-<div class="ttc" id="astructbcnp_1_1TelemetryAccumulator_1_1Metrics_html_a9adba78686282d45d3d7ff763bb64ae7"><div class="ttname"><a href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a9adba78686282d45d3d7ff763bb64ae7">bcnp::TelemetryAccumulator::Metrics::messagesSent</a></div><div class="ttdeci">uint64_t messagesSent</div><div class="ttdef"><b>Definition</b> <a href="#l00192">telemetry_accumulator.h:192</a></div></div>
+<div class="ttc" id="astructbcnp_1_1TelemetryAccumulator_1_1Metrics_html"><div class="ttname"><a href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html">bcnp::TelemetryAccumulator::Metrics</a></div><div class="ttdoc">Metrics for diagnostics.</div><div class="ttdef"><b>Definition</b> <a href="#l00189">telemetry_accumulator.h:189</a></div></div>
+<div class="ttc" id="astructbcnp_1_1TelemetryAccumulator_1_1Metrics_html_a23989fb719470722e2bddc6039eff647"><div class="ttname"><a href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a23989fb719470722e2bddc6039eff647">bcnp::TelemetryAccumulator::Metrics::sendFailures</a></div><div class="ttdeci">uint64_t sendFailures</div><div class="ttdef"><b>Definition</b> <a href="#l00194">telemetry_accumulator.h:194</a></div></div>
+<div class="ttc" id="astructbcnp_1_1TelemetryAccumulator_1_1Metrics_html_a341440966ee63adac3de093b8e759849"><div class="ttname"><a href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a341440966ee63adac3de093b8e759849">bcnp::TelemetryAccumulator::Metrics::messagesRecorded</a></div><div class="ttdeci">uint64_t messagesRecorded</div><div class="ttdef"><b>Definition</b> <a href="#l00190">telemetry_accumulator.h:190</a></div></div>
+<div class="ttc" id="astructbcnp_1_1TelemetryAccumulator_1_1Metrics_html_a42484ae15ed6b5280c4d37bd5f7cfd2f"><div class="ttname"><a href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a42484ae15ed6b5280c4d37bd5f7cfd2f">bcnp::TelemetryAccumulator::Metrics::bufferOverflows</a></div><div class="ttdeci">uint64_t bufferOverflows</div><div class="ttdef"><b>Definition</b> <a href="#l00193">telemetry_accumulator.h:193</a></div></div>
+<div class="ttc" id="astructbcnp_1_1TelemetryAccumulator_1_1Metrics_html_a6b8bac43a799c9fafe650e31ee571e74"><div class="ttname"><a href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a6b8bac43a799c9fafe650e31ee571e74">bcnp::TelemetryAccumulator::Metrics::packetsSent</a></div><div class="ttdeci">uint64_t packetsSent</div><div class="ttdef"><b>Definition</b> <a href="#l00192">telemetry_accumulator.h:192</a></div></div>
+<div class="ttc" id="astructbcnp_1_1TelemetryAccumulator_1_1Metrics_html_a9adba78686282d45d3d7ff763bb64ae7"><div class="ttname"><a href="structbcnp_1_1TelemetryAccumulator_1_1Metrics.html#a9adba78686282d45d3d7ff763bb64ae7">bcnp::TelemetryAccumulator::Metrics::messagesSent</a></div><div class="ttdeci">uint64_t messagesSent</div><div class="ttdef"><b>Definition</b> <a href="#l00191">telemetry_accumulator.h:191</a></div></div>
 <div class="ttc" id="astructbcnp_1_1TypedPacket_html"><div class="ttname"><a href="structbcnp_1_1TypedPacket.html">bcnp::TypedPacket</a></div><div class="ttdoc">Generic packet containing messages of a specific type.</div><div class="ttdef"><b>Definition</b> <a href="packet_8h_source.html#l00242">packet.h:242</a></div></div>
 <div class="ttc" id="astructbcnp_1_1TypedPacket_html_a1d95bebf260db58542716eabbe3e67af"><div class="ttname"><a href="structbcnp_1_1TypedPacket.html#a1d95bebf260db58542716eabbe3e67af">bcnp::TypedPacket::messages</a></div><div class="ttdeci">Storage messages</div><div class="ttdef"><b>Definition</b> <a href="packet_8h_source.html#l00247">packet.h:247</a></div></div>
 </div><!-- fragment --></div><!-- contents -->
