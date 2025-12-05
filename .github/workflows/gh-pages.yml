@@ -18,6 +18,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Clone Doxygen Awesome CSS
+        run: git clone https://github.com/jothepro/doxygen-awesome-css.git
+
       - name: Generate Doxygen docs
         uses: mattnotmitt/doxygen-action@1.12.0
         with:
