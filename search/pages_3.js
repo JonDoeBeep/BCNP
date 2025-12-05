@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['generation_0',['BCNP Schema &amp; Code Generation',['../index.html',1,'']]]
+  ['generation_0',['BCNP Schema &amp; Code Generation',['../md_schema.html',1,'']]]
 ];

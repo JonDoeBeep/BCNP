@@ -23,7 +23,7 @@ var searchData=
   ['poll_20',['Poll',['../classbcnp_1_1SpiStreamAdapter.html#a61d15768c6077dc18e980e3dc3b09c06',1,'bcnp::SpiStreamAdapter']]],
   ['pollonce_21',['PollOnce',['../classbcnp_1_1DispatcherDriver.html#a655f7a43cf2aa95b75682ca1d741b8cd',1,'bcnp::DispatcherDriver']]],
   ['pop_5fback_22',['pop_back',['../classbcnp_1_1StaticVector.html#a416976a9b5b54259ab01d0a88710fb1a',1,'bcnp::StaticVector']]],
-  ['project_23',['3. Integrate with Your Project',['..//github/workspace/README.md#autotoc_md34',1,'']]],
+  ['project_23',['3. Integrate with Your Project',['../index.html#autotoc_md34',1,'']]],
   ['protocol_24',['Protocol',['../md__2github_2workspace_2protocol.html',1,'BCNP: Batched Command Network Protocol'],['../md__2github_2workspace_2protocol.html#autotoc_md75',1,'Handshake Protocol']]],
   ['protocol_20constants_20v3_25',['Protocol Constants (V3)',['../group__ProtocolConstants.html',1,'']]],
   ['protocol_2emd_26',['protocol.md',['../protocol_8md.html',1,'']]],
@@ -31,7 +31,7 @@ var searchData=
   ['push_5fback_28',['push_back',['../classbcnp_1_1StaticVector.html#a67863868b9be1dd443610d650a5c1b60',1,'bcnp::StaticVector::push_back(const T &amp;value)'],['../classbcnp_1_1StaticVector.html#a34e0a16663f14c0464da1423bd3d7c6a',1,'bcnp::StaticVector::push_back(T &amp;&amp;value)']]],
   ['pushbytes_29',['PushBytes',['../classbcnp_1_1PacketDispatcher.html#a4363452b902f9182c2a6683a11a4f681',1,'bcnp::PacketDispatcher']]],
   ['pushchunk_30',['PushChunk',['../classbcnp_1_1SpiStreamAdapter.html#ab30138900d326cd1b53d5440bc99da85',1,'bcnp::SpiStreamAdapter']]],
-  ['py_20tt_31',['Python Module (&lt;tt&gt;bcnp_messages.py&lt;/tt&gt;)',['../index.html#autotoc_md25',1,'']]],
-  ['python_32',['Client Side (Python)',['..//github/workspace/README.md#autotoc_md41',1,'']]],
-  ['python_20module_20tt_20bcnp_5fmessages_20py_20tt_33',['Python Module (&lt;tt&gt;bcnp_messages.py&lt;/tt&gt;)',['../index.html#autotoc_md25',1,'']]]
+  ['py_20tt_31',['Python Module (&lt;tt&gt;bcnp_messages.py&lt;/tt&gt;)',['../md_schema.html#autotoc_md25',1,'']]],
+  ['python_32',['Client Side (Python)',['../index.html#autotoc_md41',1,'']]],
+  ['python_20module_20tt_20bcnp_5fmessages_20py_20tt_33',['Python Module (&lt;tt&gt;bcnp_messages.py&lt;/tt&gt;)',['../md_schema.html#autotoc_md25',1,'']]]
 ];

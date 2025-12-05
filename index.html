@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.12.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>BCNP: BCNP Schema &amp; Code Generation</title>
+<title>BCNP: BCNP Core</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -97,43 +97,46 @@ $(function(){initNavTree('index.html',''); initResizable(true); });
 </div>
 
 <div><div class="header">
-  <div class="headertitle"><div class="title">BCNP Schema &amp; Code Generation </div></div>
+  <div class="headertitle"><div class="title">BCNP Core </div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="md_README"></a></p>
+<div class="textblock"><p><a class="anchor" id="md__2github_2workspace_2README"></a></p>
 <blockquote class="doxtable">
-<p>&zwj;Define message types in JSON, generate type-safe C++ and Python code automatically. </p>
+<p>&zwj;**B**atched **C**ommand **N**etwork **P**rotocol: a lightweight, real-time binary protocol for robot control. </p>
 </blockquote>
-<h1><a class="anchor" id="autotoc_md1"></a>
-</h1>
-<h1><a class="anchor" id="autotoc_md2"></a>
-Overview</h1>
-<p>The BCNP schema system provides:</p>
+<p>[<img src="https://img.shields.io/badge/protocol-v3.2-blue" alt="Protocol Version" class="inline"/>]() [<img src="https://img.shields.io/badge/C%2B%2B-17-blue" alt="C++ Standard" class="inline"/>]()</p>
+<p>BCNP enables reliable, low-latency command streaming between control stations and robots. It's designed for FRC robotics but works anywhere you need efficient binary messaging with timing guarantees.</p>
+<h1><a class="anchor" id="autotoc_md28"></a>
+Features</h1>
 <ul>
-<li>JSON schema</li>
-<li>Code generation</li>
-<li>Schema hashing</li>
-<li>Type safety</li>
+<li>Schema-driven: Define messages in JSON, generate C++/Python code automatically</li>
+<li>Real-time safe: Optional zero-allocation mode with <code>StaticVector</code> storage</li>
+<li>Batched commands: Send multiple timestamped commands in a single packet</li>
+<li>Integrity checking: CRC32 validation on every packet</li>
+<li>Connection monitoring: Automatic timeout detection and safe shutdown</li>
+<li>Full duplex: Bidirectional telemetry and command streaming simultaneously</li>
+</ul>
+<h1><a class="anchor" id="autotoc_md29"></a>
+Architecture</h1>
+<div class="fragment"><div class="line">┌─────────────────────────────────────────────────────────────────┐</div>
+<div class="line">│  src/bcnp/                                                      │</div>
+<div class="line">│  ├── packet.h/cpp        — Wire format, encoding/decoding       │</div>
+<div class="line">│  ├── stream_parser.h/cpp — Byte stream reassembly &amp; framing     │</div>
+<div class="line">│  ├── dispatcher.h/cpp    — Route packets to message handlers    │</div>
+<div class="line">│  ├── message_queue.h     — Timed command execution queue        │</div>
+<div class="line">│  ├── telemetry_accumulator.h — Batched sensor data transmission │</div>
+<div class="line">│  └── transport/          — TCP/UDP adapters (platform-specific) │</div>
+<div class="line">└─────────────────────────────────────────────────────────────────┘</div>
+</div><!-- fragment --><ul>
+<li><b><code>src/bcnp/</code></b>: Core protocol library (pure C++17, no platform dependencies)</li>
+<li><b><code>src/bcnp/transport/</code></b>: Transport adapters that connect byte streams to the dispatcher</li>
 </ul>
 <hr  />
-<h1><a class="anchor" id="autotoc_md4"></a>
-Files</h1>
-<table class="markdownTable">
-<tr class="markdownTableHead">
-<th class="markdownTableHeadNone">File   </th><th class="markdownTableHeadNone">Purpose    </th></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>messages.json</code>   </td><td class="markdownTableBodyNone">Your message type definitions (edit this)    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>bcnp_schema.json</code>   </td><td class="markdownTableBodyNone">JSON Schema for validating messages.json    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code><a class="el" href="bcnp__codegen_8py.html">bcnp_codegen.py</a></code>   </td><td class="markdownTableBodyNone">Code generator script   </td></tr>
-</table>
-<hr  />
-<h1><a class="anchor" id="autotoc_md6"></a>
+<h1><a class="anchor" id="autotoc_md31"></a>
 Quick Start</h1>
-<h2><a class="anchor" id="autotoc_md7"></a>
-1. Define Messages</h2>
-<p>Edit <code>messages.json</code>:</p>
+<h2><a class="anchor" id="autotoc_md32"></a>
+1. Define Your Message Types</h2>
+<p>Create a <code>messages.json</code> file describing your command and telemetry structures:</p>
 <div class="fragment"><div class="line">{</div>
 <div class="line">  &quot;version&quot;: &quot;3.2&quot;,</div>
 <div class="line">  &quot;namespace&quot;: &quot;bcnp&quot;,</div>
@@ -150,159 +153,138 @@ Quick Start</h1>
 <div class="line">    }</div>
 <div class="line">  ]</div>
 <div class="line">}</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md8"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md33"></a>
 2. Generate Code</h2>
-<div class="fragment"><div class="line"># Generate C++ and Python</div>
-<div class="line">python bcnp_codegen.py messages.json --cpp ../generated --python ../examples</div>
+<div class="fragment"><div class="line">python schema/bcnp_codegen.py messages.json --cpp generated --python examples</div>
+</div><!-- fragment --><p>This creates:</p><ul>
+<li><code><a class="el" href="message__types_8h.html">generated/bcnp/message_types.h</a></code> : C++ structs with <code>Encode()</code>/<code>Decode()</code> methods</li>
+<li><code>examples/bcnp_messages.py</code> : Python dataclasses with serialization</li>
+</ul>
+<h2><a class="anchor" id="autotoc_md34"></a>
+3. Integrate with Your Project</h2>
+<h3><a class="anchor" id="autotoc_md35"></a>
+Option A: CMake Subdirectory (Recommended)</h3>
+<div class="fragment"><div class="line"># Your project&#39;s CMakeLists.txt</div>
+<div class="line">set(BCNP_SCHEMA_FILE &quot;${CMAKE_SOURCE_DIR}/src/messages.json&quot; CACHE FILEPATH &quot;&quot;)</div>
+<div class="line">set(BCNP_GENERATED_DIR &quot;${CMAKE_BINARY_DIR}/generated&quot; CACHE PATH &quot;&quot;)</div>
+<div class="line">add_subdirectory(libraries/BCNP)</div>
 <div class="line"> </div>
-<div class="line"># C++ only</div>
-<div class="line">python bcnp_codegen.py messages.json --cpp ../generated</div>
-<div class="line"> </div>
-<div class="line"># View schema info (no file generation)</div>
-<div class="line">python bcnp_codegen.py messages.json</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md9"></a>
-3. Use Generated Code</h2>
-<p><b>C++:</b> </p><div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="message__types_8h.html">bcnp/message_types.h</a>&gt;</span></div>
-<div class="line"> </div>
-<div class="line">bcnp::DriveCmd cmd{.vx = 1.5f, .omega = 0.0f, .durationMs = 100};</div>
-<div class="ttc" id="amessage__types_8h_html"><div class="ttname"><a href="message__types_8h.html">message_types.h</a></div></div>
-</div><!-- fragment --><p><em>Python:</em> </p><div class="fragment"><div class="line"><span class="keyword">from</span> bcnp_messages <span class="keyword">import</span> DriveCmd, encode_packet</div>
-<div class="line"> </div>
-<div class="line">cmd = DriveCmd(vx=1.5, omega=0.0, durationMs=100)</div>
-<div class="line">packet = encode_packet([cmd])</div>
-</div><!-- fragment --><hr  />
-<h1><a class="anchor" id="autotoc_md11"></a>
-Adding a New Message Type</h1>
-<h2><a class="anchor" id="autotoc_md12"></a>
-Step 1: Edit <code>messages.json</code></h2>
-<p>Add a new entry to the <code>messages</code> array:</p>
-<div class="fragment"><div class="line">{</div>
-<div class="line">  &quot;id&quot;: 10,</div>
-<div class="line">  &quot;name&quot;: &quot;ArmCmd&quot;,</div>
-<div class="line">  &quot;description&quot;: &quot;Arm position command&quot;,</div>
-<div class="line">  &quot;fields&quot;: [</div>
-<div class="line">    {&quot;name&quot;: &quot;shoulderAngle&quot;, &quot;type&quot;: &quot;float32&quot;, &quot;scale&quot;: 10000, &quot;unit&quot;: &quot;rad&quot;},</div>
-<div class="line">    {&quot;name&quot;: &quot;elbowAngle&quot;, &quot;type&quot;: &quot;float32&quot;, &quot;scale&quot;: 10000, &quot;unit&quot;: &quot;rad&quot;},</div>
-<div class="line">    {&quot;name&quot;: &quot;gripperOpen&quot;, &quot;type&quot;: &quot;uint8&quot;},</div>
-<div class="line">    {&quot;name&quot;: &quot;durationMs&quot;, &quot;type&quot;: &quot;uint16&quot;, &quot;unit&quot;: &quot;ms&quot;}</div>
-<div class="line">  ]</div>
+<div class="line">add_executable(robot src/main.cpp)</div>
+<div class="line">target_link_libraries(robot PRIVATE bcnp_core)</div>
+</div><!-- fragment --><p>CMake automatically regenerates code when the schema changes.</p>
+<h3><a class="anchor" id="autotoc_md36"></a>
+Option B: FRC GradleRIO</h3>
+<div class="fragment"><div class="line">// build.gradle</div>
+<div class="line">model {</div>
+<div class="line">    components {</div>
+<div class="line">        frcUserProgram(NativeExecutableSpec) {</div>
+<div class="line">            binaries.all {</div>
+<div class="line">                cppCompiler.args &quot;-I${projectDir}/libraries/BCNP/src&quot;</div>
+<div class="line">                cppCompiler.args &quot;-I${projectDir}/generated&quot;</div>
+<div class="line">            }</div>
+<div class="line">        }</div>
+<div class="line">    }</div>
 <div class="line">}</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md13"></a>
-Step 2: Run Codegen</h2>
-<div class="fragment"><div class="line">python bcnp_codegen.py messages.json --cpp ../generated --python ../examples</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md14"></a>
-Step 3: Rebuild &amp; Update</h2>
-<ol type="1">
-<li>Rebuild your C++ project</li>
-<li>Update Python clients with new <code>bcnp_messages.py</code></li>
-<li><b>Both sides must have matching schema hash</b></li>
-</ol>
-<hr  />
-<h1><a class="anchor" id="autotoc_md16"></a>
-Supported Field Types</h1>
+</div><!-- fragment --><p>Run codegen before building:</p>
+<div class="fragment"><div class="line">python libraries/BCNP/schema/bcnp_codegen.py src/messages.json --cpp generated</div>
+</div><!-- fragment --><h3><a class="anchor" id="autotoc_md37"></a>
+Option C: Standalone Build</h3>
+<div class="fragment"><div class="line">cmake -S . -B build</div>
+<div class="line">cmake --build build</div>
+<div class="line">ctest --test-dir build</div>
+</div><!-- fragment --><hr  />
+<h1><a class="anchor" id="autotoc_md39"></a>
+Usage Example</h1>
+<h2><a class="anchor" id="autotoc_md40"></a>
+Robot Side (C++)</h2>
+<div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="dispatcher_8h.html">bcnp/dispatcher.h</a>&gt;</span></div>
+<div class="line"><span class="preprocessor">#include &lt;<a class="code" href="message__queue_8h.html">bcnp/message_queue.h</a>&gt;</span></div>
+<div class="line"><span class="preprocessor">#include &lt;<a class="code" href="message__types_8h.html">bcnp/message_types.h</a>&gt;</span></div>
+<div class="line"> </div>
+<div class="line"><span class="comment">// Create dispatcher and command queue</span></div>
+<div class="line"><a class="code hl_class" href="classbcnp_1_1PacketDispatcher.html">bcnp::PacketDispatcher</a> dispatcher;</div>
+<div class="line"><a class="code hl_class" href="classbcnp_1_1MessageQueue.html">bcnp::MessageQueue&lt;bcnp::DriveCmd&gt;</a> driveQueue;</div>
+<div class="line"> </div>
+<div class="line"><span class="comment">// Register handler for DriveCmd packets</span></div>
+<div class="line">dispatcher.<a class="code hl_function" href="classbcnp_1_1PacketDispatcher.html#a81ad2a18c1172af7887279f92a6889c2">RegisterHandler</a>&lt;bcnp::DriveCmd&gt;([&amp;](<span class="keyword">const</span> <a class="code hl_struct" href="structbcnp_1_1PacketView.html">bcnp::PacketView</a>&amp; pkt) {</div>
+<div class="line">    <span class="keywordflow">for</span> (<span class="keyword">auto</span> it = pkt.begin_as&lt;bcnp::DriveCmd&gt;(); it != pkt.end_as&lt;bcnp::DriveCmd&gt;(); ++it) {</div>
+<div class="line">        driveQueue.<a class="code hl_function" href="classbcnp_1_1MessageQueue.html#aa5eeeb2dc4b14d8505a7a7ea23a36cad">Push</a>(*it);</div>
+<div class="line">    }</div>
+<div class="line">    driveQueue.<a class="code hl_function" href="classbcnp_1_1MessageQueue.html#ab653c5c6dbe4974467e2009cdabbe98c">NotifyReceived</a>(std::chrono::steady_clock::now());</div>
+<div class="line">});</div>
+<div class="line"> </div>
+<div class="line"><span class="comment">// In your control loop:</span></div>
+<div class="line"><span class="keywordtype">void</span> Periodic() {</div>
+<div class="line">    <span class="comment">// Feed bytes from transport</span></div>
+<div class="line">    dispatcher.<a class="code hl_function" href="classbcnp_1_1PacketDispatcher.html#a4363452b902f9182c2a6683a11a4f681">PushBytes</a>(rxBuffer, rxLength);</div>
+<div class="line">    </div>
+<div class="line">    <span class="comment">// Update queue timing</span></div>
+<div class="line">    driveQueue.<a class="code hl_function" href="classbcnp_1_1MessageQueue.html#a3c0007ccbc4819c15d0dcd625eb3bc72">Update</a>(std::chrono::steady_clock::now());</div>
+<div class="line">    </div>
+<div class="line">    <span class="comment">// Execute active command</span></div>
+<div class="line">    <span class="keywordflow">if</span> (<span class="keyword">auto</span> cmd = driveQueue.<a class="code hl_function" href="classbcnp_1_1MessageQueue.html#a9ae24ed58a604c005898cb79a663d876">ActiveMessage</a>()) {</div>
+<div class="line">        drivetrain.Drive(cmd-&gt;vx, cmd-&gt;omega);</div>
+<div class="line">    } <span class="keywordflow">else</span> {</div>
+<div class="line">        drivetrain.Stop();</div>
+<div class="line">    }</div>
+<div class="line">}</div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_html"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html">bcnp::MessageQueue</a></div><div class="ttdoc">Generic timed message queue for any message type with durationMs field.</div><div class="ttdef"><b>Definition</b> <a href="message__queue_8h_source.html#l00084">message_queue.h:84</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a3c0007ccbc4819c15d0dcd625eb3bc72"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#a3c0007ccbc4819c15d0dcd625eb3bc72">bcnp::MessageQueue::Update</a></div><div class="ttdeci">void Update(Clock::time_point now)</div><div class="ttdoc">Update queue state - call once per control loop iteration.</div><div class="ttdef"><b>Definition</b> <a href="message__queue_8h_source.html#l00160">message_queue.h:160</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a9ae24ed58a604c005898cb79a663d876"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#a9ae24ed58a604c005898cb79a663d876">bcnp::MessageQueue::ActiveMessage</a></div><div class="ttdeci">std::optional&lt; MsgType &gt; ActiveMessage() const</div><div class="ttdoc">Get the currently executing message.</div><div class="ttdef"><b>Definition</b> <a href="message__queue_8h_source.html#l00200">message_queue.h:200</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_aa5eeeb2dc4b14d8505a7a7ea23a36cad"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#aa5eeeb2dc4b14d8505a7a7ea23a36cad">bcnp::MessageQueue::Push</a></div><div class="ttdeci">bool Push(const MsgType &amp;message)</div><div class="ttdoc">Add a message to the back of the queue.</div><div class="ttdef"><b>Definition</b> <a href="message__queue_8h_source.html#l00116">message_queue.h:116</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_ab653c5c6dbe4974467e2009cdabbe98c"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#ab653c5c6dbe4974467e2009cdabbe98c">bcnp::MessageQueue::NotifyReceived</a></div><div class="ttdeci">void NotifyReceived(Clock::time_point now)</div><div class="ttdoc">Notify that messages were received from the network.</div><div class="ttdef"><b>Definition</b> <a href="message__queue_8h_source.html#l00144">message_queue.h:144</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1PacketDispatcher_html"><div class="ttname"><a href="classbcnp_1_1PacketDispatcher.html">bcnp::PacketDispatcher</a></div><div class="ttdoc">Parses BCNP stream and dispatches packets to registered handlers.</div><div class="ttdef"><b>Definition</b> <a href="dispatcher_8h_source.html#l00049">dispatcher.h:49</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1PacketDispatcher_html_a4363452b902f9182c2a6683a11a4f681"><div class="ttname"><a href="classbcnp_1_1PacketDispatcher.html#a4363452b902f9182c2a6683a11a4f681">bcnp::PacketDispatcher::PushBytes</a></div><div class="ttdeci">void PushBytes(const uint8_t *data, std::size_t length)</div><div class="ttdoc">Feed raw bytes from transport (thread-safe)</div><div class="ttdef"><b>Definition</b> <a href="dispatcher_8cpp_source.html#l00036">dispatcher.cpp:36</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1PacketDispatcher_html_a81ad2a18c1172af7887279f92a6889c2"><div class="ttname"><a href="classbcnp_1_1PacketDispatcher.html#a81ad2a18c1172af7887279f92a6889c2">bcnp::PacketDispatcher::RegisterHandler</a></div><div class="ttdeci">void RegisterHandler(PacketHandler handler)</div><div class="ttdoc">Register a handler for a message type (by type)</div><div class="ttdef"><b>Definition</b> <a href="dispatcher_8h_source.html#l00060">dispatcher.h:60</a></div></div>
+<div class="ttc" id="adispatcher_8h_html"><div class="ttname"><a href="dispatcher_8h.html">dispatcher.h</a></div></div>
+<div class="ttc" id="amessage__queue_8h_html"><div class="ttname"><a href="message__queue_8h.html">message_queue.h</a></div><div class="ttdoc">Timed message queue for executing duration-based commands.</div></div>
+<div class="ttc" id="amessage__types_8h_html"><div class="ttname"><a href="message__types_8h.html">message_types.h</a></div></div>
+<div class="ttc" id="astructbcnp_1_1PacketView_html"><div class="ttname"><a href="structbcnp_1_1PacketView.html">bcnp::PacketView</a></div><div class="ttdoc">Zero-copy view into a decoded packet buffer.</div><div class="ttdef"><b>Definition</b> <a href="packet_8h_source.html#l00170">packet.h:170</a></div></div>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md41"></a>
+Client Side (Python)</h2>
+<div class="fragment"><div class="line"><span class="keyword">from</span> bcnp_messages <span class="keyword">import</span> DriveCmd, encode_packet</div>
+<div class="line"> </div>
+<div class="line"><span class="comment"># Create commands with durations</span></div>
+<div class="line">commands = [</div>
+<div class="line">    DriveCmd(vx=1.0, omega=0.0, durationMs=500),  <span class="comment"># Forward 0.5s</span></div>
+<div class="line">    DriveCmd(vx=0.0, omega=1.5, durationMs=300),  <span class="comment"># Turn 0.3s</span></div>
+<div class="line">]</div>
+<div class="line"> </div>
+<div class="line"><span class="comment"># Encode and send</span></div>
+<div class="line">packet = encode_packet(commands)</div>
+<div class="line">socket.send(packet)</div>
+</div><!-- fragment --><hr  />
+<h1><a class="anchor" id="autotoc_md43"></a>
+Documentation</h1>
 <table class="markdownTable">
 <tr class="markdownTableHead">
-<th class="markdownTableHeadNone">Type   </th><th class="markdownTableHeadNone">Wire Size   </th><th class="markdownTableHeadNone">Description    </th></tr>
+<th class="markdownTableHeadNone">Document   </th><th class="markdownTableHeadNone">Description    </th></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>int8</code>   </td><td class="markdownTableBodyNone">1 byte   </td><td class="markdownTableBodyNone">Signed 8-bit integer    </td></tr>
+<td class="markdownTableBodyNone"><a class="el" href="md__2github_2workspace_2protocol.html">protocol.md</a>   </td><td class="markdownTableBodyNone">Full protocol specification and wire format    </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>uint8</code>   </td><td class="markdownTableBodyNone">1 byte   </td><td class="markdownTableBodyNone">Unsigned 8-bit integer    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>int16</code>   </td><td class="markdownTableBodyNone">2 bytes   </td><td class="markdownTableBodyNone">Signed 16-bit integer (big-endian)    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>uint16</code>   </td><td class="markdownTableBodyNone">2 bytes   </td><td class="markdownTableBodyNone">Unsigned 16-bit integer (big-endian)    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>int32</code>   </td><td class="markdownTableBodyNone">4 bytes   </td><td class="markdownTableBodyNone">Signed 32-bit integer (big-endian)    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>uint32</code>   </td><td class="markdownTableBodyNone">4 bytes   </td><td class="markdownTableBodyNone">Unsigned 32-bit integer (big-endian)    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>float32</code>   </td><td class="markdownTableBodyNone">4 bytes   </td><td class="markdownTableBodyNone">Float encoded as int32 with scale factor   </td></tr>
+<td class="markdownTableBodyNone">schema/README.md   </td><td class="markdownTableBodyNone">Schema format and code generation guide   </td></tr>
 </table>
-<h2><a class="anchor" id="autotoc_md17"></a>
-Float Encoding</h2>
-<p><code>float32</code> fields use fixed-point encoding for platform independence:</p>
-<div class="fragment"><div class="line">wire_value = (int32_t)(float_value * scale)</div>
-<div class="line">float_value = wire_value / scale</div>
-</div><!-- fragment --><p>Default scale: <code>10000</code> (4 decimal places, range ±214,748.3647)</p>
 <hr  />
-<h1><a class="anchor" id="autotoc_md19"></a>
-Message Definition Format</h1>
-<div class="fragment"><div class="line">{</div>
-<div class="line">  &quot;id&quot;: 1,                              // Required: Unique ID (1-65535)</div>
-<div class="line">  &quot;name&quot;: &quot;MessageName&quot;,                // Required: PascalCase identifier</div>
-<div class="line">  &quot;description&quot;: &quot;What this does&quot;,      // Optional: Documentation</div>
-<div class="line">  &quot;fields&quot;: [                           // Required: Array of fields</div>
-<div class="line">    {</div>
-<div class="line">      &quot;name&quot;: &quot;fieldName&quot;,              // Required: camelCase identifier</div>
-<div class="line">      &quot;type&quot;: &quot;uint16&quot;,                 // Required: One of supported types</div>
-<div class="line">      &quot;scale&quot;: 10000,                   // Optional: For float32 only</div>
-<div class="line">      &quot;unit&quot;: &quot;m/s&quot;                     // Optional: Documentation only</div>
-<div class="line">    }</div>
-<div class="line">  ]</div>
-<div class="line">}</div>
-</div><!-- fragment --><hr  />
-<h1><a class="anchor" id="autotoc_md21"></a>
-Schema Hash</h1>
-<p>The schema hash is a CRC32 computed from the canonical JSON representation of all message definitions. The hash is printed during codegen and embedded in generated code:</p>
-<div class="fragment"><div class="line">Schema hash: 0x0152BCDB</div>
-</div><!-- fragment --><hr  />
-<h1><a class="anchor" id="autotoc_md23"></a>
-Generated Output</h1>
-<h2><a class="anchor" id="autotoc_md24"></a>
-C++ Header (<code>message_types.h</code>)</h2>
-<div class="fragment"><div class="line"><span class="keyword">namespace </span><a class="code hl_namespace" href="namespacebcnp.html">bcnp</a> {</div>
-<div class="line"> </div>
-<div class="line"><span class="comment">// Protocol constants</span></div>
-<div class="line"><span class="keyword">constexpr</span> uint8_t <a class="code hl_variable" href="namespacebcnp.html#ae6f804883e536bd67015b9ff23b7c8dd">kProtocolMajorV3</a> = 3;</div>
-<div class="line"><span class="keyword">constexpr</span> uint8_t <a class="code hl_variable" href="namespacebcnp.html#ab32538d8c5b740d6ef7505b224df83fc">kProtocolMinorV3</a> = 2;</div>
-<div class="line"><span class="keyword">constexpr</span> uint32_t <a class="code hl_variable" href="namespacebcnp.html#a9ca34194c90d0471f44a433dde42ae71">kSchemaHash</a> = 0x0152BCDB;</div>
-<div class="line"> </div>
-<div class="line"><span class="comment">// Message type enum</span></div>
-<div class="line"><span class="keyword">enum class</span> <a class="code hl_enumeration" href="namespacebcnp.html#a14399a29891cebdd7f6b429bdc258744">MessageTypeId</a> : uint16_t {</div>
-<div class="line">    <a class="code hl_enumvalue" href="namespacebcnp.html#a14399a29891cebdd7f6b429bdc258744a88183b946cc5f0e8c96b2e66e1c74a7e">Unknown</a> = 0,</div>
-<div class="line">    DriveCmd = 1,</div>
-<div class="line">    <span class="comment">// ... your types</span></div>
-<div class="line">};</div>
-<div class="line"> </div>
-<div class="line"><span class="comment">// Generated struct</span></div>
-<div class="line"><span class="keyword">struct </span>DriveCmd {</div>
-<div class="line">    <span class="keyword">static</span> <span class="keyword">constexpr</span> MessageTypeId kTypeId = MessageTypeId::DriveCmd;</div>
-<div class="line">    <span class="keyword">static</span> <span class="keyword">constexpr</span> std::size_t kWireSize = 10;</div>
-<div class="line">    </div>
-<div class="line">    <span class="keywordtype">float</span> vx{0.0f};</div>
-<div class="line">    <span class="keywordtype">float</span> omega{0.0f};</div>
-<div class="line">    uint16_t durationMs{0};</div>
-<div class="line">    </div>
-<div class="line">    <span class="keywordtype">bool</span> Encode(uint8_t* buffer, std::size_t size) <span class="keyword">const</span>;</div>
-<div class="line">    <span class="keyword">static</span> std::optional&lt;DriveCmd&gt; Decode(<span class="keyword">const</span> uint8_t* buffer, std::size_t size);</div>
-<div class="line">};</div>
-<div class="line"> </div>
-<div class="line">} <span class="comment">// namespace bcnp</span></div>
-<div class="ttc" id="anamespacebcnp_html"><div class="ttname"><a href="namespacebcnp.html">bcnp</a></div><div class="ttdef"><b>Definition</b> <a href="command__queue_8h_source.html#l00008">command_queue.h:8</a></div></div>
-<div class="ttc" id="anamespacebcnp_html_a14399a29891cebdd7f6b429bdc258744"><div class="ttname"><a href="namespacebcnp.html#a14399a29891cebdd7f6b429bdc258744">bcnp::MessageTypeId</a></div><div class="ttdeci">MessageTypeId</div><div class="ttdef"><b>Definition</b> <a href="message__types_8h_source.html#l00039">message_types.h:39</a></div></div>
-<div class="ttc" id="anamespacebcnp_html_a14399a29891cebdd7f6b429bdc258744a88183b946cc5f0e8c96b2e66e1c74a7e"><div class="ttname"><a href="namespacebcnp.html#a14399a29891cebdd7f6b429bdc258744a88183b946cc5f0e8c96b2e66e1c74a7e">bcnp::MessageTypeId::Unknown</a></div><div class="ttdeci">@ Unknown</div></div>
+<h1><a class="anchor" id="autotoc_md45"></a>
+Diagnostics</h1>
+<p>BCNP provides diagnostics for debugging communication issues:</p>
+<ul>
+<li><code>StreamParser::ErrorInfo</code>: Reports error code, byte offset, and consecutive error count</li>
+<li><code>MessageQueue::GetMetrics()</code>: Tracks messages received, overflows, and skipped commands</li>
+<li><code>PacketDispatcher::ParseErrorCount()</code>: Cumulative parse error counter</li>
+</ul>
+<p>Publish to SmartDashboard for real-time monitoring:</p>
+<div class="fragment"><div class="line">frc::SmartDashboard::PutBoolean(<span class="stringliteral">&quot;Network/Connected&quot;</span>, dispatcher.<a class="code hl_function" href="classbcnp_1_1PacketDispatcher.html#ae4ab7e0761478845edb390f4d8d31795">IsConnected</a>(now));</div>
+<div class="line">frc::SmartDashboard::PutNumber(<span class="stringliteral">&quot;Network/ParseErrors&quot;</span>, dispatcher.<a class="code hl_function" href="classbcnp_1_1PacketDispatcher.html#a9b3ac96dd914957777beb7d769392901">ParseErrorCount</a>());</div>
+<div class="line">frc::SmartDashboard::PutString(<span class="stringliteral">&quot;Network/SchemaHash&quot;</span>, <span class="stringliteral">&quot;0x&quot;</span> + std::to_string(<a class="code hl_variable" href="namespacebcnp.html#a9ca34194c90d0471f44a433dde42ae71">bcnp::kSchemaHash</a>));</div>
+<div class="ttc" id="aclassbcnp_1_1PacketDispatcher_html_a9b3ac96dd914957777beb7d769392901"><div class="ttname"><a href="classbcnp_1_1PacketDispatcher.html#a9b3ac96dd914957777beb7d769392901">bcnp::PacketDispatcher::ParseErrorCount</a></div><div class="ttdeci">uint64_t ParseErrorCount() const</div><div class="ttdoc">Get parse error count.</div><div class="ttdef"><b>Definition</b> <a href="dispatcher_8cpp_source.html#l00099">dispatcher.cpp:99</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1PacketDispatcher_html_ae4ab7e0761478845edb390f4d8d31795"><div class="ttname"><a href="classbcnp_1_1PacketDispatcher.html#ae4ab7e0761478845edb390f4d8d31795">bcnp::PacketDispatcher::IsConnected</a></div><div class="ttdeci">bool IsConnected(Clock::time_point now) const</div><div class="ttdoc">Check if any packets received recently.</div><div class="ttdef"><b>Definition</b> <a href="dispatcher_8cpp_source.html#l00078">dispatcher.cpp:78</a></div></div>
 <div class="ttc" id="anamespacebcnp_html_a9ca34194c90d0471f44a433dde42ae71"><div class="ttname"><a href="namespacebcnp.html#a9ca34194c90d0471f44a433dde42ae71">bcnp::kSchemaHash</a></div><div class="ttdeci">constexpr uint32_t kSchemaHash</div><div class="ttdef"><b>Definition</b> <a href="message__types_8h_source.html#l00024">message_types.h:24</a></div></div>
-<div class="ttc" id="anamespacebcnp_html_ab32538d8c5b740d6ef7505b224df83fc"><div class="ttname"><a href="namespacebcnp.html#ab32538d8c5b740d6ef7505b224df83fc">bcnp::kProtocolMinorV3</a></div><div class="ttdeci">constexpr uint8_t kProtocolMinorV3</div><div class="ttdef"><b>Definition</b> <a href="message__types_8h_source.html#l00023">message_types.h:23</a></div></div>
-<div class="ttc" id="anamespacebcnp_html_ae6f804883e536bd67015b9ff23b7c8dd"><div class="ttname"><a href="namespacebcnp.html#ae6f804883e536bd67015b9ff23b7c8dd">bcnp::kProtocolMajorV3</a></div><div class="ttdeci">constexpr uint8_t kProtocolMajorV3</div><div class="ttdef"><b>Definition</b> <a href="message__types_8h_source.html#l00022">message_types.h:22</a></div></div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md25"></a>
-Python Module (<code>bcnp_messages.py</code>)</h2>
-<div class="fragment"><div class="line"><span class="preprocessor">@dataclass</span></div>
-<div class="line"><span class="keyword">class </span>DriveCmd:</div>
-<div class="line">    TYPE_ID = 1</div>
-<div class="line">    WIRE_SIZE = 10</div>
-<div class="line">    </div>
-<div class="line">    vx: float = 0.0</div>
-<div class="line">    omega: float = 0.0</div>
-<div class="line">    durationMs: int = 0</div>
-<div class="line">    </div>
-<div class="line">    <span class="keyword">def </span>encode(self) -&gt; bytes: ...</div>
-<div class="line">    </div>
-<div class="line">    <span class="preprocessor">@classmethod</span></div>
-<div class="line">    <span class="keyword">def </span>decode(cls, data: bytes) -&gt; <span class="stringliteral">&#39;DriveCmd&#39;</span>: ...</div>
-<div class="line"> </div>
-<div class="line"><span class="keyword">def </span>encode_packet(messages: List[Any], flags: int = 0) -&gt; bytes: ...</div>
 </div><!-- fragment --><hr  />
- </div></div><!-- PageDoc -->
+<h1><a class="anchor" id="autotoc_md47"></a>
+License</h1>
+<p>MIT License — See [LICENSE](LICENSE) for details. </p>
+</div></div><!-- PageDoc -->
 <a href="doxygen_crawl.html"></a>
 </div><!-- contents -->
 </div><!-- doc-content -->

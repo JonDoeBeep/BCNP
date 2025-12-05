@@ -1,8 +1,8 @@
 var searchData=
 [
-  ['c_0',['Robot Side (C++)',['..//github/workspace/README.md#autotoc_md40',1,'']]],
-  ['c_20header_20tt_20message_5ftypes_20h_20tt_1',['C++ Header (&lt;tt&gt;message_types.h&lt;/tt&gt;)',['../index.html#autotoc_md24',1,'']]],
-  ['c_3a_20standalone_20build_2',['Option C: Standalone Build',['..//github/workspace/README.md#autotoc_md37',1,'']]],
+  ['c_0',['Robot Side (C++)',['../index.html#autotoc_md40',1,'']]],
+  ['c_20header_20tt_20message_5ftypes_20h_20tt_1',['C++ Header (&lt;tt&gt;message_types.h&lt;/tt&gt;)',['../md_schema.html#autotoc_md24',1,'']]],
+  ['c_3a_20standalone_20build_2',['Option C: Standalone Build',['../index.html#autotoc_md37',1,'']]],
   ['canonical_5fjson_3',['canonical_json',['../namespacebcnp__codegen.html#ab80c965b830102cc8adb068cd83b8f51',1,'bcnp_codegen']]],
   ['capacity_4',['capacity',['../structbcnp_1_1MessageQueueConfig.html#a9a6afa56182f77f7af92b63d77d9e724',1,'bcnp::MessageQueueConfig::capacity'],['../classbcnp_1_1StaticVector.html#adc212a210fb5c4c8390f28bfb2e3196d',1,'bcnp::StaticVector::capacity() const noexcept']]],
   ['cbegin_5',['cbegin',['../classbcnp_1_1StaticVector.html#af83e193e308e995b060e7dd8058936a8',1,'bcnp::StaticVector']]],
@@ -11,13 +11,13 @@ var searchData=
   ['checksummismatch_8',['ChecksumMismatch',['../namespacebcnp.html#ab9d83a77b2a1ac85b1c902bd414a1771a23cd86e43512932a4bc975552c8d17fd',1,'bcnp']]],
   ['clear_9',['Clear',['../classbcnp_1_1MessageQueue.html#ad181e89bc24c39b6125dffb8c2c8b34f',1,'bcnp::MessageQueue::Clear()'],['../classbcnp_1_1MessageQueue_1_1Transaction.html#a47586543b99f2439f9af79acc6174610',1,'bcnp::MessageQueue::Transaction::Clear()'],['../classbcnp_1_1TelemetryAccumulator.html#a8db67f62ae023f9976f56f9d8869a47b',1,'bcnp::TelemetryAccumulator::Clear()']]],
   ['clear_10',['clear',['../classbcnp_1_1StaticVector.html#adedac6b87c8326b536f8505843fcb8c6',1,'bcnp::StaticVector']]],
-  ['client_20side_20python_11',['Client Side (Python)',['..//github/workspace/README.md#autotoc_md41',1,'']]],
+  ['client_20side_20python_11',['Client Side (Python)',['../index.html#autotoc_md41',1,'']]],
   ['clock_12',['Clock',['../classbcnp_1_1PacketDispatcher.html#ad8c04eb84f5fe7999acd279fe25a71ee',1,'bcnp::PacketDispatcher::Clock'],['../classbcnp_1_1MessageQueue.html#a29f1baa168384d36553e6b8bd6573e8c',1,'bcnp::MessageQueue::Clock'],['../classbcnp_1_1TelemetryAccumulator.html#a12521794322893dac86fc63a4cfb8d24',1,'bcnp::TelemetryAccumulator::Clock']]],
-  ['cmake_20subdirectory_20recommended_13',['Option A: CMake Subdirectory (Recommended)',['..//github/workspace/README.md#autotoc_md35',1,'']]],
-  ['code_14',['Code',['../index.html#autotoc_md8',1,'2. Generate Code'],['..//github/workspace/README.md#autotoc_md33',1,'2. Generate Code'],['../index.html#autotoc_md9',1,'3. Use Generated Code']]],
+  ['cmake_20subdirectory_20recommended_13',['Option A: CMake Subdirectory (Recommended)',['../index.html#autotoc_md35',1,'']]],
+  ['code_14',['Code',['../md_schema.html#autotoc_md8',1,'2. Generate Code'],['../index.html#autotoc_md33',1,'2. Generate Code'],['../md_schema.html#autotoc_md9',1,'3. Use Generated Code']]],
   ['code_15',['code',['../structbcnp_1_1StreamParser_1_1ErrorInfo.html#ac1d83b3c2857e21caf6dd24159130141',1,'bcnp::StreamParser::ErrorInfo']]],
-  ['code_20generation_16',['Code Generation',['../index.html',1,'BCNP Schema &amp; Code Generation'],['../md__2github_2workspace_2protocol.html#autotoc_md84',1,'Code Generation']]],
-  ['codegen_17',['Codegen',['../md__2github_2workspace_2protocol.html#autotoc_md85',1,'Running Codegen'],['../index.html#autotoc_md13',1,'Step 2: Run Codegen']]],
+  ['code_20generation_16',['Code Generation',['../md_schema.html',1,'BCNP Schema &amp; Code Generation'],['../md__2github_2workspace_2protocol.html#autotoc_md84',1,'Code Generation']]],
+  ['codegen_17',['Codegen',['../md__2github_2workspace_2protocol.html#autotoc_md85',1,'Running Codegen'],['../md_schema.html#autotoc_md13',1,'Step 2: Run Codegen']]],
   ['command_18',['Command',['../namespacebcnp.html#acc3785a98774f5bcb095eca770503c97',1,'bcnp']]],
   ['command_20execution_20model_19',['Command Execution Model',['../md__2github_2workspace_2protocol.html#autotoc_md80',1,'']]],
   ['command_20network_20protocol_20',['BCNP: Batched Command Network Protocol',['../md__2github_2workspace_2protocol.html',1,'']]],
@@ -37,5 +37,6 @@ var searchData=
   ['controller_5fdriver_2ecpp_34',['controller_driver.cpp',['../controller__driver_8cpp.html',1,'']]],
   ['controller_5fdriver_2eh_35',['controller_driver.h',['../controller__driver_8h.html',1,'']]],
   ['controllerdriver_36',['ControllerDriver',['../namespacebcnp.html#ad0508809a29db10d4ddb7cc35f48f3d4',1,'bcnp']]],
-  ['custom_20message_20types_37',['Defining Custom Message Types',['../md__2github_2workspace_2protocol.html#autotoc_md71',1,'']]]
+  ['core_37',['BCNP Core',['../index.html',1,'']]],
+  ['custom_20message_20types_38',['Defining Custom Message Types',['../md__2github_2workspace_2protocol.html#autotoc_md71',1,'']]]
 ];

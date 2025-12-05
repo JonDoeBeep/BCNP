@@ -25,7 +25,31 @@
 var NAVTREE =
 [
   [ "BCNP", "index.html", [
-    [ "BCNP Schema & Code Generation", "index.html", "index" ],
+    [ "BCNP Core", "index.html", "index" ],
+    [ "BCNP Schema & Code Generation", "md_schema.html", [
+      [ "", "md_schema.html#autotoc_md1", null ],
+      [ "Overview", "md_schema.html#autotoc_md2", null ],
+      [ "Files", "md_schema.html#autotoc_md4", null ],
+      [ "Quick Start", "md_schema.html#autotoc_md6", [
+        [ "Define Messages", "md_schema.html#autotoc_md7", null ],
+        [ "Generate Code", "md_schema.html#autotoc_md8", null ],
+        [ "Use Generated Code", "md_schema.html#autotoc_md9", null ]
+      ] ],
+      [ "Adding a New Message Type", "md_schema.html#autotoc_md11", [
+        [ "Step 1: Edit messages.json", "md_schema.html#autotoc_md12", null ],
+        [ "Step 2: Run Codegen", "md_schema.html#autotoc_md13", null ],
+        [ "Step 3: Rebuild & Update", "md_schema.html#autotoc_md14", null ]
+      ] ],
+      [ "Supported Field Types", "md_schema.html#autotoc_md16", [
+        [ "Float Encoding", "md_schema.html#autotoc_md17", null ]
+      ] ],
+      [ "Message Definition Format", "md_schema.html#autotoc_md19", null ],
+      [ "Schema Hash", "md_schema.html#autotoc_md21", null ],
+      [ "Generated Output", "md_schema.html#autotoc_md23", [
+        [ "C++ Header (message_types.h)", "md_schema.html#autotoc_md24", null ],
+        [ "Python Module (bcnp_messages.py)", "md_schema.html#autotoc_md25", null ]
+      ] ]
+    ] ],
     [ "BCNP: Batched Command Network Protocol", "md__2github_2workspace_2protocol.html", [
       [ "", "md__2github_2workspace_2protocol.html#autotoc_md49", null ],
       [ "Table of Contents", "md__2github_2workspace_2protocol.html#autotoc_md50", null ],
@@ -99,7 +123,7 @@ var NAVTREEINDEX =
 [
 "adapter_8h.html",
 "classbcnp_1_1StreamParser.html#aded412907bb5773c63587a3d58c3146a",
-"namespacebcnp.html#adae6273ce9d7b4061b1dcfc3a6b1d797"
+"namespacebcnp.html#ab9d83a77b2a1ac85b1c902bd414a1771a23cd86e43512932a4bc975552c8d17fd"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';
