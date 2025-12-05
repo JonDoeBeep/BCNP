@@ -101,11 +101,12 @@ $(function(){initNavTree('index.html',''); initResizable(true); });
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><p><a class="anchor" id="md__2github_2workspace_2README"></a></p>
-<h1><a class="anchor" id="autotoc_md28"></a>
-**B**atched **C**ommand **N**etwork **P**rotocol: a lightweight, real-time binary protocol for robot control.</h1>
+<blockquote class="doxtable">
+<p>&zwj;Batched Command Network Protocol: a lightweight, real-time binary protocol for robot control. </p>
+</blockquote>
 <p>[<img src="https://img.shields.io/badge/protocol-v3.2-blue" alt="Protocol Version" class="inline"/>]() [<img src="https://img.shields.io/badge/C%2B%2B-17-blue" alt="C++ Standard" class="inline"/>]()</p>
 <p>BCNP enables reliable, low-latency command streaming between control stations and robots. It's designed for FRC robotics but works anywhere you need efficient binary messaging with timing guarantees.</p>
-<h1><a class="anchor" id="autotoc_md29"></a>
+<h1><a class="anchor" id="autotoc_md28"></a>
 Features</h1>
 <ul>
 <li>Schema-driven: Define messages in JSON, generate C++/Python code automatically</li>
@@ -115,7 +116,7 @@ Features</h1>
 <li>Connection monitoring: Automatic timeout detection and safe shutdown</li>
 <li>Full duplex: Bidirectional telemetry and command streaming simultaneously</li>
 </ul>
-<h1><a class="anchor" id="autotoc_md30"></a>
+<h1><a class="anchor" id="autotoc_md29"></a>
 Architecture</h1>
 <div class="fragment"><div class="line">┌─────────────────────────────────────────────────────────────────┐</div>
 <div class="line">│  src/bcnp/                                                      │</div>
@@ -131,9 +132,9 @@ Architecture</h1>
 <li><b><code>src/bcnp/transport/</code></b>: Transport adapters that connect byte streams to the dispatcher</li>
 </ul>
 <hr  />
-<h1><a class="anchor" id="autotoc_md32"></a>
+<h1><a class="anchor" id="autotoc_md31"></a>
 Quick Start</h1>
-<h2><a class="anchor" id="autotoc_md33"></a>
+<h2><a class="anchor" id="autotoc_md32"></a>
 1. Define Your Message Types</h2>
 <p>Create a <code>messages.json</code> file describing your command and telemetry structures:</p>
 <div class="fragment"><div class="line">{</div>
@@ -152,16 +153,16 @@ Quick Start</h1>
 <div class="line">    }</div>
 <div class="line">  ]</div>
 <div class="line">}</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md34"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md33"></a>
 2. Generate Code</h2>
 <div class="fragment"><div class="line">python schema/bcnp_codegen.py messages.json --cpp generated --python examples</div>
 </div><!-- fragment --><p>This creates:</p><ul>
 <li><code><a class="el" href="message__types_8h.html">generated/bcnp/message_types.h</a></code> : C++ structs with <code>Encode()</code>/<code>Decode()</code> methods</li>
 <li><code>examples/bcnp_messages.py</code> : Python dataclasses with serialization</li>
 </ul>
-<h2><a class="anchor" id="autotoc_md35"></a>
+<h2><a class="anchor" id="autotoc_md34"></a>
 3. Integrate with Your Project</h2>
-<h3><a class="anchor" id="autotoc_md36"></a>
+<h3><a class="anchor" id="autotoc_md35"></a>
 Option A: CMake Subdirectory (Recommended)</h3>
 <div class="fragment"><div class="line"># Your project&#39;s CMakeLists.txt</div>
 <div class="line">set(BCNP_SCHEMA_FILE &quot;${CMAKE_SOURCE_DIR}/src/messages.json&quot; CACHE FILEPATH &quot;&quot;)</div>
@@ -171,7 +172,7 @@ Option A: CMake Subdirectory (Recommended)</h3>
 <div class="line">add_executable(robot src/main.cpp)</div>
 <div class="line">target_link_libraries(robot PRIVATE bcnp_core)</div>
 </div><!-- fragment --><p>CMake automatically regenerates code when the schema changes.</p>
-<h3><a class="anchor" id="autotoc_md37"></a>
+<h3><a class="anchor" id="autotoc_md36"></a>
 Option B: FRC GradleRIO</h3>
 <div class="fragment"><div class="line">// build.gradle</div>
 <div class="line">model {</div>
@@ -186,15 +187,15 @@ Option B: FRC GradleRIO</h3>
 <div class="line">}</div>
 </div><!-- fragment --><p>Run codegen before building:</p>
 <div class="fragment"><div class="line">python libraries/BCNP/schema/bcnp_codegen.py src/messages.json --cpp generated</div>
-</div><!-- fragment --><h3><a class="anchor" id="autotoc_md38"></a>
+</div><!-- fragment --><h3><a class="anchor" id="autotoc_md37"></a>
 Option C: Standalone Build</h3>
 <div class="fragment"><div class="line">cmake -S . -B build</div>
 <div class="line">cmake --build build</div>
 <div class="line">ctest --test-dir build</div>
 </div><!-- fragment --><hr  />
-<h1><a class="anchor" id="autotoc_md40"></a>
+<h1><a class="anchor" id="autotoc_md39"></a>
 Usage Example</h1>
-<h2><a class="anchor" id="autotoc_md41"></a>
+<h2><a class="anchor" id="autotoc_md40"></a>
 Robot Side (C++)</h2>
 <div class="fragment"><div class="line"><span class="preprocessor">#include &lt;<a class="code" href="dispatcher_8h.html">bcnp/dispatcher.h</a>&gt;</span></div>
 <div class="line"><span class="preprocessor">#include &lt;<a class="code" href="message__queue_8h.html">bcnp/message_queue.h</a>&gt;</span></div>
@@ -239,7 +240,7 @@ Robot Side (C++)</h2>
 <div class="ttc" id="amessage__queue_8h_html"><div class="ttname"><a href="message__queue_8h.html">message_queue.h</a></div><div class="ttdoc">Timed message queue for executing duration-based commands.</div></div>
 <div class="ttc" id="amessage__types_8h_html"><div class="ttname"><a href="message__types_8h.html">message_types.h</a></div></div>
 <div class="ttc" id="astructbcnp_1_1PacketView_html"><div class="ttname"><a href="structbcnp_1_1PacketView.html">bcnp::PacketView</a></div><div class="ttdoc">Zero-copy view into a decoded packet buffer.</div><div class="ttdef"><b>Definition</b> <a href="packet_8h_source.html#l00170">packet.h:170</a></div></div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md42"></a>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md41"></a>
 Client Side (Python)</h2>
 <div class="fragment"><div class="line"><span class="keyword">from</span> bcnp_messages <span class="keyword">import</span> DriveCmd, encode_packet</div>
 <div class="line"> </div>
@@ -253,7 +254,7 @@ Client Side (Python)</h2>
 <div class="line">packet = encode_packet(commands)</div>
 <div class="line">socket.send(packet)</div>
 </div><!-- fragment --><hr  />
-<h1><a class="anchor" id="autotoc_md44"></a>
+<h1><a class="anchor" id="autotoc_md43"></a>
 Documentation</h1>
 <table class="markdownTable">
 <tr class="markdownTableHead">
@@ -264,7 +265,7 @@ Documentation</h1>
 <td class="markdownTableBodyNone"><a class="el" href="md_schema.html">schema/schema.md</a>   </td><td class="markdownTableBodyNone">Schema format and code generation guide   </td></tr>
 </table>
 <hr  />
-<h1><a class="anchor" id="autotoc_md46"></a>
+<h1><a class="anchor" id="autotoc_md45"></a>
 Diagnostics</h1>
 <p>BCNP provides diagnostics for debugging communication issues:</p>
 <ul>
@@ -280,7 +281,7 @@ Diagnostics</h1>
 <div class="ttc" id="aclassbcnp_1_1PacketDispatcher_html_ae4ab7e0761478845edb390f4d8d31795"><div class="ttname"><a href="classbcnp_1_1PacketDispatcher.html#ae4ab7e0761478845edb390f4d8d31795">bcnp::PacketDispatcher::IsConnected</a></div><div class="ttdeci">bool IsConnected(Clock::time_point now) const</div><div class="ttdoc">Check if any packets received recently.</div><div class="ttdef"><b>Definition</b> <a href="dispatcher_8cpp_source.html#l00078">dispatcher.cpp:78</a></div></div>
 <div class="ttc" id="anamespacebcnp_html_a9ca34194c90d0471f44a433dde42ae71"><div class="ttname"><a href="namespacebcnp.html#a9ca34194c90d0471f44a433dde42ae71">bcnp::kSchemaHash</a></div><div class="ttdeci">constexpr uint32_t kSchemaHash</div><div class="ttdef"><b>Definition</b> <a href="message__types_8h_source.html#l00024">message_types.h:24</a></div></div>
 </div><!-- fragment --><hr  />
-<h1><a class="anchor" id="autotoc_md48"></a>
+<h1><a class="anchor" id="autotoc_md47"></a>
 License</h1>
 <p>MIT License — See [LICENSE](LICENSE) for details. </p>
 </div></div><!-- PageDoc -->
