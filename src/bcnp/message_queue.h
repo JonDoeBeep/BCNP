@@ -193,15 +193,12 @@ public:
      * @brief Get the currently executing message.
      * 
      * Returns the message whose duration is currently being executed.
-     * Non-blocking: returns nullopt immediately if mutex is busy.
+     * Blocks briefly if mutex is held by network thread (typically <5µs).
      * 
-     * @return The active message, or nullopt if none active or mutex busy
+     * @return The active message, or nullopt if none active
      */
     std::optional<MsgType> ActiveMessage() const {
-        std::unique_lock<std::mutex> lock(m_mutex, std::try_to_lock);
-        if (!lock.owns_lock()) {
-            return std::nullopt;
-        }
+        std::lock_guard<std::mutex> lock(m_mutex);
         if (m_active) {
             return m_active->message;
         }

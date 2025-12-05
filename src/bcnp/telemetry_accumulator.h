@@ -111,15 +111,31 @@ public:
      */
     template<typename Adapter>
     bool MaybeFlush(Adapter& adapter) {
-        std::lock_guard<std::mutex> lock(m_mutex);
+        Storage localBuffer;
+        std::size_t messageCount = 0;
         
-        ++m_tickCount;
-        if (m_tickCount < m_config.flushIntervalTicks) {
-            return false;
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            
+            ++m_tickCount;
+            if (m_tickCount < m_config.flushIntervalTicks) {
+                return false;
+            }
+            
+            m_tickCount = 0;
+            
+            if (m_buffer.empty()) {
+                return false;
+            }
+            
+            // Swap buffer out while holding lock
+            localBuffer = std::move(m_buffer);
+            m_buffer = Storage{};
+            messageCount = localBuffer.size();
         }
+        // Lock released - now safe to do blocking I/O
         
-        m_tickCount = 0;
-        return FlushUnlocked(adapter);
+        return SendBuffer(adapter, std::move(localBuffer), messageCount);
     }
 
     /**
@@ -130,9 +146,25 @@ public:
      */
     template<typename Adapter>
     bool ForceFlush(Adapter& adapter) {
-        std::lock_guard<std::mutex> lock(m_mutex);
-        m_tickCount = 0;
-        return FlushUnlocked(adapter);
+        Storage localBuffer;
+        std::size_t messageCount = 0;
+        
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            m_tickCount = 0;
+            
+            if (m_buffer.empty()) {
+                return false;
+            }
+            
+            // Swap buffer out while holding lock
+            localBuffer = std::move(m_buffer);
+            m_buffer = Storage{};
+            messageCount = localBuffer.size();
+        }
+        // Lock released - now safe to do blocking I/O
+        
+        return SendBuffer(adapter, std::move(localBuffer), messageCount);
     }
 
     /**
@@ -182,32 +214,39 @@ public:
     }
 
 private:
+    /**
+     * @brief Send a buffer of messages (called without holding m_mutex).
+     * 
+     * This helper is called after the buffer has been swapped out of the
+     * accumulator, allowing blocking I/O without blocking Record() calls.
+     */
     template<typename Adapter>
-    bool FlushUnlocked(Adapter& adapter) {
-        if (m_buffer.empty()) {
-            return false;
-        }
-
-        // Build packet from buffer
+    bool SendBuffer(Adapter& adapter, Storage&& buffer, std::size_t messageCount) {
+        // Build packet from extracted buffer
         TypedPacket<MsgType, Storage> packet;
-        packet.messages = std::move(m_buffer);
-        m_buffer = Storage{};  
+        packet.messages = std::move(buffer);
         
-        // Encode to wire format (reuse buffer to avoid malloc per flush)
+        // Encode to wire format
         m_wireBuffer.clear();
         if (!EncodeTypedPacket(packet, m_wireBuffer)) {
+            std::lock_guard<std::mutex> lock(m_mutex);
             ++m_metrics.sendFailures;
             return false;
         }
 
-        // Send
+        // Send (potentially blocking syscall - but we don't hold the lock!)
         if (!adapter.SendBytes(m_wireBuffer.data(), m_wireBuffer.size())) {
+            std::lock_guard<std::mutex> lock(m_mutex);
             ++m_metrics.sendFailures;
             return false;
         }
 
-        m_metrics.messagesSent += packet.messages.size();
-        ++m_metrics.packetsSent;
+        // Update metrics
+        {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            m_metrics.messagesSent += messageCount;
+            ++m_metrics.packetsSent;
+        }
         return true;
     }
 
