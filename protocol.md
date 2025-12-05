@@ -1,6 +1,6 @@
 # BCNP: Batched Command Network Protocol
 
-> **Version 3.2.0** 
+> **Version 3.2.2** 
 
 ---
 
@@ -32,6 +32,7 @@ BCNP is a binary protocol designed for real-time robot control over unreliable n
 
 | Version | Type | Changes |
 |---------|------|---------|
+| **3.2.2** | Bugfix | Fix telemetry behaviour and move into stable! |
 | **3.2.1** | Bugfix | The Commenting and Docs Update! |
 | **3.2.0** | Minor | Full duplex communication (bidirectional telemetry) |
 | **3.1.0** | Minor | Decoupled command queue, genericized message handling, deprecated SPI |

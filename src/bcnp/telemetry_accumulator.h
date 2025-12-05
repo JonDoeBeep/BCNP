@@ -70,14 +70,13 @@ public:
      */
     bool Record(const MsgType& msg) {
         std::lock_guard<std::mutex> lock(m_mutex);
-        
-        // If at capacity, we need to make room
-        // For real-time, we just clear and start fresh (latest-wins philosophy)
+
+        // Ring-buffer behavior: drop oldest when full
         if (m_buffer.size() >= m_config.maxBufferedMessages) {
-            m_buffer.clear();
+            DropOldestUnlocked();
             ++m_metrics.bufferOverflows;
         }
-        
+
         m_buffer.push_back(msg);
         ++m_metrics.messagesRecorded;
         return true;
@@ -93,7 +92,7 @@ public:
         std::lock_guard<std::mutex> lock(m_mutex);
         for (auto it = first; it != last; ++it) {
             if (m_buffer.size() >= m_config.maxBufferedMessages) {
-                m_buffer.clear();
+                DropOldestUnlocked();
                 ++m_metrics.bufferOverflows;
             }
             m_buffer.push_back(*it);
@@ -256,6 +255,18 @@ private:
     std::size_t m_tickCount{0};
     Metrics m_metrics{};
     mutable std::mutex m_mutex;
+
+    void DropOldestUnlocked() {
+        if (m_buffer.empty()) {
+            return;
+        }
+
+        // Shift everything left by one; O(n) but small (default 64)
+        for (std::size_t i = 1; i < m_buffer.size(); ++i) {
+            m_buffer[i - 1] = std::move(m_buffer[i]);
+        }
+        m_buffer.pop_back();
+    }
 };
 
 /**
