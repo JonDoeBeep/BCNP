@@ -1,0 +1,86 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "bcnp_schema.json",
+  "title": "BCNP Message Schema",
+  "description": "Schema definition for BCNP v3 message types",
+  "type": "object",
+  "required": ["version", "namespace", "messages"],
+  "properties": {
+    "version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "description": "Protocol version (major.minor)"
+    },
+    "namespace": {
+      "type": "string",
+      "pattern": "^[a-zA-Z_][a-zA-Z0-9_]*$",
+      "description": "C++ namespace for generated code"
+    },
+    "messages": {
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/message"
+      },
+      "minItems": 1
+    }
+  },
+  "definitions": {
+    "message": {
+      "type": "object",
+      "required": ["id", "name", "fields"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 65535,
+          "description": "Unique message type ID (1-65535, 0 reserved)"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[A-Z][a-zA-Z0-9]*$",
+          "description": "Message name (PascalCase)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Human-readable description"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/field"
+          },
+          "minItems": 1
+        }
+      }
+    },
+    "field": {
+      "type": "object",
+      "required": ["name", "type"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-zA-Z0-9]*$",
+          "description": "Field name (camelCase)"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["int8", "uint8", "int16", "uint16", "int32", "uint32", "float32"],
+          "description": "Field data type"
+        },
+        "scale": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Scale factor for float32 fixed-point encoding (e.g., 10000 for 1e-4 precision)"
+        },
+        "unit": {
+          "type": "string",
+          "description": "Physical unit (for documentation)"
+        },
+        "description": {
+          "type": "string",
+          "description": "Field description"
+        }
+      }
+    }
+  }
+}

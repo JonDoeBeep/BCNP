@@ -1,6 +1,7 @@
 #pragma once
 
 #include "bcnp/transport/adapter.h"
+#include <bcnp/message_types.h>
 
 #include <chrono>
 #include <cstdint>
@@ -8,8 +9,22 @@
 
 namespace bcnp {
 
+/**
+ * @brief UDP transport adapter for BCNP over POSIX sockets.
+ * 
+ * Connectionless transport with optional peer locking for security.
+ * Supports pairing tokens and schema handshake validation.
+ * 
+ * Note: UDP does not guarantee delivery. Use TCP for reliable transport.
+ */
 class UdpPosixAdapter : public DuplexAdapter {
 public:
+    /**
+     * @brief Construct UDP adapter.
+     * @param listenPort Port to bind for receiving
+     * @param targetIp Fixed target IP (optional, can learn from first packet)
+     * @param targetPort Fixed target port (optional)
+     */
     explicit UdpPosixAdapter(uint16_t listenPort, const char* targetIp = nullptr, uint16_t targetPort = 0);
     ~UdpPosixAdapter() override;
 
@@ -22,6 +37,11 @@ public:
     void SetPeerLockMode(bool locked);
     void SetPairingToken(uint32_t token);
     void UnlockPeer();
+    
+    // V3 Schema handshake
+    bool IsHandshakeComplete() const { return m_pairingComplete && m_schemaValidated; }
+    bool SendHandshake();  // Send schema hash to peer
+    uint32_t GetRemoteSchemaHash() const { return m_remoteSchemaHash; }
 
 private:
     bool ProcessPairingPacket(const uint8_t* buffer, std::size_t length, const sockaddr_in& src);
@@ -32,9 +52,11 @@ private:
     bool m_hasPeer{false};
     bool m_peerLocked{false};
     bool m_pairingComplete{false};
+    bool m_schemaValidated{false};
     bool m_requirePairing{false};
     bool m_fixedPeerConfigured{false};
     uint32_t m_pairingToken{0x42434E50U};
+    uint32_t m_remoteSchemaHash{0};
     sockaddr_in m_initialPeer{};
     std::chrono::steady_clock::time_point m_lastPeerRx{};
     static constexpr std::chrono::milliseconds kPeerTimeout{5000};

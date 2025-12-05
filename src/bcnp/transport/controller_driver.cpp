@@ -4,14 +4,13 @@
 
 namespace bcnp {
 
-ControllerDriver::ControllerDriver(Controller& controller, DuplexAdapter& adapter)
-    : m_controller(controller), m_adapter(adapter) {
-        // Allocate buffers on heap to prevent stack overflow with large packet sizes
-        m_txBuffer.resize(kMaxPacketSize);
-        m_rxScratch.resize(kMaxPacketSize);
+DispatcherDriver::DispatcherDriver(PacketDispatcher& dispatcher, DuplexAdapter& adapter)
+    : m_dispatcher(dispatcher), m_adapter(adapter) {
+        // Allocate buffer on heap to prevent stack overflow
+        m_rxScratch.resize(8192);
     }
 
-void ControllerDriver::PollOnce() {
+void DispatcherDriver::PollOnce() {
     // Limit iterations to prevent starvation if data arrives faster than we can process
     constexpr std::size_t kMaxChunksPerPoll = 10;
     for (std::size_t i = 0; i < kMaxChunksPerPoll; ++i) {
@@ -19,16 +18,12 @@ void ControllerDriver::PollOnce() {
         if (received == 0) {
             break;
         }
-        m_controller.PushBytes(m_rxScratch.data(), received);
+        m_dispatcher.PushBytes(m_rxScratch.data(), received);
     }
 }
 
-bool ControllerDriver::SendPacket(const Packet& packet) {
-    std::size_t length = 0;
-    if (!EncodePacket(packet, m_txBuffer.data(), m_txBuffer.size(), length)) {
-        return false;
-    }
-    return m_adapter.SendBytes(m_txBuffer.data(), length);
+bool DispatcherDriver::SendBytes(const uint8_t* data, std::size_t length) {
+    return m_adapter.SendBytes(data, length);
 }
 
 } // namespace bcnp

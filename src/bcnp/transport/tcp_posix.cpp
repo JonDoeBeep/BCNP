@@ -1,3 +1,17 @@
+/**
+ * @file tcp_posix.cpp
+ * @brief TCP transport adapter implementation for POSIX systems.
+ * 
+ * Provides reliable, stream-oriented BCNP transport over TCP sockets.
+ * Supports both server mode (listen/accept) and client mode (connect) with
+ * automatic reconnection, non-blocking I/O, and V3 schema handshake validation.
+ * 
+ * @note This implementation is for Linux/POSIX systems only. For Windows,
+ *       use a separate Winsock implementation.
+ * 
+ * 
+ * @see TcpPosixAdapter
+ */
 #include "bcnp/transport/tcp_posix.h"
 
 #include <algorithm>
@@ -14,10 +28,29 @@
 namespace bcnp {
 
 namespace {
+/// @brief Interval between reconnection attempts for client mode.
 constexpr auto kReconnectInterval = std::chrono::milliseconds(500);
+
+/// @brief Minimum interval between error log messages to prevent spam.
 constexpr auto kLogThrottle = std::chrono::seconds(1);
 } // namespace
 
+/**
+ * @brief Constructs a TCP adapter in server or client mode.
+ * 
+ * @param listenPort Port to bind for server mode. Pass 0 for client mode.
+ * @param targetIp Target IP address for client mode (ignored in server mode).
+ * @param targetPort Target port for client mode (ignored in server mode).
+ * 
+ * Server mode (listenPort > 0):
+ * Creates a listening socket on the specified port
+ * Accepts one client at a time
+ * Auto-disconnects zombie clients after timeout
+ * 
+ * Client mode (listenPort == 0, targetIp/targetPort set):
+ * Initiates connect to the target
+ * Automatically reconnects on disconnect
+ */
 TcpPosixAdapter::TcpPosixAdapter(uint16_t listenPort, const char* targetIp, uint16_t targetPort) {
     m_txBuffer = std::make_unique<uint8_t[]>(kTxBufferCapacity);
 
@@ -61,6 +94,9 @@ TcpPosixAdapter::TcpPosixAdapter(uint16_t listenPort, const char* targetIp, uint
     }
 }
 
+/**
+ * @brief Destructor. Closes all open sockets.
+ */
 TcpPosixAdapter::~TcpPosixAdapter() {
     if (m_clientSocket >= 0) {
         ::close(m_clientSocket);
@@ -70,6 +106,14 @@ TcpPosixAdapter::~TcpPosixAdapter() {
     }
 }
 
+/**
+ * @brief Creates or recreates the base socket.
+ * 
+ * Closes any existing socket and creates a new one with SO_REUSEADDR enabled.
+ * Used for server mode initialization and client reconnection.
+ * 
+ * @return true if socket was created successfully, false otherwise.
+ */
 bool TcpPosixAdapter::CreateBaseSocket() {
     if (m_socket >= 0) {
         ::close(m_socket);
@@ -97,6 +141,14 @@ bool TcpPosixAdapter::CreateBaseSocket() {
     return true;
 }
 
+/**
+ * @brief Initiates a non-blocking connect to the configured peer (client mode only).
+ * 
+ * Implements reconnection backoff: won't attempt reconnect until kReconnectInterval
+ * has passed since the last attempt unless forceImmediate is set.
+ * 
+ * @param forceImmediate If true, bypass the reconnection interval throttle.
+ */
 void TcpPosixAdapter::BeginClientConnect(bool forceImmediate) {
     if (m_isServer || !m_peerAddrValid) {
         return;
@@ -130,6 +182,17 @@ void TcpPosixAdapter::BeginClientConnect(bool forceImmediate) {
     m_connectInProgress = false;
 }
 
+/**
+ * @brief Polls connection state and handles accept/connect operations.
+ * 
+ * Server mode:
+ * Checks for zombie client timeout
+ * Accepts new client connections
+ * 
+ * Client mode:
+ * Checks async connect completion
+ * Initiates reconnection if disconnected
+ */
 void TcpPosixAdapter::PollConnection() {
     if (m_isServer) {
         if (m_socket < 0) {
@@ -207,8 +270,19 @@ void TcpPosixAdapter::PollConnection() {
     }
 }
 
+/**
+ * @brief Handles connection loss cleanup and reconnection initiation.
+ * 
+ * Resets handshake state, drops pending TX data, and closes sockets.
+ * In client mode, triggers immediate reconnection attempt.
+ */
 void TcpPosixAdapter::HandleConnectionLoss() {
     m_isConnected = false;
+    m_handshakeComplete = false;
+    m_handshakeSent = false;
+    m_schemaValidated = false;
+    m_handshakeReceived = 0;
+    m_remoteSchemaHash = 0;
     DropPendingTx();
 
     if (m_isServer) {
@@ -229,6 +303,16 @@ void TcpPosixAdapter::HandleConnectionLoss() {
     BeginClientConnect(true);
 }
 
+/**
+ * @brief Sends bytes through the TCP connection.
+ * 
+ * Data is buffered and sent asynchronously to prevent blocking on slow connections.
+ * Implements congestion control by rejecting new packets when buffer exceeds 50% capacity.
+ * 
+ * @param data Pointer to byte buffer to send.
+ * @param length Number of bytes to send.
+ * @return true if data was accepted for sending, false if buffer full or not connected.
+ */
 bool TcpPosixAdapter::SendBytes(const uint8_t* data, std::size_t length) {
     if (!data || length == 0) {
         return true;
@@ -254,6 +338,16 @@ bool TcpPosixAdapter::SendBytes(const uint8_t* data, std::size_t length) {
     return true;
 }
 
+/**
+ * @brief Receives bytes from the TCP connection.
+ * 
+ * Performs non-blocking receive. Handles V3 handshake protocol transparently -
+ * handshake bytes are consumed internally and not returned to the caller.
+ * 
+ * @param buffer Destination buffer for received data.
+ * @param maxLength Maximum bytes to receive.
+ * @return Number of bytes received (0 if no data or error).
+ */
 std::size_t TcpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength) {
     if (m_socket < 0 || !buffer || maxLength == 0) {
         return 0;
@@ -267,6 +361,11 @@ std::size_t TcpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength
     }
 
     TryFlushTxBuffer(targetSock);
+    
+    // Send handshake if connected but not sent yet
+    if (!m_handshakeSent) {
+        SendHandshake();
+    }
 
     ssize_t received;
     do {
@@ -277,6 +376,24 @@ std::size_t TcpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength
         if (m_isServer) {
             m_lastServerRx = std::chrono::steady_clock::now();
         }
+        
+        // Process handshake if not complete
+        if (!m_handshakeComplete) {
+            std::size_t consumed = std::min(static_cast<std::size_t>(received), 
+                                            kHandshakeSize - m_handshakeReceived);
+            ProcessHandshake(buffer, consumed);
+            
+            // If handshake consumed all data, return 0
+            if (consumed >= static_cast<std::size_t>(received)) {
+                return 0;
+            }
+            
+            // Move remaining data to start of buffer
+            std::size_t remaining = static_cast<std::size_t>(received) - consumed;
+            std::memmove(buffer, buffer + consumed, remaining);
+            return remaining;
+        }
+        
         return static_cast<std::size_t>(received);
     } else if (received == 0) {
         HandleConnectionLoss();
@@ -294,6 +411,14 @@ std::size_t TcpPosixAdapter::ReceiveChunk(uint8_t* buffer, std::size_t maxLength
     }
 }
 
+/**
+ * @brief Attempts to flush pending TX data to the socket.
+ * 
+ * Called internally after enqueuing data and during receive operations.
+ * Uses MSG_NOSIGNAL to prevent SIGPIPE on broken connections.
+ * 
+ * @param targetSock Socket file descriptor to send to.
+ */
 void TcpPosixAdapter::TryFlushTxBuffer(int targetSock) {
     uint8_t* buffer = m_txBuffer.get();
     if (!buffer) {
@@ -334,6 +459,16 @@ void TcpPosixAdapter::TryFlushTxBuffer(int targetSock) {
     }
 }
 
+/**
+ * @brief Enqueues data to the circular TX buffer.
+ * 
+ * Implements real-time congestion control: rejects new packets when buffer
+ * exceeds 50% capacity to prevent runaway buffering and mid-packet corruption.
+ * 
+ * @param data Pointer to data to enqueue.
+ * @param length Number of bytes to enqueue.
+ * @return true if data was enqueued, false if buffer congested.
+ */
 bool TcpPosixAdapter::EnqueueTx(const uint8_t* data, std::size_t length) {
     if (!data || length == 0) {
         return true;
@@ -364,6 +499,15 @@ bool TcpPosixAdapter::EnqueueTx(const uint8_t* data, std::size_t length) {
     m_txSize += length;
     return true;
 }
+/**
+ * @brief Configures socket options for BCNP transport.
+ * 
+ * Enables TCP_NODELAY to minimize latency (important for real-time control)
+ * and O_NONBLOCK for non-blocking I/O.
+ * 
+ * @param sock Socket file descriptor to configure.
+ * @return true if configuration succeeded, false on error.
+ */
 bool TcpPosixAdapter::ConfigureSocket(int sock) {
     int yes = 1;
     if (setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char*)&yes, sizeof(int)) < 0) {
@@ -378,6 +522,13 @@ bool TcpPosixAdapter::ConfigureSocket(int sock) {
     return true;
 }
 
+/**
+ * @brief Logs an error message with throttling.
+ * 
+ * Prevents log spam by only logging once per kLogThrottle interval.
+ * 
+ * @param message Error description to log.
+ */
 void TcpPosixAdapter::LogError(const char* message) {
     const auto now = std::chrono::steady_clock::now();
     if (now - m_lastErrorLog < kLogThrottle) {
@@ -387,10 +538,104 @@ void TcpPosixAdapter::LogError(const char* message) {
     std::cerr << "TCP adapter error: " << message << " errno=" << errno << std::endl;
 }
 
+/**
+ * @brief Discards all pending TX data.
+ * 
+ * Called on connection loss to prevent stale data from being sent
+ * on reconnection.
+ */
 void TcpPosixAdapter::DropPendingTx() {
     m_txHead = 0;
     m_txTail = 0;
     m_txSize = 0;
+}
+
+/**
+ * @brief Sends the V3 protocol handshake to the peer.
+ * 
+ * The handshake contains the protocol magic bytes and schema hash.
+ * Peers must have matching schema hashes for full interoperability.
+ * 
+ * @return true if handshake was queued for sending, false on error.
+ */
+bool TcpPosixAdapter::SendHandshake() {
+    int targetSock = m_isServer ? m_clientSocket : m_socket;
+    if (targetSock < 0 || !m_isConnected) {
+        return false;
+    }
+    
+    uint8_t handshake[kHandshakeSize];
+    // Use custom hash if set, otherwise use default
+    if (m_expectedSchemaHash != 0) {
+        if (!EncodeHandshakeWithHash(handshake, sizeof(handshake), m_expectedSchemaHash)) {
+            return false;
+        }
+    } else {
+        if (!EncodeHandshake(handshake, sizeof(handshake))) {
+            return false;
+        }
+    }
+    
+    // Queue handshake for sending
+    if (!EnqueueTx(handshake, sizeof(handshake))) {
+        return false;
+    }
+    
+    TryFlushTxBuffer(targetSock);
+    m_handshakeSent = true;
+    return true;
+}
+
+/**
+ * @brief Returns the expected schema hash for handshake validation.
+ * 
+ * @return Custom hash if SetExpectedSchemaHash() was called, otherwise kSchemaHash.
+ */
+uint32_t TcpPosixAdapter::GetExpectedSchemaHash() const {
+    return m_expectedSchemaHash != 0 ? m_expectedSchemaHash : kSchemaHash;
+}
+
+/**
+ * @brief Processes incoming handshake bytes.
+ * 
+ * Accumulates bytes until a complete handshake is received, then validates
+ * the remote schema hash against the expected value. Sets m_schemaValidated
+ * on match, logs a warning on mismatch.
+ * 
+ * @param data Received bytes (may be partial handshake).
+ * @param length Number of bytes in data.
+ * @return true if handshake is complete (valid or invalid), false if more bytes needed.
+ */
+bool TcpPosixAdapter::ProcessHandshake(const uint8_t* data, std::size_t length) {
+    // Accumulate handshake bytes
+    std::size_t toRead = std::min(length, kHandshakeSize - m_handshakeReceived);
+    std::memcpy(m_handshakeBuffer + m_handshakeReceived, data, toRead);
+    m_handshakeReceived += toRead;
+    
+    if (m_handshakeReceived < kHandshakeSize) {
+        return false; // Not complete yet
+    }
+    
+    // Extract and validate against expected hash
+    m_remoteSchemaHash = ExtractSchemaHash(m_handshakeBuffer, kHandshakeSize);
+    const uint32_t expected = GetExpectedSchemaHash();
+    
+    if (m_remoteSchemaHash != expected) {
+        std::cerr << "TCP adapter: Schema mismatch! Local=0x" << std::hex << expected 
+                  << " Remote=0x" << m_remoteSchemaHash << std::dec << std::endl;
+        m_schemaValidated = false;
+        m_handshakeComplete = true;
+        return true;
+    }
+    
+    m_schemaValidated = true;
+    m_handshakeComplete = true;
+    
+    if (!m_handshakeSent) {
+        SendHandshake();
+    }
+    
+    return true;
 }
 
 } // namespace bcnp

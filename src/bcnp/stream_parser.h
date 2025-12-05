@@ -10,6 +10,14 @@
 
 namespace bcnp {
 
+/**
+ * @brief Parses a byte stream into BCNP packets.
+ * 
+ * Handles stream reassembly, framing, CRC validation, and error recovery.
+ * Uses a ring buffer internally for efficient parsing of partial packets.
+ * 
+ * Thread-safety: Not thread-safe. Caller must synchronize access.
+ */
 class StreamParser {
 public:
     using PacketCallback = std::function<void(const PacketView&)>;
@@ -19,12 +27,19 @@ public:
         uint64_t consecutiveErrors{0};
     };
     using ErrorCallback = std::function<void(const ErrorInfo&)>;
+    
+    /// Callback to get wire size for a message type ID
+    /// Return 0 if message type is unknown
+    using WireSizeLookup = std::function<std::size_t(MessageTypeId)>;
 
     StreamParser(PacketCallback onPacket, ErrorCallback onError = {}, std::size_t bufferSize = 4096);
 
     void Push(const uint8_t* data, std::size_t length);
 
     void Reset(bool resetErrorState = true);
+    
+    /// Set custom wire size lookup (for testing with custom message types)
+    void SetWireSizeLookup(WireSizeLookup lookup) { m_wireSizeLookup = std::move(lookup); }
 
     static constexpr std::size_t kMaxParseIterationsPerPush = 1024;
 
@@ -37,9 +52,11 @@ private:
     void Discard(std::size_t count);
     void ParseBuffer(std::size_t& iterationBudget);
     std::size_t FindNextHeaderCandidate() const;
+    std::size_t LookupWireSize(MessageTypeId typeId) const;
 
     PacketCallback m_onPacket;
     ErrorCallback m_onError;
+    WireSizeLookup m_wireSizeLookup;
     std::vector<uint8_t> m_buffer;
     std::vector<uint8_t> m_decodeScratch;
     std::size_t m_head{0};

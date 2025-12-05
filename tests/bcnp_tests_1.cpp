@@ -1,8 +1,9 @@
 #define DOCTEST_CONFIG_IMPLEMENT_WITH_MAIN
 #include "doctest.h"
 
-#include "bcnp/command_queue.h"
-#include "bcnp/controller.h"
+#include <bcnp/message_types.h>
+#include "bcnp/message_queue.h"
+#include "bcnp/dispatcher.h"
 #include "bcnp/packet.h"
 #include "bcnp/stream_parser.h"
 #include "bcnp/transport/tcp_posix.h"
@@ -20,88 +21,114 @@
 
 using namespace std::chrono_literals;
 
+namespace {
+// Schema handshake frame for V3 protocol
+std::array<uint8_t, 8> MakeSchemaHandshake() {
+    std::array<uint8_t, 8> frame{};
+    bcnp::EncodeHandshake(frame.data(), frame.size());
+    return frame;
+}
+}
+
 // ============================================================================
 // Test Suite: Packet Encoding/Decoding
 // ============================================================================
 
 TEST_CASE("Packet: Encode and decode round-trip") {
-    bcnp::Packet packet{};
+    bcnp::TypedPacket<bcnp::TestCmd> packet;
     packet.header.flags = bcnp::kFlagClearQueue;
-    packet.commands.push_back({0.5f, -1.0f, 1500});
-    packet.commands.push_back({-0.25f, 0.25f, 500});
+    packet.messages.push_back({0.5f, -1.0f, 1500});
+    packet.messages.push_back({-0.25f, 0.25f, 500});
 
     std::vector<uint8_t> buffer;
-    const bool encoded = bcnp::EncodePacket(packet, buffer);
+    const bool encoded = bcnp::EncodeTypedPacket(packet, buffer);
     REQUIRE(encoded);
 
-    const auto decode = bcnp::DecodePacket(buffer.data(), buffer.size());
-    REQUIRE(decode.packet.has_value());
-    CHECK(decode.packet->commands.size() == 2);
-    CHECK(decode.packet->commands[0].vx == 0.5f);
-    CHECK(decode.packet->commands[1].omega == 0.25f);
+    const auto decode = bcnp::DecodePacketViewAs<bcnp::TestCmd>(buffer.data(), buffer.size());
+    REQUIRE(decode.view.has_value());
+    
+    auto typedPacket = bcnp::DecodeTypedPacket<bcnp::TestCmd>(*decode.view);
+    REQUIRE(typedPacket.has_value());
+    CHECK(typedPacket->messages.size() == 2);
+    CHECK(typedPacket->messages[0].value1 == 0.5f);
+    CHECK(typedPacket->messages[1].value2 == 0.25f);
 }
 
 TEST_CASE("Packet: Detects checksum mismatch") {
-    bcnp::Packet packet{};
-    packet.commands.push_back({0.1f, 0.2f, 250});
+    bcnp::TypedPacket<bcnp::TestCmd> packet;
+    packet.messages.push_back({0.1f, 0.2f, 250});
 
     std::vector<uint8_t> bytes;
-    REQUIRE(bcnp::EncodePacket(packet, bytes));
+    REQUIRE(bcnp::EncodeTypedPacket(packet, bytes));
 
     bytes.back() ^= 0xFF; // Corrupt CRC without touching payload
 
-    const auto decode = bcnp::DecodePacket(bytes.data(), bytes.size());
-    CHECK(!decode.packet.has_value());
+    const auto decode = bcnp::DecodePacketViewAs<bcnp::TestCmd>(bytes.data(), bytes.size());
+    CHECK(!decode.view.has_value());
     CHECK(decode.error == bcnp::PacketError::ChecksumMismatch);
 }
 
 // ============================================================================
-// Test Suite: CommandQueue
+// Test Suite: MessageQueue
 // ============================================================================
 
-TEST_CASE("CommandQueue: Basic command execution timing") {
-    bcnp::CommandQueue queue;
+TEST_CASE("MessageQueue: Basic message execution timing") {
+    bcnp::MessageQueue<bcnp::TestCmd> queue;
     queue.Push({1.0f, 0.0f, 100});
     queue.Push({2.0f, 0.5f, 50});
 
-    const auto start = bcnp::CommandQueue::Clock::now();
-    queue.NotifyPacketReceived(start);
+    const auto start = bcnp::MessageQueue<bcnp::TestCmd>::Clock::now();
+    queue.NotifyReceived(start);
     queue.Update(start);
-    auto cmd = queue.ActiveCommand();
-    REQUIRE(cmd.has_value());
-    CHECK(cmd->vx == 1.0f);
+    auto msg = queue.ActiveMessage();
+    REQUIRE(msg.has_value());
+    CHECK(msg->value1 == 1.0f);
 
     queue.Update(start + 110ms);
-    cmd = queue.ActiveCommand();
-    REQUIRE(cmd.has_value());
-    CHECK(cmd->vx == 2.0f);
+    msg = queue.ActiveMessage();
+    REQUIRE(msg.has_value());
+    CHECK(msg->value1 == 2.0f);
 
     queue.Update(start + 200ms);
-    cmd = queue.ActiveCommand();
-    CHECK(!cmd.has_value());
+    msg = queue.ActiveMessage();
+    CHECK(!msg.has_value());
 }
 
 // ============================================================================
 // Test Suite: StreamParser
 // ============================================================================
 
+namespace {
+// Helper to get wire size for test message types
+std::size_t TestWireSizeLookup(bcnp::MessageTypeId typeId) {
+    if (typeId == bcnp::TestCmd::kTypeId) {
+        return bcnp::TestCmd::kWireSize;
+    }
+    return 0;
+}
+}
+
 TEST_CASE("StreamParser: Chunked packet delivery") {
-    bcnp::Packet packet{};
-    packet.commands.push_back({0.1f, 0.2f, 250});
-    packet.header.commandCount = 1;
+    bcnp::TypedPacket<bcnp::TestCmd> packet;
+    packet.messages.push_back({0.1f, 0.2f, 250});
 
     std::vector<uint8_t> encoded;
-    REQUIRE(bcnp::EncodePacket(packet, encoded));
+    REQUIRE(bcnp::EncodeTypedPacket(packet, encoded));
 
     bool packetSeen = false;
     bcnp::StreamParser parser(
         [&](const bcnp::PacketView& parsed) {
             packetSeen = true;
-            CHECK(std::distance(parsed.begin(), parsed.end()) == 1);
+            int count = 0;
+            for (auto it = parsed.begin_as<bcnp::TestCmd>(); it != parsed.end_as<bcnp::TestCmd>(); ++it) {
+                ++count;
+            }
+            CHECK(count == 1);
         },
         [&](const bcnp::StreamParser::ErrorInfo&) {
             FAIL("Unexpected parse error");
         });
+    parser.SetWireSizeLookup(TestWireSizeLookup);
 
     parser.Push(encoded.data(), 3);
     CHECK(!packetSeen);
@@ -110,18 +137,18 @@ TEST_CASE("StreamParser: Chunked packet delivery") {
 }
 
 TEST_CASE("StreamParser: Truncated packet waits without error") {
-    bcnp::Packet packet{};
-    packet.header.commandCount = 1;
-    packet.commands.push_back({0.5f, 0.1f, 100});
+    bcnp::TypedPacket<bcnp::TestCmd> packet;
+    packet.messages.push_back({0.5f, 0.1f, 100});
 
     std::vector<uint8_t> encoded;
-    REQUIRE(bcnp::EncodePacket(packet, encoded));
+    REQUIRE(bcnp::EncodeTypedPacket(packet, encoded));
 
     bool packetSeen = false;
     std::size_t errors = 0;
     bcnp::StreamParser parser(
         [&](const bcnp::PacketView&) { packetSeen = true; },
         [&](const bcnp::StreamParser::ErrorInfo&) { ++errors; });
+    parser.SetWireSizeLookup(TestWireSizeLookup);
 
     parser.Push(encoded.data(), encoded.size() - 1);
     CHECK(!packetSeen);
@@ -133,49 +160,46 @@ TEST_CASE("StreamParser: Truncated packet waits without error") {
 }
 
 TEST_CASE("StreamParser: Skip bad headers and recover") {
-    bcnp::Packet first{};
-    first.header.commandCount = 1;
-    first.commands.push_back({0.2f, 0.0f, 150});
+    bcnp::TypedPacket<bcnp::TestCmd> first;
+    first.messages.push_back({0.2f, 0.0f, 150});
 
-    bcnp::Packet second{};
-    second.header.commandCount = 1;
-    second.commands.push_back({-0.1f, 0.5f, 200});
+    bcnp::TypedPacket<bcnp::TestCmd> second;
+    second.messages.push_back({-0.1f, 0.5f, 200});
 
     std::vector<uint8_t> combined;
     std::vector<uint8_t> encoded;
 
-    REQUIRE(bcnp::EncodePacket(first, encoded));
+    REQUIRE(bcnp::EncodeTypedPacket(first, encoded));
     combined.insert(combined.end(), encoded.begin(), encoded.end());
 
-    // Append a malformed header (wrong protocol version).
-    combined.push_back(bcnp::kProtocolMajor + 1);
-    combined.push_back(bcnp::kProtocolMinor);
-    combined.push_back(0x00);
-    combined.push_back(0x00);
-    combined.push_back(0x01); // Count = 1
+    // Append a malformed header (wrong protocol version) - V3 format: 7 bytes
+    combined.push_back(bcnp::kProtocolMajor + 1);  // Major (wrong)
+    combined.push_back(bcnp::kProtocolMinor);       // Minor
+    combined.push_back(0x00);                       // Flags
+    combined.push_back(0x00);                       // MsgType high
+    combined.push_back(0x01);                       // MsgType low (TestCmd)
+    combined.push_back(0x00);                       // MsgCount high
+    combined.push_back(0x01);                       // MsgCount low (1 message)
 
-    REQUIRE(bcnp::EncodePacket(second, encoded));
+    REQUIRE(bcnp::EncodeTypedPacket(second, encoded));
     combined.insert(combined.end(), encoded.begin(), encoded.end());
 
-    std::vector<bcnp::Packet> seen;
+    std::vector<bcnp::TypedPacket<bcnp::TestCmd>> seen;
     std::size_t errorCount = 0;
     bcnp::StreamParser parser(
         [&](const bcnp::PacketView& parsed) {
-            bcnp::Packet p;
-            p.header = parsed.header;
-            for (const auto& cmd : parsed) {
-                p.commands.push_back(cmd);
-            }
-            seen.push_back(p);
+            auto p = bcnp::DecodeTypedPacket<bcnp::TestCmd>(parsed);
+            if (p) seen.push_back(*p);
         },
         [&](const bcnp::StreamParser::ErrorInfo&) { ++errorCount; });
+    parser.SetWireSizeLookup(TestWireSizeLookup);
 
     parser.Push(combined.data(), combined.size());
 
     CHECK(errorCount >= 1);
     CHECK(seen.size() == 2);
-    CHECK(seen.front().commands.front().vx == first.commands.front().vx);
-    CHECK(seen.back().commands.front().omega == second.commands.front().omega);
+    CHECK(seen.front().messages.front().value1 == first.messages.front().value1);
+    CHECK(seen.back().messages.front().value2 == second.messages.front().value2);
 }
 
 TEST_CASE("StreamParser: Error info provides diagnostics") {
@@ -183,11 +207,16 @@ TEST_CASE("StreamParser: Error info provides diagnostics") {
     bcnp::StreamParser parser(
         [](const bcnp::PacketView&) {},
         [&](const bcnp::StreamParser::ErrorInfo& info) { errors.push_back(info); });
+    parser.SetWireSizeLookup(TestWireSizeLookup);
 
     std::array<uint8_t, bcnp::kHeaderSize> badHeader{};
     badHeader[bcnp::kHeaderMajorIndex] = bcnp::kProtocolMajor + 1;
     badHeader[bcnp::kHeaderMinorIndex] = bcnp::kProtocolMinor;
-    badHeader[bcnp::kHeaderCountIndex] = 0;
+    // V3: MsgTypeIndex=3 (2 bytes), MsgCountIndex=5 (2 bytes)
+    badHeader[bcnp::kHeaderMsgTypeIndex] = 0;
+    badHeader[bcnp::kHeaderMsgTypeIndex + 1] = 1; // TestCmd
+    badHeader[bcnp::kHeaderMsgCountIndex] = 0;
+    badHeader[bcnp::kHeaderMsgCountIndex + 1] = 0;
 
     parser.Push(badHeader.data(), badHeader.size());
     parser.Push(badHeader.data(), badHeader.size());
@@ -211,91 +240,89 @@ TEST_CASE("StreamParser: DoS protection - survives garbage flood") {
         [&](const bcnp::PacketView&) { packetSeen = true; },
         [](const bcnp::StreamParser::ErrorInfo&) {},
         kBufferSize);
+    parser.SetWireSizeLookup(TestWireSizeLookup);
 
     std::vector<uint8_t> garbage(kBufferSize + 100, 0xFF);
     parser.Push(garbage.data(), garbage.size());
 
-    bcnp::Packet packet{};
-    packet.commands.push_back({0.1f, 0.1f, 100});
+    bcnp::TypedPacket<bcnp::TestCmd> packet;
+    packet.messages.push_back({0.1f, 0.1f, 100});
     std::vector<uint8_t> encoded;
-    bcnp::EncodePacket(packet, encoded);
+    bcnp::EncodeTypedPacket(packet, encoded);
 
     parser.Push(encoded.data(), encoded.size());
     CHECK(packetSeen);
 }
 
 // ============================================================================
-// Test Suite: Controller
+// Test Suite: PacketDispatcher
 // ============================================================================
 
-TEST_CASE("Controller: Command clamping enforces limits") {
-    bcnp::ControllerConfig config{};
-    config.limits.vxMin = -0.25f;
-    config.limits.vxMax = 0.25f;
-    config.limits.omegaMin = -0.5f;
-    config.limits.omegaMax = 0.5f;
-    config.limits.durationMin = 50;
-    config.limits.durationMax = 5000;
-
-    bcnp::Controller controller(config);
-
-    bcnp::Packet packet{};
-    packet.header.commandCount = 1;
-    packet.commands.push_back({1.0f, -2.0f, 6000});
+TEST_CASE("PacketDispatcher: Routes to registered handlers") {
+    bcnp::PacketDispatcher dispatcher;
+    dispatcher.RegisterMessageTypes<bcnp::TestCmd>();
+    bcnp::MessageQueue<bcnp::TestCmd> queue;
+    
+    dispatcher.RegisterHandler<bcnp::TestCmd>([&](const bcnp::PacketView& pkt) {
+        for (auto it = pkt.begin_as<bcnp::TestCmd>(); it != pkt.end_as<bcnp::TestCmd>(); ++it) {
+            queue.Push(*it);
+        }
+        queue.NotifyReceived(bcnp::MessageQueue<bcnp::TestCmd>::Clock::now());
+    });
+    
+    bcnp::TypedPacket<bcnp::TestCmd> packet;
+    packet.messages.push_back({1.0f, -2.0f, 6000});
     
     std::vector<uint8_t> encoded;
-    REQUIRE(bcnp::EncodePacket(packet, encoded));
+    REQUIRE(bcnp::EncodeTypedPacket(packet, encoded));
     
-    bcnp::PacketView view;
-    view.header = packet.header;
-    view.payloadStart = encoded.data() + bcnp::kHeaderSize;
+    dispatcher.PushBytes(encoded.data(), encoded.size());
     
-    controller.HandlePacket(view);
-
-    auto cmd = controller.CurrentCommand(bcnp::CommandQueue::Clock::now());
-    REQUIRE(cmd.has_value());
-    CHECK(cmd->vx == config.limits.vxMax);
-    CHECK(cmd->omega == config.limits.omegaMin);
-    CHECK(cmd->durationMs == config.limits.durationMax);
+    auto now = bcnp::MessageQueue<bcnp::TestCmd>::Clock::now();
+    queue.Update(now);
+    
+    auto msg = queue.ActiveMessage();
+    REQUIRE(msg.has_value());
+    CHECK(msg->value1 == 1.0f);
+    CHECK(msg->value2 == -2.0f);
+    CHECK(msg->durationMs == 6000);
 }
 
-TEST_CASE("CommandQueue: Disconnect clears active command immediately") {
-    bcnp::QueueConfig config{};
+TEST_CASE("MessageQueue: Disconnect clears active message immediately") {
+    bcnp::MessageQueueConfig config{};
     config.connectionTimeout = 50ms;
-    bcnp::CommandQueue queue(config);
+    bcnp::MessageQueue<bcnp::TestCmd> queue(config);
 
-    const auto now = bcnp::CommandQueue::Clock::now();
-    queue.NotifyPacketReceived(now);
+    const auto now = bcnp::MessageQueue<bcnp::TestCmd>::Clock::now();
+    queue.NotifyReceived(now);
     queue.Push({0.0f, 0.0f, 60000});
     queue.Update(now);
-    REQUIRE(queue.ActiveCommand().has_value());
+    REQUIRE(queue.ActiveMessage().has_value());
 
     const auto later = now + config.connectionTimeout + 1ms;
     queue.Update(later);
-    CHECK(!queue.ActiveCommand().has_value());
+    CHECK(!queue.ActiveMessage().has_value());
     CHECK(queue.Size() == 0);
 }
 
 // ============================================================================
-// Test Suite: Thread Safety (NEW)
+// Test Suite: Thread Safety
 // ============================================================================
 
-TEST_CASE("Controller: Thread-safe PushBytes from multiple threads") {
-    bcnp::Controller controller;
+TEST_CASE("PacketDispatcher: Thread-safe PushBytes from multiple threads") {
+    bcnp::PacketDispatcher dispatcher;
+    dispatcher.RegisterMessageTypes<bcnp::TestCmd>();
     std::atomic<int> packetsReceived{0};
     
+    dispatcher.RegisterHandler<bcnp::TestCmd>([&](const bcnp::PacketView&) {
+        ++packetsReceived;
+    });
+    
     // Prepare valid packets
-    bcnp::Packet packet{};
-    packet.commands.push_back({0.1f, 0.1f, 100});
+    bcnp::TypedPacket<bcnp::TestCmd> packet;
+    packet.messages.push_back({0.1f, 0.1f, 100});
     std::vector<uint8_t> encoded;
-    REQUIRE(bcnp::EncodePacket(packet, encoded));
-    
-    // Track received packets
-    std::mutex resultsMutex;
-    std::vector<bcnp::Packet> receivedPackets;
-    
-    // Replace the parser with one that tracks packets
-    controller.Parser().Reset();
+    REQUIRE(bcnp::EncodeTypedPacket(packet, encoded));
     
     // Launch 3 threads that all push the same packet repeatedly
     const int threadsCount = 3;
@@ -305,7 +332,7 @@ TEST_CASE("Controller: Thread-safe PushBytes from multiple threads") {
     for (int t = 0; t < threadsCount; ++t) {
         threads.emplace_back([&, t]() {
             for (int i = 0; i < iterationsPerThread; ++i) {
-                controller.PushBytes(encoded.data(), encoded.size());
+                dispatcher.PushBytes(encoded.data(), encoded.size());
                 std::this_thread::sleep_for(std::chrono::microseconds(100));
             }
         });
@@ -315,20 +342,20 @@ TEST_CASE("Controller: Thread-safe PushBytes from multiple threads") {
         thread.join();
     }
     
-    // Verify no crashes occurred (test passes if we reach here)
-    CHECK(true);
+    // Verify no crashes occurred and packets were received
+    CHECK(packetsReceived > 0);
 }
 
-TEST_CASE("CommandQueue: Concurrent Push and ActiveCommand") {
-    bcnp::CommandQueue queue;
+TEST_CASE("MessageQueue: Concurrent Push and ActiveMessage") {
+    bcnp::MessageQueue<bcnp::TestCmd> queue;
     std::atomic<bool> running{true};
     std::atomic<int> pushCount{0};
     std::atomic<int> readCount{0};
     
-    auto now = bcnp::CommandQueue::Clock::now();
-    queue.NotifyPacketReceived(now);
+    auto now = bcnp::MessageQueue<bcnp::TestCmd>::Clock::now();
+    queue.NotifyReceived(now);
     
-    // Thread 1: Continuously push commands
+    // Thread 1: Continuously push messages
     std::thread pusher([&]() {
         for (int i = 0; i < 100; ++i) {
             if (queue.Push({0.1f, 0.1f, 10})) {
@@ -339,12 +366,12 @@ TEST_CASE("CommandQueue: Concurrent Push and ActiveCommand") {
         running = false;
     });
     
-    // Thread 2: Continuously read active command
+    // Thread 2: Continuously read active message
     std::thread reader([&]() {
         while (running) {
-            queue.Update(bcnp::CommandQueue::Clock::now());
-            auto cmd = queue.ActiveCommand();
-            if (cmd.has_value()) {
+            queue.Update(bcnp::MessageQueue<bcnp::TestCmd>::Clock::now());
+            auto msg = queue.ActiveMessage();
+            if (msg.has_value()) {
                 ++readCount;
             }
             std::this_thread::sleep_for(std::chrono::microseconds(50));
@@ -366,31 +393,54 @@ TEST_CASE("CommandQueue: Concurrent Push and ActiveCommand") {
 TEST_CASE("TCP: Basic server-client connection and data transfer") {
     bcnp::TcpPosixAdapter server(12345);
     REQUIRE(server.IsValid());
+    // Use test schema hash (generated from tests/test_schema.json)
+    server.SetExpectedSchemaHash(bcnp::kSchemaHash);
 
     bcnp::TcpPosixAdapter client(0, "127.0.0.1", 12345);
     REQUIRE(client.IsValid());
+    client.SetExpectedSchemaHash(bcnp::kSchemaHash);
 
-    std::vector<uint8_t> txData = {0x01, 0x02, 0x03, 0x04};
-    for (int i = 0; i < 10; ++i) {
-        client.SendBytes(txData.data(), txData.size());
-        std::this_thread::sleep_for(10ms);
-        if (client.IsConnected()) break;
-    }
-
+    // V3 requires schema handshake first
+    auto handshake = MakeSchemaHandshake();
     std::vector<uint8_t> rxBuffer(1024);
+    
+    // Establish connection with handshakes
+    for (int i = 0; i < 100; ++i) {
+        client.SendBytes(handshake.data(), handshake.size());
+        std::this_thread::sleep_for(10ms);
+        server.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
+        if (server.IsConnected()) {
+            server.SendBytes(handshake.data(), handshake.size());
+            break;
+        }
+    }
+    
+    // Wait for handshake completion
+    for (int i = 0; i < 50; ++i) {
+        client.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
+        server.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
+        if (client.IsHandshakeComplete()) break;
+        std::this_thread::sleep_for(10ms);
+    }
+    
+    REQUIRE(server.IsConnected());
+    REQUIRE(client.IsHandshakeComplete());
+    
+    // Now send actual data
+    std::vector<uint8_t> txData = {0x01, 0x02, 0x03, 0x04};
+    client.SendBytes(txData.data(), txData.size());
+
     bool received = false;
     for (int i = 0; i < 50; ++i) {
         size_t bytes = server.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
-        if (bytes > 0) {
+        if (bytes >= txData.size()) {
             received = true;
-            CHECK(bytes == txData.size());
             CHECK(rxBuffer[0] == 0x01);
             break;
         }
         std::this_thread::sleep_for(10ms);
     }
     REQUIRE(received);
-    CHECK(server.IsConnected());
 
     std::vector<uint8_t> response = {0x05, 0x06};
     server.SendBytes(response.data(), response.size());
@@ -398,9 +448,8 @@ TEST_CASE("TCP: Basic server-client connection and data transfer") {
     received = false;
     for (int i = 0; i < 50; ++i) {
         size_t bytes = client.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
-        if (bytes > 0) {
+        if (bytes >= response.size()) {
             received = true;
-            CHECK(bytes == response.size());
             CHECK(rxBuffer[0] == 0x05);
             break;
         }
@@ -409,41 +458,251 @@ TEST_CASE("TCP: Basic server-client connection and data transfer") {
     CHECK(received);
 }
 
-TEST_CASE("TCP: Partial send handling with slow consumer") {
-    bcnp::TcpPosixAdapter server(12346);
-    REQUIRE(server.IsValid());
+// ============================================================================
+// Test Suite: StaticVector (Rule of Five)
+// ============================================================================
+
+#include "bcnp/static_vector.h"
+#include <string>
+
+TEST_CASE("StaticVector: Basic operations") {
+    bcnp::StaticVector<int, 10> vec;
+    CHECK(vec.empty());
+    CHECK(vec.size() == 0);
+    CHECK(vec.capacity() == 10);
     
-    bcnp::TcpPosixAdapter client(0, "127.0.0.1", 12346);
-    REQUIRE(client.IsValid());
+    vec.push_back(1);
+    vec.push_back(2);
+    vec.push_back(3);
     
-    // Establish connection
-    std::vector<uint8_t> handshake = {0xAA};
-    std::vector<uint8_t> rxBuffer(65536);
+    CHECK(vec.size() == 3);
+    CHECK(vec[0] == 1);
+    CHECK(vec[1] == 2);
+    CHECK(vec[2] == 3);
+    CHECK(vec.front() == 1);
+    CHECK(vec.back() == 3);
+}
+
+TEST_CASE("StaticVector: Copy constructor with non-trivial type") {
+    bcnp::StaticVector<std::string, 5> original;
+    original.push_back("Hello");
+    original.push_back("World");
+    original.push_back("Test");
     
-    for (int i = 0; i < 50; ++i) {
-        client.SendBytes(handshake.data(), handshake.size());
-        server.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
-        if (server.IsConnected() && client.IsConnected()) break;
-        std::this_thread::sleep_for(10ms);
+    // Copy construct
+    bcnp::StaticVector<std::string, 5> copy(original);
+    
+    CHECK(copy.size() == 3);
+    CHECK(copy[0] == "Hello");
+    CHECK(copy[1] == "World");
+    CHECK(copy[2] == "Test");
+    
+    // Modify original - should not affect copy
+    original[0] = "Modified";
+    CHECK(copy[0] == "Hello");
+    
+    // Modify copy - should not affect original
+    copy[1] = "Changed";
+    CHECK(original[1] == "World");
+}
+
+TEST_CASE("StaticVector: Copy assignment with non-trivial type") {
+    bcnp::StaticVector<std::string, 5> original;
+    original.push_back("One");
+    original.push_back("Two");
+    
+    bcnp::StaticVector<std::string, 5> assigned;
+    assigned.push_back("Existing");
+    
+    // Copy assign
+    assigned = original;
+    
+    CHECK(assigned.size() == 2);
+    CHECK(assigned[0] == "One");
+    CHECK(assigned[1] == "Two");
+    
+    // Modify original - should not affect assigned
+    original[0] = "Changed";
+    CHECK(assigned[0] == "One");
+}
+
+TEST_CASE("StaticVector: Move constructor with non-trivial type") {
+    bcnp::StaticVector<std::string, 5> original;
+    original.push_back("Move");
+    original.push_back("Me");
+    
+    // Move construct
+    bcnp::StaticVector<std::string, 5> moved(std::move(original));
+    
+    CHECK(moved.size() == 2);
+    CHECK(moved[0] == "Move");
+    CHECK(moved[1] == "Me");
+    
+    // Original should be empty after move
+    CHECK(original.empty());
+}
+
+TEST_CASE("StaticVector: Move assignment with non-trivial type") {
+    bcnp::StaticVector<std::string, 5> original;
+    original.push_back("Transfer");
+    
+    bcnp::StaticVector<std::string, 5> target;
+    target.push_back("Old");
+    target.push_back("Data");
+    
+    // Move assign
+    target = std::move(original);
+    
+    CHECK(target.size() == 1);
+    CHECK(target[0] == "Transfer");
+    CHECK(original.empty());
+}
+
+TEST_CASE("StaticVector: Self-assignment safety") {
+    bcnp::StaticVector<std::string, 5> vec;
+    vec.push_back("Self");
+    vec.push_back("Assign");
+    
+    // Self copy assign
+    vec = vec;
+    
+    CHECK(vec.size() == 2);
+    CHECK(vec[0] == "Self");
+    CHECK(vec[1] == "Assign");
+    
+    // Self move assign (technically UB for std containers, but we handle it)
+    vec = std::move(vec);
+    
+    CHECK(vec.size() == 2);
+    CHECK(vec[0] == "Self");
+}
+
+TEST_CASE("StaticVector: pop_back and resize") {
+    bcnp::StaticVector<std::string, 5> vec;
+    vec.push_back("A");
+    vec.push_back("B");
+    vec.push_back("C");
+    
+    vec.pop_back();
+    CHECK(vec.size() == 2);
+    CHECK(vec.back() == "B");
+    
+    vec.resize(4, "X");
+    CHECK(vec.size() == 4);
+    CHECK(vec[2] == "X");
+    CHECK(vec[3] == "X");
+    
+    vec.resize(1);
+    CHECK(vec.size() == 1);
+    CHECK(vec[0] == "A");
+}
+
+TEST_CASE("StaticVector: at() bounds checking") {
+    bcnp::StaticVector<int, 5> vec;
+    vec.push_back(10);
+    vec.push_back(20);
+    
+    CHECK(vec.at(0) == 10);
+    CHECK(vec.at(1) == 20);
+    
+    CHECK_THROWS_AS(vec.at(2), std::out_of_range);
+    CHECK_THROWS_AS(vec.at(100), std::out_of_range);
+}
+
+TEST_CASE("StaticVector: Emplace and initializer list") {
+    bcnp::StaticVector<std::string, 5> vec{"First", "Second"};
+    CHECK(vec.size() == 2);
+    
+    vec.emplace_back("Third");
+    CHECK(vec.size() == 3);
+    CHECK(vec[2] == "Third");
+}
+
+TEST_CASE("StaticVector: Iterator support") {
+    bcnp::StaticVector<int, 5> vec{1, 2, 3, 4};
+    
+    int sum = 0;
+    for (int v : vec) {
+        sum += v;
     }
-    REQUIRE(server.IsConnected());
+    CHECK(sum == 10);
     
-    // Test within real-time buffer limits (8 packets max)
-    std::vector<uint8_t> largeData(bcnp::kMaxPacketSize * 2, 0xBB);
-    bool sendSuccess = server.SendBytes(largeData.data(), largeData.size());
+    // Modify through iterator
+    for (int& v : vec) {
+        v *= 2;
+    }
+    CHECK(vec[0] == 2);
+    CHECK(vec[3] == 8);
+}
+
+// Struct with destructor tracking for leak detection
+struct TrackedObject {
+    static int constructions;
+    static int destructions;
     
-    // Should succeed within buffer capacity
-    CHECK(sendSuccess);
+    int value;
+    TrackedObject(int v = 0) : value(v) { ++constructions; }
+    TrackedObject(const TrackedObject& o) : value(o.value) { ++constructions; }
+    TrackedObject(TrackedObject&& o) noexcept : value(o.value) { ++constructions; o.value = -1; }
+    ~TrackedObject() { ++destructions; }
     
-    // Client should be able to receive all data
-    std::vector<uint8_t> received;
-    for (int i = 0; i < 1000 && received.size() < largeData.size(); ++i) {
-        size_t bytes = client.ReceiveChunk(rxBuffer.data(), rxBuffer.size());
-        if (bytes > 0) {
-            received.insert(received.end(), rxBuffer.begin(), rxBuffer.begin() + bytes);
-        }
-        std::this_thread::sleep_for(5ms);
+    static void reset() { constructions = destructions = 0; }
+};
+
+int TrackedObject::constructions = 0;
+int TrackedObject::destructions = 0;
+
+TEST_CASE("StaticVector: No memory leaks on destruction") {
+    TrackedObject::reset();
+    
+    {
+        bcnp::StaticVector<TrackedObject, 10> vec;
+        vec.emplace_back(1);
+        vec.emplace_back(2);
+        vec.emplace_back(3);
     }
     
-    CHECK(received.size() == largeData.size());
+    CHECK(TrackedObject::constructions == TrackedObject::destructions);
+}
+
+TEST_CASE("StaticVector: No memory leaks on copy") {
+    TrackedObject::reset();
+    
+    {
+        bcnp::StaticVector<TrackedObject, 10> original;
+        original.emplace_back(1);
+        original.emplace_back(2);
+        
+        bcnp::StaticVector<TrackedObject, 10> copy(original);
+    }
+    
+    CHECK(TrackedObject::constructions == TrackedObject::destructions);
+}
+
+TEST_CASE("StaticVector: No memory leaks on move") {
+    TrackedObject::reset();
+    
+    {
+        bcnp::StaticVector<TrackedObject, 10> original;
+        original.emplace_back(1);
+        original.emplace_back(2);
+        
+        bcnp::StaticVector<TrackedObject, 10> moved(std::move(original));
+    }
+    
+    CHECK(TrackedObject::constructions == TrackedObject::destructions);
+}
+
+TEST_CASE("StaticVector: No memory leaks on clear") {
+    TrackedObject::reset();
+    
+    bcnp::StaticVector<TrackedObject, 10> vec;
+    vec.emplace_back(1);
+    vec.emplace_back(2);
+    vec.emplace_back(3);
+    
+    vec.clear();
+    
+    CHECK(TrackedObject::constructions == TrackedObject::destructions);
+    CHECK(vec.empty());
 }

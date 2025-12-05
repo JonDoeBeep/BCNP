@@ -1,146 +1,336 @@
-# BCNP: Batched Command Network Protocol v2.4.1
+# BCNP: Batched Command Network Protocol
 
-## Version History:
-- **v2.4.1** (Optimization): Implemented Zero-Copy packet parsing using `PacketView` and `CommandIterator`, and added batch locking to reduce mutex overhead on large packets.
-- **v2.4.0** (Major): Expanded command count to 16-bit (65k commands/packet), increased packet size limit, and switched to dynamic memory allocation.
-- **v2.3.2** (bugfix): Fix bloat, safety, and optimize.
-- **v2.3.1** (bugfix): Fix several critical issues.
-- **v2.3.0** (Minor): Adds CRC32 integrity trailer, fixed-point command encoding, UDP pairing handshake, and buffered TCP send path.
-- **v2.2.1** (Minor): Security bugfixes. 
-- **v2.2.0** (Minor, deprecated): Security bugfixes, optimization. 
-- **v2.1.1** (Bugfix): TCP improvements.
-- **v2.1.0** (Minor, deprecated): TCP Optimization/Adapter support.
-- **v2.0.3** (Bugfix): Packet loss code revamps, DOS prevention.
-- **v2.0.2** (Bugfix): Prevent UDP datagram truncation, keep POSIX transport optional on non-UNIX builds, and ensure unit tests run even in Release builds.
-- **v2.0.1** (Bugfix): Optimize O(n^2) parser to O(m), fix queueing to be more efficient.
-- **v2.0.0** (Major, deprecated): Complete rewrite, BNCP lives in it's own seperate library
-- **v1.1.0** (Minor, deprecated): All fields now use big-endian. Header format changed to major.minor.flags.count
-- **v1.0.0**: Initial release with mixed endianness (deprecated)
+> **Version 3.2.2** 
 
-## Protocol Specification
+---
 
-### Packet Structure
+## Table of Contents
 
-All multi-byte integers use **big-endian** byte order.
+- [Overview](#overview)
+- [Version History](#version-history)
+- [Key Concepts](#key-concepts)
+- [Wire Format](#wire-format)
+- [Message Types](#message-types)
+- [Transport Layer](#transport-layer)
+- [Robot Behavior](#robot-behavior)
+- [Code Generation](#code-generation)
+
+---
+
+## Overview
+
+BCNP is a binary protocol designed for real-time robot control over unreliable networks. It provides:
+
+- Batched commands
+- Fixed-point encoding
+- Graceful degradation
+- And more, meant to make life easier for robotics networking.
+
+---
+
+## Version History
+
+| Version | Type | Changes |
+|---------|------|---------|
+| **3.2.2** | Bugfix | Fix telemetry behaviour and move into stable! |
+| **3.2.1** | Bugfix | The Commenting and Docs Update! |
+| **3.2.0** | Minor | Full duplex communication (bidirectional telemetry) |
+| **3.1.0** | Minor | Decoupled command queue, genericized message handling, deprecated SPI |
+| **3.0.1** | Bugfix | Minor fixes |
+| **3.0.0** | **Major** | Registration-based serialization, JSON schema, codegen, handshake. *Breaking change from v2.x* |
+| 2.4.1 | Optimization | Zero-copy parsing with `PacketView`, batch locking |
+| 2.4.0 | Minor | 16-bit command count (65k/packet), dynamic allocation |
+| 2.3.x | Bugfixes | CRC32, fixed-point encoding, UDP handshake |
+| 2.2.x | Minor | Security fixes, optimization |
+| 2.1.x | Minor | TCP optimization |
+| 2.0.x | **Major** | Complete rewrite, standalone library |
+| 1.x | Deprecated | Initial release |
+
+---
+
+## Key Concepts
+
+### Registration-Based Serialization
+
+BCNP v3 uses a Message Type System:
+
+1. Each message type has a unique ID (1–65535)
+2. Message structures are defined in JSON (`schema/messages.json`)
+3. A codegen tool compiles the schema to C++ and Python
+4. Schema hash ensures both endpoints agree on message definitions
+
+### Schema-Driven Development
+
+```bash
+# 1. Define messages in schema/messages.json
+# 2. Generate code
+python schema/bcnp_codegen.py schema/messages.json --cpp generated --python examples
+
+# 3. Include in your code
+#include <bcnp/message_types.h>
+
+# 4. Use generated types
+bcnp::DriveCmd cmd{.vx = 1.0f, .omega = 0.0f, .durationMs = 100};
+```
+
+### Handshake Requirement
+
+All connections must complete a schema handshake before streaming packets:
+
+1. Both sides send an 8-byte handshake packet on connect
+2. Schema hashes are compared
+3. Connection is rejected if hashes don't match
+
+This prevents silent data corruption from version mismatches.
+
+---
+
+## Wire Format
+
+> **All multi-byte integers use big-endian byte order.**
+
+### Schema Hash
+
+The schema hash is a CRC32 of the canonical JSON representation:
+
+- Ensures client and server agree on field types and order
+- Detects version mismatches before data corruption
+- Automatically updated by codegen
+
+### Handshake Packet (8 bytes)
 
 ```
-┌──────────────────────────────────────────────────────────┐
-│ Header (5 bytes)                                         │
-├──────────┬───────────┬──────────┬────────────────────────┤
-│ Major(1) │ Minor (1) │ Flags(1) │ Cmd Count (2)          │
-│          │           │          │ uint16 (BE)            │
-└──────────┴───────────┴──────────┴────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  Handshake (8 bytes)                                         │
+├─────────────────────────────┬────────────────────────────────┤
+│  Magic "BCNP" (4B ASCII)    │  Schema Hash (4B big-endian)   │
+└─────────────────────────────┴────────────────────────────────┘
+```
 
-┌─────────────────────────────────────────────────────┐
-│ Command 1 (10 bytes)                                 │
-├──────────────────┬───────────────┬──────────────────┤
-│ VX (4)           │ Omega (4)     │ Duration (2)     │
-│ int32 (BE)       │ int32 (BE)    │ uint16 (BE)      │
-│ 1e-4 m/s units   │ 1e-4 rad/s    │ milliseconds     │
-└──────────────────┴───────────────┴──────────────────┘
+Both client and server send this immediately upon connection.
 
-┌─────────────────────────────────────────────────────┐
-│ Command 2 (10 bytes)                                 │
-│ ... (same structure)                                 │
-└─────────────────────────────────────────────────────┘
+### Data Packet
 
-┌─────────────────────────────────────────────────────┐
-│ CRC32 (4 bytes)                                      │
-├─────────────────────────────────────────────────────┤
-│ IEEE CRC32 of header+commands                        │
-└─────────────────────────────────────────────────────┘
+```
+┌──────────────────────────────────────────────────────────────────────────┐
+│  HEADER (7 bytes)                                                        │
+├──────────┬──────────┬──────────┬─────────────────┬───────────────────────┤
+│ Major(1) │ Minor(1) │ Flags(1) │ MsgTypeId(2 BE) │ MsgCount(2 BE)        │
+│    3     │    2     │   0x00   │     0x0001      │      0x000A           │
+└──────────┴──────────┴──────────┴─────────────────┴───────────────────────┘
 
-... (up to 65,535 commands per packet)
+┌──────────────────────────────────────────────────────────────────────────┐
+│  PAYLOAD (MsgCount × message wire size)                                  │
+├──────────────────────────────────────────────────────────────────────────┤
+│  Message 0: [field0][field1][field2]...                                  │
+│  Message 1: [field0][field1][field2]...                                  │
+│  ...                                                                     │
+│  Message N: [field0][field1][field2]...                                  │
+└──────────────────────────────────────────────────────────────────────────┘
+
+┌──────────────────────────────────────────────────────────────────────────┐
+│  CRC32 (4 bytes) — IEEE CRC32 of header + payload                        │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Header Fields
 
-- **Major** (1 byte): Protocol major version. Current: `2`
-- **Minor** (1 byte): Protocol minor version. Current: `4`
-  - Robot rejects packets with mismatched major.minor version
-  - Patch version not transmitted (for bug fixes only)
-- **Flags** (1 byte): Bit flags for special operations:
-  - Bit 0: `CLEAR_QUEUE` - If set, clears the existing command queue before adding new commands
-  - Bits 1-7: Reserved (set to 0)
-- **Command Count** (2 bytes, uint16, big-endian): Number of commands in this packet (0-65535)
+| Field | Size | Description |
+|-------|------|-------------|
+| **Major** | 1 byte | Protocol major version (`3`) |
+| *Minor* | 1 byte | Protocol minor version (`2`) |
+| Flags | 1 byte | Bit 0: `CLEAR_QUEUE` — clear queue before adding messages |
+| MsgTypeId | 2 bytes | Message type ID (1–65535, big-endian) |
+| MsgCount | 2 bytes | Number of messages (0–65535, big-endian) |
 
-### Queue Management
+### Homogeneous Packets
 
-- **Maximum queue size:** Configurable (default: 65,535 commands)
-- **Maximum commands per packet:** 65,535 commands
-- **Packet size:** 5 bytes (header) + 655,350 bytes (65k commands) + 4 bytes (CRC32) ≈ 655 KB
-- Clients can send multiple packets to fill the queue
+> **Each packet contains messages of a single type.**
 
-### Command Fields
+The `MsgTypeId` in the header applies to all messages in that packet.
 
-Each command consists of 10 bytes:
+To send different message types, use separate packets:
 
-- **VX** (4 bytes, signed int32, big-endian): Forward velocity in meters per second encoded as fixed-point (`value = raw / 10,000`).
-  - Range: still clamped to robot limits (e.g., -1.5 to +1.5 m/s).
-  - Positive = forward, Negative = backward.
-  - Senders convert `float` to wire format with `round(vx * 10000.0f)`.
-  
-- **Omega** (4 bytes, signed int32, big-endian): Angular velocity encoded as fixed-point radians/sec with the same 1e-4 scale.
-  
-- **Duration** (2 bytes, uint16, big-endian): How long to execute this command in milliseconds
-  - Range: 0 to 65535 ms (~65 seconds max per command)
-  - The robot will execute this command for the specified duration before moving to the next
+```
+Packet 1: [Header: Type=DriveCmd, Count=10] [DriveCmd×10] [CRC]
+Packet 2: [Header: Type=ArmCmd,   Count=5]  [ArmCmd×5]   [CRC]
+```
 
-### Integrity and Fixed-Point Math
+**FRC Impact:** Negligible overhead (11 bytes per packet type). The dispatcher handles multiple packet types per control loop tick.
 
-- Every packet carries an IEEE CRC32 over the header and command payload. Receivers drop packets whose CRC does not match, preventing silent bit flips from propagating into the queue.
-- Fixed-point encoding removes IEEE-754 dependencies so heterogeneous controllers (DSPs, MCUs, desktop planners) agree on the exact on-wire value without per-platform float quirks.
+---
 
-### Controller Limits & Safety
+## Message Types
 
-- Robots may choose tighter limits than the wire specification by supplying a
-  `ControllerConfig::CommandLimits` struct when constructing `bcnp::Controller`.
-- Limits are enforced centrally (before commands enter the execution queue), so
-  even legacy senders are bounded to robot-approved velocity and duration
-  ranges.
+### Default: DriveCmd (ID: 1)
 
-### Parser Diagnostics
+Differential drive velocity command.
 
-- `bcnp::StreamParser` emits an `ErrorInfo` payload to its error callback that
-  includes the `PacketError` code, the byte offset (from the start of the stream)
-  where parsing failed, and a monotonically increasing consecutive-error count.
-- Transports can log these details to correlate bursty link noise, sync loss, or
-  malformed traffic back to specific timestamps and offsets.
+| Field | Type | Wire Size | Encoding | Unit |
+|-------|------|-----------|----------|------|
+| `vx` | float32 | 4 bytes | int32 × 10000 | m/s |
+| `omega` | float32 | 4 bytes | int32 × 10000 | rad/s |
+| `durationMs` | uint16 | 2 bytes | raw | ms |
 
-## Transport Layer Guidance
+Total wire size: 10 bytes
 
-BCNP frames already provide packet delineation (start/stop/escape + CRC in the
-framing layer), so transports should behave like streaming byte pipes:
+### Fixed-Point Float Encoding
 
-- **SPI**: clock bytes continuously while chip-select is asserted and feed each
-  chunk into `bcnp::StreamParser`/`Controller::PushBytes`. There is no
-  requirement (or benefit) to issue a "one transfer == one packet" request.
-- **UDP or other datagram transports**: forward each datagram buffer directly to
-  the parser; the controller validates headers, lengths, command counts, and CRC.
-  When `UdpPosixAdapter` runs in **peer-lock** mode it now requires a pairing
-  handshake: send a single 8-byte datagram containing the ASCII literal
-  `"BCNP"` followed by the agreed 32-bit token before streaming BCNP packets.
-  Call `UdpPosixAdapter::UnlockPeer()` to re-arm pairing if you intentionally
-  switch driver stations.
-- **Send path**: when transmitting commands back to a client, serialize once via
-  `bcnp::EncodePacket` and send the resulting byte span with a blocking
-  `sendBytes()` equivalent. The supplied TCP adapter now buffers and drains TX
-  data in the background to avoid blocking real-time loops while the kernel
-  window is full.
+Floats are encoded as `int32` with a scale factor (default: 10000):
+
+* 4 decimal places of precision
+* Platform-independent encoding
+* Range: ±214,748.3647 (with scale=10000)
+
+**Example:** `vx = 1.5 m/s` → wire value: `15000`
+
+### Defining Custom Message Types
+
+Edit `schema/messages.json`:
+
+```json
+{
+  "id": 10,
+  "name": "SwerveCmd",
+  "description": "Swerve drive command",
+  "fields": [
+    {"name": "vx", "type": "float32", "scale": 10000, "unit": "m/s"},
+    {"name": "vy", "type": "float32", "scale": 10000, "unit": "m/s"},
+    {"name": "omega", "type": "float32", "scale": 10000, "unit": "rad/s"},
+    {"name": "durationMs", "type": "uint16", "unit": "ms"}
+  ]
+}
+```
+
+### Supported Field Types
+
+| Type | Size | Description |
+|------|------|-------------|
+| `int8` | 1 byte | Signed 8-bit integer |
+| `uint8` | 1 byte | Unsigned 8-bit integer |
+| `int16` | 2 bytes | Signed 16-bit (big-endian) |
+| `uint16` | 2 bytes | Unsigned 16-bit (big-endian) |
+| `int32` | 4 bytes | Signed 32-bit (big-endian) |
+| `uint32` | 4 bytes | Unsigned 32-bit (big-endian) |
+| `float32` | 4 bytes | Float encoded as int32 with scale |
+
+---
+
+## Transport Layer
+
+### Handshake Protocol
+
+| Transport | Handshake Procedure |
+|-----------|---------------------|
+| **TCP** | Send handshake after connect. Wait for peer before streaming. |
+| *UDP* | Send handshake as first datagram. Peer-lock mode requires it. |
+
+```cpp
+// Check handshake status
+if (adapter.IsHandshakeComplete()) {
+    // Ready to stream packets
+}
+
+// Diagnostics
+uint32_t remoteHash = adapter.GetRemoteSchemaHash();
+```
+
+### Transport Guidelines
+
+BCNP packets are self-delimiting (header + length + CRC), so transports act as byte pipes:
+
+| Transport | Guidance |
+|-----------|----------|
+| **TCP** | Stream bytes directly to `StreamParser`. Framing handled automatically. |
+| *UDP* | Forward each datagram to parser. One datagram may contain partial/multiple packets. |
+
+### Sending Packets
+
+```cpp
+// Encode once, send the resulting bytes
+std::vector<uint8_t> buffer;
+bcnp::EncodeTypedPacket(packet, buffer);
+transport.Send(buffer.data(), buffer.size());
+```
+
+---
 
 ## Robot Behavior
 
-1. **Command Queue**: The robot maintains an internal queue of commands
-2. **Sequential Execution**: Commands are executed one at a time, in the order received
-3. **Timing**: Each command runs for its specified duration before the next command starts
-4. **Connection Timeout**: If no packets are received for 200ms, the robot considers itself disconnected
-5. **Safety**: When disconnected, the BCNP controller clears its queue (including the active command) so the robot stops immediately, even if long-duration commands were pending
+### Command Execution Model
 
-## SmartDashboard Keys
+1. Queue: Commands are queued in order received
+2. Sequential: One command executes at a time
+3. Timed: Each command runs for its `durationMs`
+4. Timeout: No packets for 200ms → disconnected
+5. Safety: Disconnection clears queue, robot stops
 
-The robot publishes the following information to SmartDashboard:
+### Safety Features
 
-- `Network/Connected`: Boolean indicating if robot is receiving commands
-- `Network/QueueSize`: Number of commands waiting in the queue
-- `Network/CmdVx`: Current commanded forward velocity (m/s)
-- `Network/CmdW`: Current commanded angular velocity (rad/s)
+- Command limits: Robot can enforce tighter limits than wire spec:
+  ```cpp
+  bcnp::MessageQueueConfig config;
+  config.maxCommandLag = std::chrono::milliseconds(100);
+  ```
+- Centralized enforcement: Limits applied before commands enter queue
+- Graceful degradation: Stale commands are skipped, not executed late
+
+### SmartDashboard Keys
+
+| Key | Type | Description |
+|-----|------|-------------|
+| `Network/Connected` | bool | Receiving commands? |
+| `Network/QueueSize` | number | Pending commands |
+| `Network/CmdVx` | number | Current vx (m/s) |
+| `Network/CmdW` | number | Current omega (rad/s) |
+| `Network/SchemaHash` | string | Current hash (hex) |
+| `Network/ParseErrors` | number | Cumulative errors |
+
+---
+
+## Code Generation
+
+### Running Codegen
+
+```bash
+# Generate C++ and Python
+python schema/bcnp_codegen.py schema/messages.json \
+    --cpp src/bcnp/generated \
+    --python examples
+
+# C++ only
+python schema/bcnp_codegen.py schema/messages.json --cpp generated
+
+# View schema info (no generation)
+python schema/bcnp_codegen.py schema/messages.json
+```
+
+### Generated Files
+
+| File | Contents |
+|------|----------|
+| `message_types.h` | C++ structs with `Encode()`/`Decode()`, constants, registry |
+| `bcnp_messages.py` | Python dataclasses with serialization |
+
+### After Schema Changes
+
+1. Run codegen
+2. Rebuild C++ project
+3. Update Python clients
+4. **Both endpoints must use matching schema hash**
+
+---
+
+## Parser Diagnostics
+
+`StreamParser` provides detailed error information:
+
+```cpp
+parser.SetErrorCallback([](const StreamParser::ErrorInfo& err) {
+    std::cerr << "Parse error: " << int(err.code)
+              << " at offset " << err.offset
+              << " (consecutive: " << err.consecutiveErrors << ")\n";
+});
+```
+
+**Error codes:** `TooSmall`, `UnsupportedVersion`, `TooManyMessages`, `Truncated`, `ChecksumMismatch`, `UnknownMessageType`, `SchemaMismatch`

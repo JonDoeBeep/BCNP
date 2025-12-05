@@ -1,3 +1,11 @@
+/**
+ * @file packet.cpp
+ * @brief Implementation of BCNP packet encoding and decoding functions.
+ * 
+ * Contains the CRC32 computation, packet view decoding, and payload size
+ * calculation. Encoding is handled by template functions in the header.
+ */
+
 #include "bcnp/packet.h"
 
 #include <algorithm>
@@ -7,39 +15,16 @@
 #include <limits>
 
 namespace bcnp {
-
 namespace {
-uint32_t LoadU32(const uint8_t* data) {
-    return (uint32_t(data[0]) << 24) |
-           (uint32_t(data[1]) << 16) |
-           (uint32_t(data[2]) << 8) |
-           uint32_t(data[3]);
-}
 
-uint16_t LoadU16(const uint8_t* data) {
-    return (uint16_t(data[0]) << 8) | uint16_t(data[1]);
-}
-
-void StoreU32(uint32_t value, uint8_t* out) {
-    out[0] = static_cast<uint8_t>((value >> 24) & 0xFF);
-    out[1] = static_cast<uint8_t>((value >> 16) & 0xFF);
-    out[2] = static_cast<uint8_t>((value >> 8) & 0xFF);
-    out[3] = static_cast<uint8_t>(value & 0xFF);
-}
-
-void StoreU16(uint16_t value, uint8_t* out) {
-    out[0] = static_cast<uint8_t>((value >> 8) & 0xFF);
-    out[1] = static_cast<uint8_t>(value & 0xFF);
-}
-
-int32_t LoadS32(const uint8_t* data) {
-    return static_cast<int32_t>(LoadU32(data));
-}
-
-void StoreS32(int32_t value, uint8_t* out) {
-    StoreU32(static_cast<uint32_t>(value), out);
-}
-
+/**
+ * @brief Generate CRC32 lookup table at compile time.
+ * 
+ * Uses the standard CRC32 polynomial (reversed: 0xEDB88320).
+ * The table is computed once at compile time using constexpr.
+ * 
+ * @return 256-entry lookup table for byte-at-a-time CRC computation
+ */
 constexpr std::array<uint32_t, 256> MakeCrcTable() {
     std::array<uint32_t, 256> table{};
     for (uint32_t i = 0; i < 256; ++i) {
@@ -56,7 +41,10 @@ constexpr std::array<uint32_t, 256> MakeCrcTable() {
     return table;
 }
 
+/// @brief Compile-time CRC32 lookup table.
 constexpr auto kCrc32Table = MakeCrcTable();
+
+} // namespace
 
 uint32_t ComputeCrc32(const uint8_t* data, std::size_t length) {
     uint32_t crc = 0xFFFFFFFFU;
@@ -67,143 +55,63 @@ uint32_t ComputeCrc32(const uint8_t* data, std::size_t length) {
     return crc ^ 0xFFFFFFFFU;
 }
 
-int32_t QuantizeScaled(float value, float scale) {
-    const double scaled = static_cast<double>(value) * static_cast<double>(scale);
-    const double clamped = std::clamp(scaled,
-        static_cast<double>(std::numeric_limits<int32_t>::min()),
-        static_cast<double>(std::numeric_limits<int32_t>::max()));
-    return static_cast<int32_t>(std::llround(clamped));
+std::size_t PacketView::GetPayloadSize() const {
+    auto info = GetMessageInfo(header.messageType);
+    if (!info) return 0;
+    return info->wireSize * header.messageCount;
 }
 
-float DequantizeScaled(int32_t fixed, float scale) {
-    return static_cast<float>(static_cast<double>(fixed) / static_cast<double>(scale));
-}
-} // namespace
 
-Command CommandIterator::operator*() const {
-    const int32_t vxFixed = LoadS32(m_ptr);
-    const int32_t omegaFixed = LoadS32(m_ptr + 4);
-    const uint16_t duration = LoadU16(m_ptr + 8);
-
-    const float vx = DequantizeScaled(vxFixed, kLinearVelocityScale);
-    const float omega = DequantizeScaled(omegaFixed, kAngularVelocityScale);
-
-    return Command{vx, omega, duration};
-}
-
-CommandIterator& CommandIterator::operator++() {
-    if (m_count > 0) {
-        m_ptr += kCommandSize;
-        m_count--;
-    }
-    if (m_count == 0) {
-        m_ptr = nullptr;
-    }
-    return *this;
-}
-
-CommandIterator CommandIterator::operator++(int) {
-    CommandIterator tmp = *this;
-    ++(*this);
-    return tmp;
-}
-
-bool CommandIterator::operator==(const CommandIterator& other) const {
-    if (m_count == 0 && other.m_count == 0) {
-        return true;
-    }
-    return m_ptr == other.m_ptr && m_count == other.m_count;
-}
-
-bool CommandIterator::operator!=(const CommandIterator& other) const {
-    return !(*this == other);
-}
-
-bool EncodePacket(const Packet& packet, uint8_t* output, std::size_t capacity, std::size_t& bytesWritten) {
-    bytesWritten = 0;
-    if (packet.commands.size() > kMaxCommandsPerPacket || !output) {
-        return false;
-    }
-
-    const std::size_t payloadSize = kHeaderSize + packet.commands.size() * kCommandSize;
-    const std::size_t required = payloadSize + kChecksumSize;
-    if (capacity < required) {
-        return false;
-    }
-
-    output[kHeaderMajorIndex] = packet.header.major;
-    output[kHeaderMinorIndex] = packet.header.minor;
-    output[kHeaderFlagsIndex] = packet.header.flags;
-    StoreU16(static_cast<uint16_t>(packet.commands.size()), &output[kHeaderCountIndex]);
-
-    std::size_t offset = kHeaderSize;
-    for (const auto& cmd : packet.commands) {
-        if (!std::isfinite(cmd.vx) || !std::isfinite(cmd.omega)) {
-            return false;
-        }
-        const int32_t vxFixed = QuantizeScaled(cmd.vx, kLinearVelocityScale);
-        const int32_t omegaFixed = QuantizeScaled(cmd.omega, kAngularVelocityScale);
-        StoreS32(vxFixed, &output[offset]);
-        StoreS32(omegaFixed, &output[offset + 4]);
-        StoreU16(cmd.durationMs, &output[offset + 8]);
-        offset += kCommandSize;
-    }
-
-    const uint32_t crc = ComputeCrc32(output, payloadSize);
-    StoreU32(crc, &output[payloadSize]);
-
-    bytesWritten = required;
-    return true;
-}
-
-bool EncodePacket(const Packet& packet, std::vector<uint8_t>& output) {
-    if (packet.commands.size() > kMaxCommandsPerPacket) {
-        return false;
-    }
-    const std::size_t required = kHeaderSize + packet.commands.size() * kCommandSize + kChecksumSize;
-    output.resize(required);
-    std::size_t bytesWritten = 0;
-    if (!EncodePacket(packet, output.data(), output.size(), bytesWritten)) {
-        return false;
-    }
-    output.resize(bytesWritten);
-    return true;
-}
-
-DecodeViewResult DecodePacketView(const uint8_t* data, std::size_t length) {
+/**
+ * @brief Decode a packet with explicitly provided message wire size.
+ * 
+ * This is the core decoding function used by all other decode variants.
+ * Validates the header, checks CRC, and constructs a PacketView on success.
+ * 
+ * @param data Pointer to raw packet bytes
+ * @param length Available bytes in buffer
+ * @param wireSize Size of each message in bytes (from schema or lookup)
+ * @return DecodeViewResult with validation status and optional view
+ */
+DecodeViewResult DecodePacketViewWithSize(const uint8_t* data, std::size_t length, std::size_t wireSize) {
     DecodeViewResult result{};
 
-    if (length < kHeaderSize) {
+    if (length < kHeaderSizeV3) {
         result.error = PacketError::TooSmall;
         return result;
     }
 
+    // Parse header
     PacketHeader header;
     header.major = data[kHeaderMajorIndex];
     header.minor = data[kHeaderMinorIndex];
     header.flags = data[kHeaderFlagsIndex];
-    header.commandCount = LoadU16(&data[kHeaderCountIndex]);
+    header.messageType = static_cast<MessageTypeId>(detail::LoadU16(&data[kHeaderMsgTypeIndex]));
+    header.messageCount = detail::LoadU16(&data[kHeaderMsgCountIndex]);
 
-    if (header.major != kProtocolMajor || header.minor != kProtocolMinor) {
+    // Version check
+    if (header.major != kProtocolMajorV3 || header.minor != kProtocolMinorV3) {
         result.error = PacketError::UnsupportedVersion;
         result.bytesConsumed = 1;
         return result;
     }
 
-    if (header.commandCount > kMaxCommandsPerPacket) {
-        result.error = PacketError::TooManyCommands;
+    if (header.messageCount > kMaxMessagesPerPacket) {
+        result.error = PacketError::TooManyMessages;
         result.bytesConsumed = 1;
         return result;
     }
 
-    const std::size_t payloadSize = kHeaderSize + (header.commandCount * kCommandSize);
+    // Calculate sizes based on provided wire size
+    const std::size_t payloadSize = kHeaderSizeV3 + (header.messageCount * wireSize);
     const std::size_t expectedSize = payloadSize + kChecksumSize;
     if (length < expectedSize) {
         result.error = PacketError::Truncated;
         return result;
     }
 
-    const uint32_t transmittedCrc = LoadU32(&data[payloadSize]);
+    // CRC validation
+    const uint32_t transmittedCrc = detail::LoadU32(&data[payloadSize]);
     const uint32_t computedCrc = ComputeCrc32(data, payloadSize);
     if (transmittedCrc != computedCrc) {
         result.error = PacketError::ChecksumMismatch;
@@ -211,26 +119,9 @@ DecodeViewResult DecodePacketView(const uint8_t* data, std::size_t length) {
         return result;
     }
 
-    // Validate floats without allocating
-    std::size_t offset = kHeaderSize;
-    for (std::size_t i = 0; i < header.commandCount; ++i) {
-        const int32_t vxFixed = LoadS32(&data[offset]);
-        const int32_t omegaFixed = LoadS32(&data[offset + 4]);
-        
-        const float vx = DequantizeScaled(vxFixed, kLinearVelocityScale);
-        const float omega = DequantizeScaled(omegaFixed, kAngularVelocityScale);
-
-        if (!std::isfinite(vx) || !std::isfinite(omega)) {
-            result.error = PacketError::InvalidFloat;
-            result.bytesConsumed = expectedSize;
-            return result;
-        }
-        offset += kCommandSize;
-    }
-
     PacketView view;
     view.header = header;
-    view.payloadStart = data + kHeaderSize;
+    view.payloadStart = data + kHeaderSizeV3;
     
     result.view = view;
     result.error = PacketError::None;
@@ -238,22 +129,37 @@ DecodeViewResult DecodePacketView(const uint8_t* data, std::size_t length) {
     return result;
 }
 
-DecodeResult DecodePacket(const uint8_t* data, std::size_t length) {
-    auto viewResult = DecodePacketView(data, length);
-    DecodeResult result;
-    result.error = viewResult.error;
-    result.bytesConsumed = viewResult.bytesConsumed;
-    
-    if (viewResult.view) {
-        Packet packet;
-        packet.header = viewResult.view->header;
-        packet.commands.reserve(packet.header.commandCount);
-        for (const auto& cmd : *viewResult.view) {
-            packet.commands.push_back(cmd);
-        }
-        result.packet = std::move(packet);
+/**
+ * @brief Decode a packet using the global message type registry.
+ * 
+ * Extracts the message type ID from the header and looks up the wire size
+ * from GetMessageInfo(). Returns UnknownMessageType error if the type is
+ * not registered.
+ * 
+ * @param data Pointer to raw packet bytes
+ * @param length Available bytes in buffer
+ * @return DecodeViewResult with validation status and optional view
+ */
+DecodeViewResult DecodePacketView(const uint8_t* data, std::size_t length) {
+    DecodeViewResult result{};
+
+    if (length < kHeaderSizeV3) {
+        result.error = PacketError::TooSmall;
+        return result;
     }
-    return result;
+
+    // Parse header to get message type
+    const auto messageType = static_cast<MessageTypeId>(detail::LoadU16(&data[kHeaderMsgTypeIndex]));
+    
+    // Look up wire size from registry
+    auto msgInfo = GetMessageInfo(messageType);
+    if (!msgInfo) {
+        result.error = PacketError::UnknownMessageType;
+        result.bytesConsumed = 1;
+        return result;
+    }
+
+    return DecodePacketViewWithSize(data, length, msgInfo->wireSize);
 }
 
 } // namespace bcnp
