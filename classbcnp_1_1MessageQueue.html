@@ -269,8 +269,8 @@ template&lt;typename MsgType &gt; </div>
 </div><div class="memdoc">
 
 <p>Get the currently executing message. </p>
-<p>Returns the message whose duration is currently being executed. Non-blocking: returns nullopt immediately if mutex is busy.</p>
-<dl class="section return"><dt>Returns</dt><dd>The active message, or nullopt if none active or mutex busy </dd></dl>
+<p>Returns the message whose duration is currently being executed. Blocks briefly if mutex is held by network thread (typically &lt;5µs).</p>
+<dl class="section return"><dt>Returns</dt><dd>The active message, or nullopt if none active </dd></dl>
 
 <p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00200">200</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
@@ -301,7 +301,7 @@ template&lt;typename MsgType &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00300">300</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00297">297</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>
@@ -362,7 +362,7 @@ template&lt;typename MsgType &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00256">256</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00253">253</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>
@@ -394,7 +394,7 @@ template&lt;typename MsgType &gt; </div>
 <p>Get current queue metrics. </p>
 <dl class="section return"><dt>Returns</dt><dd>Snapshot of queue statistics </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00226">226</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00223">223</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>
@@ -432,7 +432,7 @@ template&lt;typename MsgType &gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if packets received within connectionTimeout, false otherwise </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00217">217</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00214">214</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>
@@ -540,7 +540,7 @@ template&lt;typename MsgType &gt; </div>
 
 <p>Reset all metrics to zero. </p>
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00234">234</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00231">231</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>
@@ -578,7 +578,7 @@ template&lt;typename MsgType &gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00246">246</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00243">243</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>

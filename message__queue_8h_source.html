@@ -228,214 +228,211 @@ $(function(){initNavTree('message__queue_8h_source.html',''); initResizable(true
 <div class="line"><a id="l00191" name="l00191"></a><span class="lineno">  191</span> </div>
 <div class="foldopen" id="foldopen00200" data-start="{" data-end="}">
 <div class="line"><a id="l00200" name="l00200"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue.html#a9ae24ed58a604c005898cb79a663d876">  200</a></span>    std::optional&lt;MsgType&gt; <a class="code hl_function" href="classbcnp_1_1MessageQueue.html#a9ae24ed58a604c005898cb79a663d876">ActiveMessage</a>()<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>        std::unique_lock&lt;std::mutex&gt; lock(m_mutex, std::try_to_lock);</div>
-<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>        <span class="keywordflow">if</span> (!lock.owns_lock()) {</div>
-<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>            <span class="keywordflow">return</span> std::nullopt;</div>
+<div class="line"><a id="l00201" name="l00201"></a><span class="lineno">  201</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
+<div class="line"><a id="l00202" name="l00202"></a><span class="lineno">  202</span>        <span class="keywordflow">if</span> (m_active) {</div>
+<div class="line"><a id="l00203" name="l00203"></a><span class="lineno">  203</span>            <span class="keywordflow">return</span> m_active-&gt;message;</div>
 <div class="line"><a id="l00204" name="l00204"></a><span class="lineno">  204</span>        }</div>
-<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>        <span class="keywordflow">if</span> (m_active) {</div>
-<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>            <span class="keywordflow">return</span> m_active-&gt;message;</div>
-<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span>        }</div>
-<div class="line"><a id="l00208" name="l00208"></a><span class="lineno">  208</span>        <span class="keywordflow">return</span> std::nullopt;</div>
-<div class="line"><a id="l00209" name="l00209"></a><span class="lineno">  209</span>    }</div>
+<div class="line"><a id="l00205" name="l00205"></a><span class="lineno">  205</span>        <span class="keywordflow">return</span> std::nullopt;</div>
+<div class="line"><a id="l00206" name="l00206"></a><span class="lineno">  206</span>    }</div>
 </div>
-<div class="line"><a id="l00210" name="l00210"></a><span class="lineno">  210</span> </div>
-<div class="foldopen" id="foldopen00217" data-start="{" data-end="}">
-<div class="line"><a id="l00217" name="l00217"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue.html#a6cf20ee65255cb68080ed5c44315afec">  217</a></span>    <span class="keywordtype">bool</span> <a class="code hl_function" href="classbcnp_1_1MessageQueue.html#a6cf20ee65255cb68080ed5c44315afec">IsConnected</a>(Clock::time_point now)<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
-<div class="line"><a id="l00219" name="l00219"></a><span class="lineno">  219</span>        <span class="keywordflow">return</span> IsConnectedUnlocked(now);</div>
-<div class="line"><a id="l00220" name="l00220"></a><span class="lineno">  220</span>    }</div>
+<div class="line"><a id="l00207" name="l00207"></a><span class="lineno">  207</span> </div>
+<div class="foldopen" id="foldopen00214" data-start="{" data-end="}">
+<div class="line"><a id="l00214" name="l00214"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue.html#a6cf20ee65255cb68080ed5c44315afec">  214</a></span>    <span class="keywordtype">bool</span> <a class="code hl_function" href="classbcnp_1_1MessageQueue.html#a6cf20ee65255cb68080ed5c44315afec">IsConnected</a>(Clock::time_point now)<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00215" name="l00215"></a><span class="lineno">  215</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
+<div class="line"><a id="l00216" name="l00216"></a><span class="lineno">  216</span>        <span class="keywordflow">return</span> IsConnectedUnlocked(now);</div>
+<div class="line"><a id="l00217" name="l00217"></a><span class="lineno">  217</span>    }</div>
 </div>
-<div class="line"><a id="l00221" name="l00221"></a><span class="lineno">  221</span> </div>
-<div class="foldopen" id="foldopen00226" data-start="{" data-end="}">
-<div class="line"><a id="l00226" name="l00226"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue.html#a0c0dd61071bc5158b33f695a7219efaa">  226</a></span>    <a class="code hl_struct" href="structbcnp_1_1MessageQueueMetrics.html">MessageQueueMetrics</a> <a class="code hl_function" href="classbcnp_1_1MessageQueue.html#a0c0dd61071bc5158b33f695a7219efaa">GetMetrics</a>()<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
-<div class="line"><a id="l00228" name="l00228"></a><span class="lineno">  228</span>        <span class="keywordflow">return</span> m_metrics;</div>
-<div class="line"><a id="l00229" name="l00229"></a><span class="lineno">  229</span>    }</div>
+<div class="line"><a id="l00218" name="l00218"></a><span class="lineno">  218</span> </div>
+<div class="foldopen" id="foldopen00223" data-start="{" data-end="}">
+<div class="line"><a id="l00223" name="l00223"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue.html#a0c0dd61071bc5158b33f695a7219efaa">  223</a></span>    <a class="code hl_struct" href="structbcnp_1_1MessageQueueMetrics.html">MessageQueueMetrics</a> <a class="code hl_function" href="classbcnp_1_1MessageQueue.html#a0c0dd61071bc5158b33f695a7219efaa">GetMetrics</a>()<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00224" name="l00224"></a><span class="lineno">  224</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
+<div class="line"><a id="l00225" name="l00225"></a><span class="lineno">  225</span>        <span class="keywordflow">return</span> m_metrics;</div>
+<div class="line"><a id="l00226" name="l00226"></a><span class="lineno">  226</span>    }</div>
 </div>
-<div class="line"><a id="l00230" name="l00230"></a><span class="lineno">  230</span> </div>
-<div class="foldopen" id="foldopen00234" data-start="{" data-end="}">
-<div class="line"><a id="l00234" name="l00234"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue.html#a41eed33fd667a98a23d7c0cb96a83695">  234</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classbcnp_1_1MessageQueue.html#a41eed33fd667a98a23d7c0cb96a83695">ResetMetrics</a>() {</div>
-<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
-<div class="line"><a id="l00236" name="l00236"></a><span class="lineno">  236</span>        m_metrics = {};</div>
-<div class="line"><a id="l00237" name="l00237"></a><span class="lineno">  237</span>    }</div>
+<div class="line"><a id="l00227" name="l00227"></a><span class="lineno">  227</span> </div>
+<div class="foldopen" id="foldopen00231" data-start="{" data-end="}">
+<div class="line"><a id="l00231" name="l00231"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue.html#a41eed33fd667a98a23d7c0cb96a83695">  231</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classbcnp_1_1MessageQueue.html#a41eed33fd667a98a23d7c0cb96a83695">ResetMetrics</a>() {</div>
+<div class="line"><a id="l00232" name="l00232"></a><span class="lineno">  232</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
+<div class="line"><a id="l00233" name="l00233"></a><span class="lineno">  233</span>        m_metrics = {};</div>
+<div class="line"><a id="l00234" name="l00234"></a><span class="lineno">  234</span>    }</div>
 </div>
-<div class="line"><a id="l00238" name="l00238"></a><span class="lineno">  238</span> </div>
-<div class="foldopen" id="foldopen00246" data-start="{" data-end="}">
-<div class="line"><a id="l00246" name="l00246"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue.html#a6bd0209d47b0b3d9d0218567e08d7f7c">  246</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classbcnp_1_1MessageQueue.html#a6bd0209d47b0b3d9d0218567e08d7f7c">SetConfig</a>(<span class="keyword">const</span> <a class="code hl_struct" href="structbcnp_1_1MessageQueueConfig.html">MessageQueueConfig</a>&amp; config) {</div>
-<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
-<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>        m_config = config;</div>
-<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>        ClampConfig();</div>
-<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>        <span class="keywordflow">if</span> (m_storage.size() != m_config.<a class="code hl_variable" href="structbcnp_1_1MessageQueueConfig.html#a9a6afa56182f77f7af92b63d77d9e724">capacity</a>) {</div>
-<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>            ClearUnlocked();</div>
-<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span>            m_storage.resize(m_config.<a class="code hl_variable" href="structbcnp_1_1MessageQueueConfig.html#a9a6afa56182f77f7af92b63d77d9e724">capacity</a>);</div>
-<div class="line"><a id="l00253" name="l00253"></a><span class="lineno">  253</span>        }</div>
-<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>    }</div>
+<div class="line"><a id="l00235" name="l00235"></a><span class="lineno">  235</span> </div>
+<div class="foldopen" id="foldopen00243" data-start="{" data-end="}">
+<div class="line"><a id="l00243" name="l00243"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue.html#a6bd0209d47b0b3d9d0218567e08d7f7c">  243</a></span>    <span class="keywordtype">void</span> <a class="code hl_function" href="classbcnp_1_1MessageQueue.html#a6bd0209d47b0b3d9d0218567e08d7f7c">SetConfig</a>(<span class="keyword">const</span> <a class="code hl_struct" href="structbcnp_1_1MessageQueueConfig.html">MessageQueueConfig</a>&amp; config) {</div>
+<div class="line"><a id="l00244" name="l00244"></a><span class="lineno">  244</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
+<div class="line"><a id="l00245" name="l00245"></a><span class="lineno">  245</span>        m_config = config;</div>
+<div class="line"><a id="l00246" name="l00246"></a><span class="lineno">  246</span>        ClampConfig();</div>
+<div class="line"><a id="l00247" name="l00247"></a><span class="lineno">  247</span>        <span class="keywordflow">if</span> (m_storage.size() != m_config.<a class="code hl_variable" href="structbcnp_1_1MessageQueueConfig.html#a9a6afa56182f77f7af92b63d77d9e724">capacity</a>) {</div>
+<div class="line"><a id="l00248" name="l00248"></a><span class="lineno">  248</span>            ClearUnlocked();</div>
+<div class="line"><a id="l00249" name="l00249"></a><span class="lineno">  249</span>            m_storage.resize(m_config.<a class="code hl_variable" href="structbcnp_1_1MessageQueueConfig.html#a9a6afa56182f77f7af92b63d77d9e724">capacity</a>);</div>
+<div class="line"><a id="l00250" name="l00250"></a><span class="lineno">  250</span>        }</div>
+<div class="line"><a id="l00251" name="l00251"></a><span class="lineno">  251</span>    }</div>
 </div>
-<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span> </div>
-<div class="foldopen" id="foldopen00256" data-start="{" data-end="}">
-<div class="line"><a id="l00256" name="l00256"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue.html#a740516762a32e07caa5463823defb755">  256</a></span>    <a class="code hl_struct" href="structbcnp_1_1MessageQueueConfig.html">MessageQueueConfig</a> <a class="code hl_function" href="classbcnp_1_1MessageQueue.html#a740516762a32e07caa5463823defb755">GetConfig</a>()<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
-<div class="line"><a id="l00258" name="l00258"></a><span class="lineno">  258</span>        <span class="keywordflow">return</span> m_config;</div>
-<div class="line"><a id="l00259" name="l00259"></a><span class="lineno">  259</span>    }</div>
+<div class="line"><a id="l00252" name="l00252"></a><span class="lineno">  252</span> </div>
+<div class="foldopen" id="foldopen00253" data-start="{" data-end="}">
+<div class="line"><a id="l00253" name="l00253"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue.html#a740516762a32e07caa5463823defb755">  253</a></span>    <a class="code hl_struct" href="structbcnp_1_1MessageQueueConfig.html">MessageQueueConfig</a> <a class="code hl_function" href="classbcnp_1_1MessageQueue.html#a740516762a32e07caa5463823defb755">GetConfig</a>()<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00254" name="l00254"></a><span class="lineno">  254</span>        std::lock_guard&lt;std::mutex&gt; lock(m_mutex);</div>
+<div class="line"><a id="l00255" name="l00255"></a><span class="lineno">  255</span>        <span class="keywordflow">return</span> m_config;</div>
+<div class="line"><a id="l00256" name="l00256"></a><span class="lineno">  256</span>    }</div>
 </div>
-<div class="line"><a id="l00260" name="l00260"></a><span class="lineno">  260</span> </div>
-<div class="foldopen" id="foldopen00277" data-start="{" data-end="};">
-<div class="line"><a id="l00277" name="l00277"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue_1_1Transaction.html">  277</a></span>    <span class="keyword">class </span><a class="code hl_class" href="classbcnp_1_1MessageQueue_1_1Transaction.html">Transaction</a> {</div>
-<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>    <span class="keyword">public</span>:</div>
+<div class="line"><a id="l00257" name="l00257"></a><span class="lineno">  257</span> </div>
+<div class="foldopen" id="foldopen00274" data-start="{" data-end="};">
+<div class="line"><a id="l00274" name="l00274"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue_1_1Transaction.html">  274</a></span>    <span class="keyword">class </span><a class="code hl_class" href="classbcnp_1_1MessageQueue_1_1Transaction.html">Transaction</a> {</div>
+<div class="line"><a id="l00275" name="l00275"></a><span class="lineno">  275</span>    <span class="keyword">public</span>:</div>
+<div class="foldopen" id="foldopen00276" data-start="{" data-end="}">
+<div class="line"><a id="l00276" name="l00276"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue_1_1Transaction.html#a2a0185205343edf3e6f36359a301f97b">  276</a></span>        <span class="keyword">explicit</span> <a class="code hl_function" href="classbcnp_1_1MessageQueue_1_1Transaction.html#a2a0185205343edf3e6f36359a301f97b">Transaction</a>(<a class="code hl_class" href="classbcnp_1_1MessageQueue.html">MessageQueue</a>&amp; queue) </div>
+<div class="line"><a id="l00277" name="l00277"></a><span class="lineno">  277</span>            : m_queue(queue), m_lock(queue.m_mutex) {}</div>
+</div>
+<div class="line"><a id="l00278" name="l00278"></a><span class="lineno">  278</span>        </div>
 <div class="foldopen" id="foldopen00279" data-start="{" data-end="}">
-<div class="line"><a id="l00279" name="l00279"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue_1_1Transaction.html#a2a0185205343edf3e6f36359a301f97b">  279</a></span>        <span class="keyword">explicit</span> <a class="code hl_function" href="classbcnp_1_1MessageQueue_1_1Transaction.html#a2a0185205343edf3e6f36359a301f97b">Transaction</a>(<a class="code hl_class" href="classbcnp_1_1MessageQueue.html">MessageQueue</a>&amp; queue) </div>
-<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>            : m_queue(queue), m_lock(queue.m_mutex) {}</div>
+<div class="line"><a id="l00279" name="l00279"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue_1_1Transaction.html#a326710f7a987ccb38da8cc8840b486db">  279</a></span>        <span class="keywordtype">bool</span> <a class="code hl_function" href="classbcnp_1_1MessageQueue_1_1Transaction.html#a326710f7a987ccb38da8cc8840b486db">Push</a>(<span class="keyword">const</span> MsgType&amp; message) {</div>
+<div class="line"><a id="l00280" name="l00280"></a><span class="lineno">  280</span>            <span class="keywordflow">if</span> (!m_queue.PushUnlocked(message)) {</div>
+<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>                ++m_queue.m_metrics.<a class="code hl_variable" href="structbcnp_1_1MessageQueueMetrics.html#a9711a79faa0ad0d50a2cc1082580634a">queueOverflows</a>;</div>
+<div class="line"><a id="l00282" name="l00282"></a><span class="lineno">  282</span>                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>            }</div>
+<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>            ++m_queue.m_metrics.<a class="code hl_variable" href="structbcnp_1_1MessageQueueMetrics.html#a4bc71bc0be1c74d8d6b568e891f84dff">messagesReceived</a>;</div>
+<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>            <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>        }</div>
 </div>
-<div class="line"><a id="l00281" name="l00281"></a><span class="lineno">  281</span>        </div>
-<div class="foldopen" id="foldopen00282" data-start="{" data-end="}">
-<div class="line"><a id="l00282" name="l00282"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue_1_1Transaction.html#a326710f7a987ccb38da8cc8840b486db">  282</a></span>        <span class="keywordtype">bool</span> <a class="code hl_function" href="classbcnp_1_1MessageQueue_1_1Transaction.html#a326710f7a987ccb38da8cc8840b486db">Push</a>(<span class="keyword">const</span> MsgType&amp; message) {</div>
-<div class="line"><a id="l00283" name="l00283"></a><span class="lineno">  283</span>            <span class="keywordflow">if</span> (!m_queue.PushUnlocked(message)) {</div>
-<div class="line"><a id="l00284" name="l00284"></a><span class="lineno">  284</span>                ++m_queue.m_metrics.<a class="code hl_variable" href="structbcnp_1_1MessageQueueMetrics.html#a9711a79faa0ad0d50a2cc1082580634a">queueOverflows</a>;</div>
-<div class="line"><a id="l00285" name="l00285"></a><span class="lineno">  285</span>                <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00286" name="l00286"></a><span class="lineno">  286</span>            }</div>
-<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span>            ++m_queue.m_metrics.<a class="code hl_variable" href="structbcnp_1_1MessageQueueMetrics.html#a4bc71bc0be1c74d8d6b568e891f84dff">messagesReceived</a>;</div>
-<div class="line"><a id="l00288" name="l00288"></a><span class="lineno">  288</span>            <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>        }</div>
+<div class="line"><a id="l00287" name="l00287"></a><span class="lineno">  287</span> </div>
+<div class="foldopen" id="foldopen00288" data-start="{" data-end="}">
+<div class="line"><a id="l00288" name="l00288"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue_1_1Transaction.html#a47586543b99f2439f9af79acc6174610">  288</a></span>        <span class="keywordtype">void</span> <a class="code hl_function" href="classbcnp_1_1MessageQueue_1_1Transaction.html#a47586543b99f2439f9af79acc6174610">Clear</a>() {</div>
+<div class="line"><a id="l00289" name="l00289"></a><span class="lineno">  289</span>            m_queue.ClearUnlocked();</div>
+<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span>        }</div>
 </div>
-<div class="line"><a id="l00290" name="l00290"></a><span class="lineno">  290</span> </div>
-<div class="foldopen" id="foldopen00291" data-start="{" data-end="}">
-<div class="line"><a id="l00291" name="l00291"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue_1_1Transaction.html#a47586543b99f2439f9af79acc6174610">  291</a></span>        <span class="keywordtype">void</span> <a class="code hl_function" href="classbcnp_1_1MessageQueue_1_1Transaction.html#a47586543b99f2439f9af79acc6174610">Clear</a>() {</div>
-<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>            m_queue.ClearUnlocked();</div>
-<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>        }</div>
+<div class="line"><a id="l00291" name="l00291"></a><span class="lineno">  291</span> </div>
+<div class="line"><a id="l00292" name="l00292"></a><span class="lineno">  292</span>    <span class="keyword">private</span>:</div>
+<div class="line"><a id="l00293" name="l00293"></a><span class="lineno">  293</span>        <a class="code hl_class" href="classbcnp_1_1MessageQueue.html">MessageQueue</a>&amp; m_queue;</div>
+<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span>        std::lock_guard&lt;std::mutex&gt; m_lock;</div>
+<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>    };</div>
 </div>
-<div class="line"><a id="l00294" name="l00294"></a><span class="lineno">  294</span> </div>
-<div class="line"><a id="l00295" name="l00295"></a><span class="lineno">  295</span>    <span class="keyword">private</span>:</div>
-<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span>        <a class="code hl_class" href="classbcnp_1_1MessageQueue.html">MessageQueue</a>&amp; m_queue;</div>
-<div class="line"><a id="l00297" name="l00297"></a><span class="lineno">  297</span>        std::lock_guard&lt;std::mutex&gt; m_lock;</div>
-<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span>    };</div>
-</div>
-<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span> </div>
-<div class="line"><a id="l00300" name="l00300"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue.html#a45bd245a9368d35090b0f84217670150">  300</a></span>    <a class="code hl_class" href="classbcnp_1_1MessageQueue_1_1Transaction.html">Transaction</a> <a class="code hl_function" href="classbcnp_1_1MessageQueue.html#a45bd245a9368d35090b0f84217670150">BeginTransaction</a>() { <span class="keywordflow">return</span> <a class="code hl_class" href="classbcnp_1_1MessageQueue_1_1Transaction.html">Transaction</a>(*<span class="keyword">this</span>); }</div>
-<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span> </div>
-<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span><span class="keyword">private</span>:</div>
-<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>    <span class="keyword">struct </span>ActiveSlot {</div>
-<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span>        MsgType message;</div>
-<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>        Clock::time_point start;</div>
-<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>    };</div>
-<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span> </div>
-<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>    <span class="keywordtype">void</span> PromoteNext(Clock::time_point now) {</div>
-<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>        <span class="keywordflow">if</span> (!m_hasVirtualCursor || m_virtualCursor == Clock::time_point::min()) {</div>
-<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span>            m_virtualCursor = now;</div>
-<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span>            m_hasVirtualCursor = <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>        }</div>
-<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span> </div>
-<div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>        <span class="keywordflow">if</span> (m_count == 0) {</div>
-<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span>            m_virtualCursor = std::max(m_virtualCursor, now);</div>
-<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>            <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span>        }</div>
-<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span> </div>
-<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>        <span class="keyword">const</span> <span class="keyword">auto</span> lagFloor = now - m_config.<a class="code hl_variable" href="structbcnp_1_1MessageQueueConfig.html#ab3bfe6d2d3c1f7a05f7da9e95173c139">maxCommandLag</a>;</div>
-<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span> </div>
-<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>        <span class="keywordflow">while</span> (m_count &gt; 0) {</div>
-<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>            <span class="keyword">const</span> MsgType&amp; next = FrontUnlocked();</div>
-<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span>            <span class="keyword">const</span> <span class="keyword">auto</span> duration = std::chrono::milliseconds(next.durationMs);</div>
-<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>            <span class="keyword">auto</span> projectedStart = m_virtualCursor;</div>
-<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>            <span class="keyword">auto</span> projectedEnd = projectedStart + duration;</div>
-<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span> </div>
-<div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>            <span class="keywordflow">if</span> (projectedEnd &lt;= lagFloor) {</div>
-<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>                PopUnlocked();</div>
-<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>                m_virtualCursor = projectedEnd;</div>
-<div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span>                ++m_metrics.<a class="code hl_variable" href="structbcnp_1_1MessageQueueMetrics.html#a4452da8084d45f61f517c6186f99cddb">messagesSkipped</a>;</div>
-<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>                <span class="keywordflow">continue</span>;</div>
-<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span>            }</div>
-<div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span> </div>
-<div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span>            <span class="keywordflow">if</span> (projectedStart &lt; lagFloor) {</div>
-<div class="line"><a id="l00335" name="l00335"></a><span class="lineno">  335</span>                projectedStart = lagFloor;</div>
-<div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span>            }</div>
-<div class="line"><a id="l00337" name="l00337"></a><span class="lineno">  337</span> </div>
-<div class="line"><a id="l00338" name="l00338"></a><span class="lineno">  338</span>            m_active = ActiveSlot{next, projectedStart};</div>
-<div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span>            PopUnlocked();</div>
-<div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span>            m_virtualCursor = projectedStart + duration;</div>
-<div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span>            <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span>        }</div>
-<div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>    }</div>
-<div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span> </div>
-<div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span>    <span class="keywordtype">void</span> ClearUnlocked() {</div>
-<div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span>        m_head = 0;</div>
-<div class="line"><a id="l00347" name="l00347"></a><span class="lineno">  347</span>        m_tail = 0;</div>
-<div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span>        m_count = 0;</div>
-<div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span>        m_active.reset();</div>
-<div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span>        m_virtualCursor = Clock::time_point::min();</div>
-<div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span>        m_hasVirtualCursor = <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>    }</div>
-<div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span>    </div>
-<div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span>    <span class="keywordtype">bool</span> PushUnlocked(<span class="keyword">const</span> MsgType&amp; message) {</div>
-<div class="line"><a id="l00355" name="l00355"></a><span class="lineno">  355</span>        <span class="keywordflow">if</span> (m_count &gt;= EffectiveDepth()) {</div>
-<div class="line"><a id="l00356" name="l00356"></a><span class="lineno">  356</span>            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00357" name="l00357"></a><span class="lineno">  357</span>        }</div>
-<div class="line"><a id="l00358" name="l00358"></a><span class="lineno">  358</span>        m_storage[m_tail] = message;</div>
-<div class="line"><a id="l00359" name="l00359"></a><span class="lineno">  359</span>        m_tail = (m_tail + 1) % Capacity();</div>
-<div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span>        ++m_count;</div>
-<div class="line"><a id="l00361" name="l00361"></a><span class="lineno">  361</span>        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
-<div class="line"><a id="l00362" name="l00362"></a><span class="lineno">  362</span>    }</div>
-<div class="line"><a id="l00363" name="l00363"></a><span class="lineno">  363</span> </div>
-<div class="line"><a id="l00364" name="l00364"></a><span class="lineno">  364</span>    <span class="keywordtype">void</span> PopUnlocked() {</div>
-<div class="line"><a id="l00365" name="l00365"></a><span class="lineno">  365</span>        <span class="keywordflow">if</span> (m_count == 0) <span class="keywordflow">return</span>;</div>
-<div class="line"><a id="l00366" name="l00366"></a><span class="lineno">  366</span>        m_head = (m_head + 1) % Capacity();</div>
-<div class="line"><a id="l00367" name="l00367"></a><span class="lineno">  367</span>        --m_count;</div>
-<div class="line"><a id="l00368" name="l00368"></a><span class="lineno">  368</span>    }</div>
-<div class="line"><a id="l00369" name="l00369"></a><span class="lineno">  369</span> </div>
-<div class="line"><a id="l00370" name="l00370"></a><span class="lineno">  370</span>    <span class="keyword">const</span> MsgType&amp; FrontUnlocked()<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00371" name="l00371"></a><span class="lineno">  371</span>        <span class="keywordflow">return</span> m_storage[m_head];</div>
-<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span>    }</div>
+<div class="line"><a id="l00296" name="l00296"></a><span class="lineno">  296</span> </div>
+<div class="line"><a id="l00297" name="l00297"></a><span class="lineno"><a class="line" href="classbcnp_1_1MessageQueue.html#a45bd245a9368d35090b0f84217670150">  297</a></span>    <a class="code hl_class" href="classbcnp_1_1MessageQueue_1_1Transaction.html">Transaction</a> <a class="code hl_function" href="classbcnp_1_1MessageQueue.html#a45bd245a9368d35090b0f84217670150">BeginTransaction</a>() { <span class="keywordflow">return</span> <a class="code hl_class" href="classbcnp_1_1MessageQueue_1_1Transaction.html">Transaction</a>(*<span class="keyword">this</span>); }</div>
+<div class="line"><a id="l00298" name="l00298"></a><span class="lineno">  298</span> </div>
+<div class="line"><a id="l00299" name="l00299"></a><span class="lineno">  299</span><span class="keyword">private</span>:</div>
+<div class="line"><a id="l00300" name="l00300"></a><span class="lineno">  300</span>    <span class="keyword">struct </span>ActiveSlot {</div>
+<div class="line"><a id="l00301" name="l00301"></a><span class="lineno">  301</span>        MsgType message;</div>
+<div class="line"><a id="l00302" name="l00302"></a><span class="lineno">  302</span>        Clock::time_point start;</div>
+<div class="line"><a id="l00303" name="l00303"></a><span class="lineno">  303</span>    };</div>
+<div class="line"><a id="l00304" name="l00304"></a><span class="lineno">  304</span> </div>
+<div class="line"><a id="l00305" name="l00305"></a><span class="lineno">  305</span>    <span class="keywordtype">void</span> PromoteNext(Clock::time_point now) {</div>
+<div class="line"><a id="l00306" name="l00306"></a><span class="lineno">  306</span>        <span class="keywordflow">if</span> (!m_hasVirtualCursor || m_virtualCursor == Clock::time_point::min()) {</div>
+<div class="line"><a id="l00307" name="l00307"></a><span class="lineno">  307</span>            m_virtualCursor = now;</div>
+<div class="line"><a id="l00308" name="l00308"></a><span class="lineno">  308</span>            m_hasVirtualCursor = <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00309" name="l00309"></a><span class="lineno">  309</span>        }</div>
+<div class="line"><a id="l00310" name="l00310"></a><span class="lineno">  310</span> </div>
+<div class="line"><a id="l00311" name="l00311"></a><span class="lineno">  311</span>        <span class="keywordflow">if</span> (m_count == 0) {</div>
+<div class="line"><a id="l00312" name="l00312"></a><span class="lineno">  312</span>            m_virtualCursor = std::max(m_virtualCursor, now);</div>
+<div class="line"><a id="l00313" name="l00313"></a><span class="lineno">  313</span>            <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00314" name="l00314"></a><span class="lineno">  314</span>        }</div>
+<div class="line"><a id="l00315" name="l00315"></a><span class="lineno">  315</span> </div>
+<div class="line"><a id="l00316" name="l00316"></a><span class="lineno">  316</span>        <span class="keyword">const</span> <span class="keyword">auto</span> lagFloor = now - m_config.<a class="code hl_variable" href="structbcnp_1_1MessageQueueConfig.html#ab3bfe6d2d3c1f7a05f7da9e95173c139">maxCommandLag</a>;</div>
+<div class="line"><a id="l00317" name="l00317"></a><span class="lineno">  317</span> </div>
+<div class="line"><a id="l00318" name="l00318"></a><span class="lineno">  318</span>        <span class="keywordflow">while</span> (m_count &gt; 0) {</div>
+<div class="line"><a id="l00319" name="l00319"></a><span class="lineno">  319</span>            <span class="keyword">const</span> MsgType&amp; next = FrontUnlocked();</div>
+<div class="line"><a id="l00320" name="l00320"></a><span class="lineno">  320</span>            <span class="keyword">const</span> <span class="keyword">auto</span> duration = std::chrono::milliseconds(next.durationMs);</div>
+<div class="line"><a id="l00321" name="l00321"></a><span class="lineno">  321</span>            <span class="keyword">auto</span> projectedStart = m_virtualCursor;</div>
+<div class="line"><a id="l00322" name="l00322"></a><span class="lineno">  322</span>            <span class="keyword">auto</span> projectedEnd = projectedStart + duration;</div>
+<div class="line"><a id="l00323" name="l00323"></a><span class="lineno">  323</span> </div>
+<div class="line"><a id="l00324" name="l00324"></a><span class="lineno">  324</span>            <span class="keywordflow">if</span> (projectedEnd &lt;= lagFloor) {</div>
+<div class="line"><a id="l00325" name="l00325"></a><span class="lineno">  325</span>                PopUnlocked();</div>
+<div class="line"><a id="l00326" name="l00326"></a><span class="lineno">  326</span>                m_virtualCursor = projectedEnd;</div>
+<div class="line"><a id="l00327" name="l00327"></a><span class="lineno">  327</span>                ++m_metrics.<a class="code hl_variable" href="structbcnp_1_1MessageQueueMetrics.html#a4452da8084d45f61f517c6186f99cddb">messagesSkipped</a>;</div>
+<div class="line"><a id="l00328" name="l00328"></a><span class="lineno">  328</span>                <span class="keywordflow">continue</span>;</div>
+<div class="line"><a id="l00329" name="l00329"></a><span class="lineno">  329</span>            }</div>
+<div class="line"><a id="l00330" name="l00330"></a><span class="lineno">  330</span> </div>
+<div class="line"><a id="l00331" name="l00331"></a><span class="lineno">  331</span>            <span class="keywordflow">if</span> (projectedStart &lt; lagFloor) {</div>
+<div class="line"><a id="l00332" name="l00332"></a><span class="lineno">  332</span>                projectedStart = lagFloor;</div>
+<div class="line"><a id="l00333" name="l00333"></a><span class="lineno">  333</span>            }</div>
+<div class="line"><a id="l00334" name="l00334"></a><span class="lineno">  334</span> </div>
+<div class="line"><a id="l00335" name="l00335"></a><span class="lineno">  335</span>            m_active = ActiveSlot{next, projectedStart};</div>
+<div class="line"><a id="l00336" name="l00336"></a><span class="lineno">  336</span>            PopUnlocked();</div>
+<div class="line"><a id="l00337" name="l00337"></a><span class="lineno">  337</span>            m_virtualCursor = projectedStart + duration;</div>
+<div class="line"><a id="l00338" name="l00338"></a><span class="lineno">  338</span>            <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00339" name="l00339"></a><span class="lineno">  339</span>        }</div>
+<div class="line"><a id="l00340" name="l00340"></a><span class="lineno">  340</span>    }</div>
+<div class="line"><a id="l00341" name="l00341"></a><span class="lineno">  341</span> </div>
+<div class="line"><a id="l00342" name="l00342"></a><span class="lineno">  342</span>    <span class="keywordtype">void</span> ClearUnlocked() {</div>
+<div class="line"><a id="l00343" name="l00343"></a><span class="lineno">  343</span>        m_head = 0;</div>
+<div class="line"><a id="l00344" name="l00344"></a><span class="lineno">  344</span>        m_tail = 0;</div>
+<div class="line"><a id="l00345" name="l00345"></a><span class="lineno">  345</span>        m_count = 0;</div>
+<div class="line"><a id="l00346" name="l00346"></a><span class="lineno">  346</span>        m_active.reset();</div>
+<div class="line"><a id="l00347" name="l00347"></a><span class="lineno">  347</span>        m_virtualCursor = Clock::time_point::min();</div>
+<div class="line"><a id="l00348" name="l00348"></a><span class="lineno">  348</span>        m_hasVirtualCursor = <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00349" name="l00349"></a><span class="lineno">  349</span>    }</div>
+<div class="line"><a id="l00350" name="l00350"></a><span class="lineno">  350</span>    </div>
+<div class="line"><a id="l00351" name="l00351"></a><span class="lineno">  351</span>    <span class="keywordtype">bool</span> PushUnlocked(<span class="keyword">const</span> MsgType&amp; message) {</div>
+<div class="line"><a id="l00352" name="l00352"></a><span class="lineno">  352</span>        <span class="keywordflow">if</span> (m_count &gt;= EffectiveDepth()) {</div>
+<div class="line"><a id="l00353" name="l00353"></a><span class="lineno">  353</span>            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00354" name="l00354"></a><span class="lineno">  354</span>        }</div>
+<div class="line"><a id="l00355" name="l00355"></a><span class="lineno">  355</span>        m_storage[m_tail] = message;</div>
+<div class="line"><a id="l00356" name="l00356"></a><span class="lineno">  356</span>        m_tail = (m_tail + 1) % Capacity();</div>
+<div class="line"><a id="l00357" name="l00357"></a><span class="lineno">  357</span>        ++m_count;</div>
+<div class="line"><a id="l00358" name="l00358"></a><span class="lineno">  358</span>        <span class="keywordflow">return</span> <span class="keyword">true</span>;</div>
+<div class="line"><a id="l00359" name="l00359"></a><span class="lineno">  359</span>    }</div>
+<div class="line"><a id="l00360" name="l00360"></a><span class="lineno">  360</span> </div>
+<div class="line"><a id="l00361" name="l00361"></a><span class="lineno">  361</span>    <span class="keywordtype">void</span> PopUnlocked() {</div>
+<div class="line"><a id="l00362" name="l00362"></a><span class="lineno">  362</span>        <span class="keywordflow">if</span> (m_count == 0) <span class="keywordflow">return</span>;</div>
+<div class="line"><a id="l00363" name="l00363"></a><span class="lineno">  363</span>        m_head = (m_head + 1) % Capacity();</div>
+<div class="line"><a id="l00364" name="l00364"></a><span class="lineno">  364</span>        --m_count;</div>
+<div class="line"><a id="l00365" name="l00365"></a><span class="lineno">  365</span>    }</div>
+<div class="line"><a id="l00366" name="l00366"></a><span class="lineno">  366</span> </div>
+<div class="line"><a id="l00367" name="l00367"></a><span class="lineno">  367</span>    <span class="keyword">const</span> MsgType&amp; FrontUnlocked()<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00368" name="l00368"></a><span class="lineno">  368</span>        <span class="keywordflow">return</span> m_storage[m_head];</div>
+<div class="line"><a id="l00369" name="l00369"></a><span class="lineno">  369</span>    }</div>
+<div class="line"><a id="l00370" name="l00370"></a><span class="lineno">  370</span>    </div>
+<div class="line"><a id="l00371" name="l00371"></a><span class="lineno">  371</span>    std::size_t Capacity()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> m_storage.size(); }</div>
+<div class="line"><a id="l00372" name="l00372"></a><span class="lineno">  372</span>    std::size_t EffectiveDepth()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> std::min(m_config.<a class="code hl_variable" href="structbcnp_1_1MessageQueueConfig.html#a9a6afa56182f77f7af92b63d77d9e724">capacity</a>, Capacity()); }</div>
 <div class="line"><a id="l00373" name="l00373"></a><span class="lineno">  373</span>    </div>
-<div class="line"><a id="l00374" name="l00374"></a><span class="lineno">  374</span>    std::size_t Capacity()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> m_storage.size(); }</div>
-<div class="line"><a id="l00375" name="l00375"></a><span class="lineno">  375</span>    std::size_t EffectiveDepth()<span class="keyword"> const </span>{ <span class="keywordflow">return</span> std::min(m_config.<a class="code hl_variable" href="structbcnp_1_1MessageQueueConfig.html#a9a6afa56182f77f7af92b63d77d9e724">capacity</a>, Capacity()); }</div>
-<div class="line"><a id="l00376" name="l00376"></a><span class="lineno">  376</span>    </div>
-<div class="line"><a id="l00377" name="l00377"></a><span class="lineno">  377</span>    <span class="keywordtype">void</span> ClampConfig() {</div>
-<div class="line"><a id="l00378" name="l00378"></a><span class="lineno">  378</span>        <span class="keywordflow">if</span> (m_config.<a class="code hl_variable" href="structbcnp_1_1MessageQueueConfig.html#a9a6afa56182f77f7af92b63d77d9e724">capacity</a> == 0) {</div>
-<div class="line"><a id="l00379" name="l00379"></a><span class="lineno">  379</span>            m_config.<a class="code hl_variable" href="structbcnp_1_1MessageQueueConfig.html#a9a6afa56182f77f7af92b63d77d9e724">capacity</a> = 200;</div>
+<div class="line"><a id="l00374" name="l00374"></a><span class="lineno">  374</span>    <span class="keywordtype">void</span> ClampConfig() {</div>
+<div class="line"><a id="l00375" name="l00375"></a><span class="lineno">  375</span>        <span class="keywordflow">if</span> (m_config.<a class="code hl_variable" href="structbcnp_1_1MessageQueueConfig.html#a9a6afa56182f77f7af92b63d77d9e724">capacity</a> == 0) {</div>
+<div class="line"><a id="l00376" name="l00376"></a><span class="lineno">  376</span>            m_config.<a class="code hl_variable" href="structbcnp_1_1MessageQueueConfig.html#a9a6afa56182f77f7af92b63d77d9e724">capacity</a> = 200;</div>
+<div class="line"><a id="l00377" name="l00377"></a><span class="lineno">  377</span>        }</div>
+<div class="line"><a id="l00378" name="l00378"></a><span class="lineno">  378</span>        <span class="keywordflow">if</span> (m_config.<a class="code hl_variable" href="structbcnp_1_1MessageQueueConfig.html#ab3bfe6d2d3c1f7a05f7da9e95173c139">maxCommandLag</a> &lt;= std::chrono::milliseconds::zero()) {</div>
+<div class="line"><a id="l00379" name="l00379"></a><span class="lineno">  379</span>            m_config.<a class="code hl_variable" href="structbcnp_1_1MessageQueueConfig.html#ab3bfe6d2d3c1f7a05f7da9e95173c139">maxCommandLag</a> = std::chrono::milliseconds(1);</div>
 <div class="line"><a id="l00380" name="l00380"></a><span class="lineno">  380</span>        }</div>
-<div class="line"><a id="l00381" name="l00381"></a><span class="lineno">  381</span>        <span class="keywordflow">if</span> (m_config.<a class="code hl_variable" href="structbcnp_1_1MessageQueueConfig.html#ab3bfe6d2d3c1f7a05f7da9e95173c139">maxCommandLag</a> &lt;= std::chrono::milliseconds::zero()) {</div>
-<div class="line"><a id="l00382" name="l00382"></a><span class="lineno">  382</span>            m_config.<a class="code hl_variable" href="structbcnp_1_1MessageQueueConfig.html#ab3bfe6d2d3c1f7a05f7da9e95173c139">maxCommandLag</a> = std::chrono::milliseconds(1);</div>
-<div class="line"><a id="l00383" name="l00383"></a><span class="lineno">  383</span>        }</div>
-<div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span>    }</div>
-<div class="line"><a id="l00385" name="l00385"></a><span class="lineno">  385</span> </div>
-<div class="line"><a id="l00386" name="l00386"></a><span class="lineno">  386</span>    <span class="keywordtype">bool</span> IsConnectedUnlocked(Clock::time_point now)<span class="keyword"> const </span>{</div>
-<div class="line"><a id="l00387" name="l00387"></a><span class="lineno">  387</span>        <span class="keywordflow">if</span> (m_lastRx == Clock::time_point::min()) {</div>
-<div class="line"><a id="l00388" name="l00388"></a><span class="lineno">  388</span>            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
-<div class="line"><a id="l00389" name="l00389"></a><span class="lineno">  389</span>        }</div>
-<div class="line"><a id="l00390" name="l00390"></a><span class="lineno">  390</span>        <span class="keywordflow">return</span> (now - m_lastRx) &lt;= m_config.<a class="code hl_variable" href="structbcnp_1_1MessageQueueConfig.html#a880e52accdda63b7f548e58f13297d52">connectionTimeout</a>;</div>
-<div class="line"><a id="l00391" name="l00391"></a><span class="lineno">  391</span>    }</div>
-<div class="line"><a id="l00392" name="l00392"></a><span class="lineno">  392</span> </div>
-<div class="line"><a id="l00393" name="l00393"></a><span class="lineno">  393</span>    MessageQueueConfig m_config{};</div>
-<div class="line"><a id="l00394" name="l00394"></a><span class="lineno">  394</span>    MessageQueueMetrics m_metrics{};</div>
-<div class="line"><a id="l00395" name="l00395"></a><span class="lineno">  395</span>    std::vector&lt;MsgType&gt; m_storage;</div>
-<div class="line"><a id="l00396" name="l00396"></a><span class="lineno">  396</span>    std::size_t m_head{0};</div>
-<div class="line"><a id="l00397" name="l00397"></a><span class="lineno">  397</span>    std::size_t m_tail{0};</div>
-<div class="line"><a id="l00398" name="l00398"></a><span class="lineno">  398</span>    std::size_t m_count{0};</div>
-<div class="line"><a id="l00399" name="l00399"></a><span class="lineno">  399</span>    std::optional&lt;ActiveSlot&gt; m_active;</div>
-<div class="line"><a id="l00400" name="l00400"></a><span class="lineno">  400</span>    Clock::time_point m_virtualCursor{Clock::time_point::min()};</div>
-<div class="line"><a id="l00401" name="l00401"></a><span class="lineno">  401</span>    <span class="keywordtype">bool</span> m_hasVirtualCursor{<span class="keyword">false</span>};</div>
-<div class="line"><a id="l00402" name="l00402"></a><span class="lineno">  402</span>    Clock::time_point m_lastRx{Clock::time_point::min()};</div>
-<div class="line"><a id="l00403" name="l00403"></a><span class="lineno">  403</span>    <span class="keyword">mutable</span> std::mutex m_mutex;</div>
-<div class="line"><a id="l00404" name="l00404"></a><span class="lineno">  404</span>};</div>
+<div class="line"><a id="l00381" name="l00381"></a><span class="lineno">  381</span>    }</div>
+<div class="line"><a id="l00382" name="l00382"></a><span class="lineno">  382</span> </div>
+<div class="line"><a id="l00383" name="l00383"></a><span class="lineno">  383</span>    <span class="keywordtype">bool</span> IsConnectedUnlocked(Clock::time_point now)<span class="keyword"> const </span>{</div>
+<div class="line"><a id="l00384" name="l00384"></a><span class="lineno">  384</span>        <span class="keywordflow">if</span> (m_lastRx == Clock::time_point::min()) {</div>
+<div class="line"><a id="l00385" name="l00385"></a><span class="lineno">  385</span>            <span class="keywordflow">return</span> <span class="keyword">false</span>;</div>
+<div class="line"><a id="l00386" name="l00386"></a><span class="lineno">  386</span>        }</div>
+<div class="line"><a id="l00387" name="l00387"></a><span class="lineno">  387</span>        <span class="keywordflow">return</span> (now - m_lastRx) &lt;= m_config.<a class="code hl_variable" href="structbcnp_1_1MessageQueueConfig.html#a880e52accdda63b7f548e58f13297d52">connectionTimeout</a>;</div>
+<div class="line"><a id="l00388" name="l00388"></a><span class="lineno">  388</span>    }</div>
+<div class="line"><a id="l00389" name="l00389"></a><span class="lineno">  389</span> </div>
+<div class="line"><a id="l00390" name="l00390"></a><span class="lineno">  390</span>    MessageQueueConfig m_config{};</div>
+<div class="line"><a id="l00391" name="l00391"></a><span class="lineno">  391</span>    MessageQueueMetrics m_metrics{};</div>
+<div class="line"><a id="l00392" name="l00392"></a><span class="lineno">  392</span>    std::vector&lt;MsgType&gt; m_storage;</div>
+<div class="line"><a id="l00393" name="l00393"></a><span class="lineno">  393</span>    std::size_t m_head{0};</div>
+<div class="line"><a id="l00394" name="l00394"></a><span class="lineno">  394</span>    std::size_t m_tail{0};</div>
+<div class="line"><a id="l00395" name="l00395"></a><span class="lineno">  395</span>    std::size_t m_count{0};</div>
+<div class="line"><a id="l00396" name="l00396"></a><span class="lineno">  396</span>    std::optional&lt;ActiveSlot&gt; m_active;</div>
+<div class="line"><a id="l00397" name="l00397"></a><span class="lineno">  397</span>    Clock::time_point m_virtualCursor{Clock::time_point::min()};</div>
+<div class="line"><a id="l00398" name="l00398"></a><span class="lineno">  398</span>    <span class="keywordtype">bool</span> m_hasVirtualCursor{<span class="keyword">false</span>};</div>
+<div class="line"><a id="l00399" name="l00399"></a><span class="lineno">  399</span>    Clock::time_point m_lastRx{Clock::time_point::min()};</div>
+<div class="line"><a id="l00400" name="l00400"></a><span class="lineno">  400</span>    <span class="keyword">mutable</span> std::mutex m_mutex;</div>
+<div class="line"><a id="l00401" name="l00401"></a><span class="lineno">  401</span>};</div>
 </div>
-<div class="line"><a id="l00405" name="l00405"></a><span class="lineno">  405</span> </div>
-<div class="line"><a id="l00410" name="l00410"></a><span class="lineno">  410</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> MsgType&gt;</div>
-<div class="line"><a id="l00411" name="l00411"></a><span class="lineno"><a class="line" href="namespacebcnp.html#a51a0bbc0634f6a07d5b533fed541f8cc">  411</a></span><span class="keyword">using </span><a class="code hl_class" href="classbcnp_1_1MessageQueue.html">TimedQueue</a> = <a class="code hl_class" href="classbcnp_1_1MessageQueue.html">MessageQueue&lt;MsgType&gt;</a>;</div>
-<div class="line"><a id="l00412" name="l00412"></a><span class="lineno">  412</span> </div>
-<div class="line"><a id="l00413" name="l00413"></a><span class="lineno">  413</span>} <span class="comment">// namespace bcnp</span></div>
-<div class="ttc" id="aclassbcnp_1_1MessageQueue_1_1Transaction_html"><div class="ttname"><a href="classbcnp_1_1MessageQueue_1_1Transaction.html">bcnp::MessageQueue::Transaction</a></div><div class="ttdoc">RAII transaction for atomic batch operations.</div><div class="ttdef"><b>Definition</b> <a href="#l00277">message_queue.h:277</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1MessageQueue_1_1Transaction_html_a2a0185205343edf3e6f36359a301f97b"><div class="ttname"><a href="classbcnp_1_1MessageQueue_1_1Transaction.html#a2a0185205343edf3e6f36359a301f97b">bcnp::MessageQueue::Transaction::Transaction</a></div><div class="ttdeci">Transaction(MessageQueue &amp;queue)</div><div class="ttdef"><b>Definition</b> <a href="#l00279">message_queue.h:279</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1MessageQueue_1_1Transaction_html_a326710f7a987ccb38da8cc8840b486db"><div class="ttname"><a href="classbcnp_1_1MessageQueue_1_1Transaction.html#a326710f7a987ccb38da8cc8840b486db">bcnp::MessageQueue::Transaction::Push</a></div><div class="ttdeci">bool Push(const MsgType &amp;message)</div><div class="ttdef"><b>Definition</b> <a href="#l00282">message_queue.h:282</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1MessageQueue_1_1Transaction_html_a47586543b99f2439f9af79acc6174610"><div class="ttname"><a href="classbcnp_1_1MessageQueue_1_1Transaction.html#a47586543b99f2439f9af79acc6174610">bcnp::MessageQueue::Transaction::Clear</a></div><div class="ttdeci">void Clear()</div><div class="ttdef"><b>Definition</b> <a href="#l00291">message_queue.h:291</a></div></div>
+<div class="line"><a id="l00402" name="l00402"></a><span class="lineno">  402</span> </div>
+<div class="line"><a id="l00407" name="l00407"></a><span class="lineno">  407</span><span class="keyword">template</span>&lt;<span class="keyword">typename</span> MsgType&gt;</div>
+<div class="line"><a id="l00408" name="l00408"></a><span class="lineno"><a class="line" href="namespacebcnp.html#a51a0bbc0634f6a07d5b533fed541f8cc">  408</a></span><span class="keyword">using </span><a class="code hl_class" href="classbcnp_1_1MessageQueue.html">TimedQueue</a> = <a class="code hl_class" href="classbcnp_1_1MessageQueue.html">MessageQueue&lt;MsgType&gt;</a>;</div>
+<div class="line"><a id="l00409" name="l00409"></a><span class="lineno">  409</span> </div>
+<div class="line"><a id="l00410" name="l00410"></a><span class="lineno">  410</span>} <span class="comment">// namespace bcnp</span></div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_1_1Transaction_html"><div class="ttname"><a href="classbcnp_1_1MessageQueue_1_1Transaction.html">bcnp::MessageQueue::Transaction</a></div><div class="ttdoc">RAII transaction for atomic batch operations.</div><div class="ttdef"><b>Definition</b> <a href="#l00274">message_queue.h:274</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_1_1Transaction_html_a2a0185205343edf3e6f36359a301f97b"><div class="ttname"><a href="classbcnp_1_1MessageQueue_1_1Transaction.html#a2a0185205343edf3e6f36359a301f97b">bcnp::MessageQueue::Transaction::Transaction</a></div><div class="ttdeci">Transaction(MessageQueue &amp;queue)</div><div class="ttdef"><b>Definition</b> <a href="#l00276">message_queue.h:276</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_1_1Transaction_html_a326710f7a987ccb38da8cc8840b486db"><div class="ttname"><a href="classbcnp_1_1MessageQueue_1_1Transaction.html#a326710f7a987ccb38da8cc8840b486db">bcnp::MessageQueue::Transaction::Push</a></div><div class="ttdeci">bool Push(const MsgType &amp;message)</div><div class="ttdef"><b>Definition</b> <a href="#l00279">message_queue.h:279</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_1_1Transaction_html_a47586543b99f2439f9af79acc6174610"><div class="ttname"><a href="classbcnp_1_1MessageQueue_1_1Transaction.html#a47586543b99f2439f9af79acc6174610">bcnp::MessageQueue::Transaction::Clear</a></div><div class="ttdeci">void Clear()</div><div class="ttdef"><b>Definition</b> <a href="#l00288">message_queue.h:288</a></div></div>
 <div class="ttc" id="aclassbcnp_1_1MessageQueue_html"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html">bcnp::MessageQueue</a></div><div class="ttdoc">Generic timed message queue for any message type with durationMs field.</div><div class="ttdef"><b>Definition</b> <a href="#l00084">message_queue.h:84</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a0c0dd61071bc5158b33f695a7219efaa"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#a0c0dd61071bc5158b33f695a7219efaa">bcnp::MessageQueue::GetMetrics</a></div><div class="ttdeci">MessageQueueMetrics GetMetrics() const</div><div class="ttdoc">Get current queue metrics.</div><div class="ttdef"><b>Definition</b> <a href="#l00226">message_queue.h:226</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a0c0dd61071bc5158b33f695a7219efaa"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#a0c0dd61071bc5158b33f695a7219efaa">bcnp::MessageQueue::GetMetrics</a></div><div class="ttdeci">MessageQueueMetrics GetMetrics() const</div><div class="ttdoc">Get current queue metrics.</div><div class="ttdef"><b>Definition</b> <a href="#l00223">message_queue.h:223</a></div></div>
 <div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a10d5715a1dae374a646b3698c4b94375"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#a10d5715a1dae374a646b3698c4b94375">bcnp::MessageQueue::Size</a></div><div class="ttdeci">std::size_t Size() const</div><div class="ttdoc">Get the current number of queued messages.</div><div class="ttdef"><b>Definition</b> <a href="#l00130">message_queue.h:130</a></div></div>
 <div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a1feda5500b46eafed6258163623eab1b"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#a1feda5500b46eafed6258163623eab1b">bcnp::MessageQueue::MessageQueue</a></div><div class="ttdeci">MessageQueue(MessageQueueConfig config={})</div><div class="ttdef"><b>Definition</b> <a href="#l00091">message_queue.h:91</a></div></div>
 <div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a29f1baa168384d36553e6b8bd6573e8c"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#a29f1baa168384d36553e6b8bd6573e8c">bcnp::MessageQueue::Clock</a></div><div class="ttdeci">std::chrono::steady_clock Clock</div><div class="ttdef"><b>Definition</b> <a href="#l00089">message_queue.h:89</a></div></div>
 <div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a3c0007ccbc4819c15d0dcd625eb3bc72"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#a3c0007ccbc4819c15d0dcd625eb3bc72">bcnp::MessageQueue::Update</a></div><div class="ttdeci">void Update(Clock::time_point now)</div><div class="ttdoc">Update queue state - call once per control loop iteration.</div><div class="ttdef"><b>Definition</b> <a href="#l00160">message_queue.h:160</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a41eed33fd667a98a23d7c0cb96a83695"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#a41eed33fd667a98a23d7c0cb96a83695">bcnp::MessageQueue::ResetMetrics</a></div><div class="ttdeci">void ResetMetrics()</div><div class="ttdoc">Reset all metrics to zero.</div><div class="ttdef"><b>Definition</b> <a href="#l00234">message_queue.h:234</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a45bd245a9368d35090b0f84217670150"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#a45bd245a9368d35090b0f84217670150">bcnp::MessageQueue::BeginTransaction</a></div><div class="ttdeci">Transaction BeginTransaction()</div><div class="ttdef"><b>Definition</b> <a href="#l00300">message_queue.h:300</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a6bd0209d47b0b3d9d0218567e08d7f7c"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#a6bd0209d47b0b3d9d0218567e08d7f7c">bcnp::MessageQueue::SetConfig</a></div><div class="ttdeci">void SetConfig(const MessageQueueConfig &amp;config)</div><div class="ttdoc">Update queue configuration.</div><div class="ttdef"><b>Definition</b> <a href="#l00246">message_queue.h:246</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a6cf20ee65255cb68080ed5c44315afec"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#a6cf20ee65255cb68080ed5c44315afec">bcnp::MessageQueue::IsConnected</a></div><div class="ttdeci">bool IsConnected(Clock::time_point now) const</div><div class="ttdoc">Check if the connection is still active.</div><div class="ttdef"><b>Definition</b> <a href="#l00217">message_queue.h:217</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a740516762a32e07caa5463823defb755"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#a740516762a32e07caa5463823defb755">bcnp::MessageQueue::GetConfig</a></div><div class="ttdeci">MessageQueueConfig GetConfig() const</div><div class="ttdef"><b>Definition</b> <a href="#l00256">message_queue.h:256</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a41eed33fd667a98a23d7c0cb96a83695"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#a41eed33fd667a98a23d7c0cb96a83695">bcnp::MessageQueue::ResetMetrics</a></div><div class="ttdeci">void ResetMetrics()</div><div class="ttdoc">Reset all metrics to zero.</div><div class="ttdef"><b>Definition</b> <a href="#l00231">message_queue.h:231</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a45bd245a9368d35090b0f84217670150"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#a45bd245a9368d35090b0f84217670150">bcnp::MessageQueue::BeginTransaction</a></div><div class="ttdeci">Transaction BeginTransaction()</div><div class="ttdef"><b>Definition</b> <a href="#l00297">message_queue.h:297</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a6bd0209d47b0b3d9d0218567e08d7f7c"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#a6bd0209d47b0b3d9d0218567e08d7f7c">bcnp::MessageQueue::SetConfig</a></div><div class="ttdeci">void SetConfig(const MessageQueueConfig &amp;config)</div><div class="ttdoc">Update queue configuration.</div><div class="ttdef"><b>Definition</b> <a href="#l00243">message_queue.h:243</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a6cf20ee65255cb68080ed5c44315afec"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#a6cf20ee65255cb68080ed5c44315afec">bcnp::MessageQueue::IsConnected</a></div><div class="ttdeci">bool IsConnected(Clock::time_point now) const</div><div class="ttdoc">Check if the connection is still active.</div><div class="ttdef"><b>Definition</b> <a href="#l00214">message_queue.h:214</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a740516762a32e07caa5463823defb755"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#a740516762a32e07caa5463823defb755">bcnp::MessageQueue::GetConfig</a></div><div class="ttdeci">MessageQueueConfig GetConfig() const</div><div class="ttdef"><b>Definition</b> <a href="#l00253">message_queue.h:253</a></div></div>
 <div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a9ae24ed58a604c005898cb79a663d876"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#a9ae24ed58a604c005898cb79a663d876">bcnp::MessageQueue::ActiveMessage</a></div><div class="ttdeci">std::optional&lt; MsgType &gt; ActiveMessage() const</div><div class="ttdoc">Get the currently executing message.</div><div class="ttdef"><b>Definition</b> <a href="#l00200">message_queue.h:200</a></div></div>
 <div class="ttc" id="aclassbcnp_1_1MessageQueue_html_aa5eeeb2dc4b14d8505a7a7ea23a36cad"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#aa5eeeb2dc4b14d8505a7a7ea23a36cad">bcnp::MessageQueue::Push</a></div><div class="ttdeci">bool Push(const MsgType &amp;message)</div><div class="ttdoc">Add a message to the back of the queue.</div><div class="ttdef"><b>Definition</b> <a href="#l00116">message_queue.h:116</a></div></div>
 <div class="ttc" id="aclassbcnp_1_1MessageQueue_html_ab653c5c6dbe4974467e2009cdabbe98c"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html#ab653c5c6dbe4974467e2009cdabbe98c">bcnp::MessageQueue::NotifyReceived</a></div><div class="ttdeci">void NotifyReceived(Clock::time_point now)</div><div class="ttdoc">Notify that messages were received from the network.</div><div class="ttdef"><b>Definition</b> <a href="#l00144">message_queue.h:144</a></div></div>
