@@ -1,0 +1,9 @@
+<map id="bcnp::GetMessageInfo" name="bcnp::GetMessageInfo">
+<area shape="rect" id="Node000001" title=" " alt="" coords="277,55,428,80"/>
+<area shape="rect" id="Node000002" href="$namespacebcnp.html#a8b5330ec65ad03a70dd3f46e95763492" title="Decode a packet using the global message type registry." alt="" coords="32,5,202,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="272,54,181,34,182,29,273,48"/>
+<area shape="rect" id="Node000003" href="$namespacebcnp.html#adae6273ce9d7b4061b1dcfc3a6b1d797" title=" " alt="" coords="41,55,193,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="261,70,193,70,193,65,261,65"/>
+<area shape="rect" id="Node000004" href="$structbcnp_1_1PacketView.html#a690138420e05b8d298b1bf96d629b998" title="Calculate total payload size in bytes." alt="" coords="5,104,229,130"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="273,87,182,106,181,101,272,81"/>
+</map>

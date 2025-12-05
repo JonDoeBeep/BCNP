@@ -1,0 +1,25 @@
+var namespacebcnp_1_1detail =
+[
+    [ "has_begin_end", "structbcnp_1_1detail_1_1has__begin__end.html", null ],
+    [ "has_begin_end< T, std::void_t< decltype(std::declval< T >().begin()), decltype(std::declval< T >().end())> >", "structbcnp_1_1detail_1_1has__begin__end_3_01T_00_01std_1_1void__t_3_01decltype_07std_1_1declval_404f3e67ccc28f5018061412bce9d633.html", null ],
+    [ "has_clear", "structbcnp_1_1detail_1_1has__clear.html", null ],
+    [ "has_clear< T, std::void_t< decltype(std::declval< T >().clear())> >", "structbcnp_1_1detail_1_1has__clear_3_01T_00_01std_1_1void__t_3_01decltype_07std_1_1declval_3_01T2e5090700075ccb5ea5e1e2d91c18a9c.html", null ],
+    [ "has_push_back", "structbcnp_1_1detail_1_1has__push__back.html", null ],
+    [ "has_push_back< T, std::void_t< decltype(std::declval< T >().push_back(std::declval< typename T::value_type >()))> >", "structbcnp_1_1detail_1_1has__push__back_3_01T_00_01std_1_1void__t_3_01decltype_07std_1_1declval_280dfca7fa6871b94d5cc8df9ce584da.html", null ],
+    [ "has_reserve", "structbcnp_1_1detail_1_1has__reserve.html", null ],
+    [ "has_reserve< T, std::void_t< decltype(std::declval< T >().reserve(std::size_t{}))> >", "structbcnp_1_1detail_1_1has__reserve_3_01T_00_01std_1_1void__t_3_01decltype_07std_1_1declval_3_0c5deb810df35b33a54a186c7de96feab.html", null ],
+    [ "has_size", "structbcnp_1_1detail_1_1has__size.html", null ],
+    [ "has_size< T, std::void_t< decltype(std::declval< T >().size())> >", "structbcnp_1_1detail_1_1has__size_3_01T_00_01std_1_1void__t_3_01decltype_07std_1_1declval_3_01T_911eb359e91f0b77387e5a7dd4f0fb26.html", null ],
+    [ "has_subscript", "structbcnp_1_1detail_1_1has__subscript.html", null ],
+    [ "has_subscript< T, std::void_t< decltype(std::declval< T >()[std::size_t{}])> >", "structbcnp_1_1detail_1_1has__subscript_3_01T_00_01std_1_1void__t_3_01decltype_07std_1_1declval_3858d61096a9d19f3d09178a4bc961f79.html", null ],
+    [ "DequantizeFloat", "namespacebcnp_1_1detail.html#a15bc4bbbe055e67895d8eb9f2f9e57a0", null ],
+    [ "LoadS16", "namespacebcnp_1_1detail.html#a0aa6aaeeb48bf83d7fe13b81c3138585", null ],
+    [ "LoadS32", "namespacebcnp_1_1detail.html#ab76c70abff4137592d822604ad65cb84", null ],
+    [ "LoadU16", "namespacebcnp_1_1detail.html#a991470361e8f2953df4cacda42728080", null ],
+    [ "LoadU32", "namespacebcnp_1_1detail.html#a340b9931eb1792e2f6cc8a9cc9bd0e27", null ],
+    [ "QuantizeFloat", "namespacebcnp_1_1detail.html#a422b3ef3c5e316541699add938ff2b29", null ],
+    [ "StoreS16", "namespacebcnp_1_1detail.html#a4f0e0fe32551ebdddd3586457aed023d", null ],
+    [ "StoreS32", "namespacebcnp_1_1detail.html#aedb4d07afe5f19587db412c2ff534181", null ],
+    [ "StoreU16", "namespacebcnp_1_1detail.html#a0f11d2df38ea2cb9f5bb35568bd10b50", null ],
+    [ "StoreU32", "namespacebcnp_1_1detail.html#a8a74ef20767465b361f711c630f7bc3b", null ]
+];

@@ -1,0 +1,11 @@
+<map id="bcnp::StreamParser::Push" name="bcnp::StreamParser::Push">
+<area shape="rect" id="Node000001" title="Push raw bytes into the parser for processing." alt="" coords="424,39,559,79"/>
+<area shape="rect" id="Node000002" href="$classbcnp_1_1PacketDispatcher.html#a4363452b902f9182c2a6683a11a4f681" title="Feed raw bytes from transport (thread&#45;safe)" alt="" coords="216,5,374,46"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="408,48,375,42,376,37,409,42"/>
+<area shape="rect" id="Node000004" href="$classbcnp_1_1SpiStreamAdapter.html#ab30138900d326cd1b53d5440bc99da85" title="Push a data chunk directly to the parser." alt="" coords="215,71,376,111"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="409,75,377,80,376,75,408,70"/>
+<area shape="rect" id="Node000003" href="$classbcnp_1_1DispatcherDriver.html#a655f7a43cf2aa95b75682ca1d741b8cd" title="Poll transport and feed data to dispatcher." alt="" coords="10,5,162,46"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="201,28,162,28,162,23,201,23"/>
+<area shape="rect" id="Node000005" href="$classbcnp_1_1SpiStreamAdapter.html#a61d15768c6077dc18e980e3dc3b09c06" title="Poll for incoming SPI data." alt="" coords="5,71,167,111"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="199,94,167,94,167,88,199,88"/>
+</map>

@@ -1,0 +1,13 @@
+<map id="bcnp::detail::StoreU16" name="bcnp::detail::StoreU16">
+<area shape="rect" id="Node000001" title=" " alt="" coords="450,88,597,114"/>
+<area shape="rect" id="Node000002" href="$namespacebcnp.html#a7230ac0a91ddcc20ac446c0699119779" title="Encode a typed packet to a pre&#45;allocated buffer." alt="" coords="228,63,402,88"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="434,93,402,89,403,83,435,87"/>
+<area shape="rect" id="Node000006" href="$namespacebcnp_1_1detail.html#a4f0e0fe32551ebdddd3586457aed023d" title=" " alt="" coords="242,112,388,138"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="435,114,389,119,388,114,434,108"/>
+<area shape="rect" id="Node000003" href="$namespacebcnp.html#a4146fa7eded1d9b950f7590c0f3e4f15" title="Encode a typed packet to a dynamically&#45;sized vector." alt="" coords="5,5,180,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="247,61,145,34,146,29,248,56"/>
+<area shape="rect" id="Node000004" href="$classbcnp_1_1DispatcherDriver.html#abe00a2e8e6c1d26fbfd7e148767bf0e1" title="Send a typed packet." alt="" coords="17,55,168,96"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="212,78,169,78,169,73,212,73"/>
+<area shape="rect" id="Node000005" href="$classbcnp_1_1SpiStreamAdapter.html#a329f6b5039478e609fa727560ae8d48f" title="Send a typed packet over SPI." alt="" coords="12,120,173,161"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="251,96,228,102,161,122,160,117,227,97,249,90"/>
+</map>

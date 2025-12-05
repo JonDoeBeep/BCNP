@@ -1,0 +1,28 @@
+var searchData=
+[
+  ['table_20of_20contents_0',['Table of Contents',['../md__2github_2workspace_2protocol.html#autotoc_md50',1,'']]],
+  ['tcp_5fposix_2ecpp_1',['tcp_posix.cpp',['../tcp__posix_8cpp.html',1,'']]],
+  ['tcp_5fposix_2eh_2',['tcp_posix.h',['../tcp__posix_8h.html',1,'']]],
+  ['tcpposixadapter_3',['TcpPosixAdapter',['../classbcnp_1_1TcpPosixAdapter.html',1,'bcnp::TcpPosixAdapter'],['../classbcnp_1_1TcpPosixAdapter.html#af75e33994a3c746608b417b78175552d',1,'bcnp::TcpPosixAdapter::TcpPosixAdapter()']]],
+  ['telemetry_5faccumulator_2eh_4',['telemetry_accumulator.h',['../telemetry__accumulator_8h.html',1,'']]],
+  ['telemetryaccumulator_5',['TelemetryAccumulator',['../classbcnp_1_1TelemetryAccumulator.html',1,'bcnp::TelemetryAccumulator&lt; MsgType, Storage &gt;'],['../classbcnp_1_1TelemetryAccumulator.html#aaa738bdf71baa2de497d528e4bb51c68',1,'bcnp::TelemetryAccumulator::TelemetryAccumulator()']]],
+  ['telemetryaccumulatorconfig_6',['TelemetryAccumulatorConfig',['../structbcnp_1_1TelemetryAccumulatorConfig.html',1,'bcnp']]],
+  ['test_7',['test',['../structbcnp_1_1HasDurationMs.html#aa78a033d48e00c0bcc3602947ffbba73',1,'bcnp::HasDurationMs::test(int) -&gt; decltype(std::declval&lt; U &gt;().durationMs, std::true_type{})'],['../structbcnp_1_1HasDurationMs.html#a20810b624f52b9c96e91af5d062109ae',1,'bcnp::HasDurationMs::test(...)']]],
+  ['timedqueue_8',['TimedQueue',['../namespacebcnp.html#a51a0bbc0634f6a07d5b533fed541f8cc',1,'bcnp']]],
+  ['toomanycommands_9',['TooManyCommands',['../namespacebcnp.html#ab9d83a77b2a1ac85b1c902bd414a1771a32e135ea68edcfdc97e28c8936e6ba9c',1,'bcnp']]],
+  ['toomanymessages_10',['TooManyMessages',['../namespacebcnp.html#ab9d83a77b2a1ac85b1c902bd414a1771a29e15f194fc4548f9b66eb4208f14938',1,'bcnp']]],
+  ['toosmall_11',['TooSmall',['../namespacebcnp.html#ab9d83a77b2a1ac85b1c902bd414a1771af4482beda9168a6955883dcf19310ad0',1,'bcnp']]],
+  ['transaction_12',['Transaction',['../classbcnp_1_1MessageQueue_1_1Transaction.html',1,'bcnp::MessageQueue&lt; MsgType &gt;::Transaction'],['../classbcnp_1_1MessageQueue_1_1Transaction.html#a2a0185205343edf3e6f36359a301f97b',1,'bcnp::MessageQueue::Transaction::Transaction()']]],
+  ['transport_20guidelines_13',['Transport Guidelines',['../md__2github_2workspace_2protocol.html#autotoc_md76',1,'']]],
+  ['transport_20layer_14',['Transport Layer',['../md__2github_2workspace_2protocol.html#autotoc_md74',1,'']]],
+  ['truncated_15',['Truncated',['../namespacebcnp.html#ab9d83a77b2a1ac85b1c902bd414a1771a442d803e8762d806fafbf15618e53500',1,'bcnp']]],
+  ['tt_16',['tt',['../index.html#autotoc_md24',1,'C++ Header (&lt;tt&gt;message_types.h&lt;/tt&gt;)'],['../index.html#autotoc_md25',1,'Python Module (&lt;tt&gt;bcnp_messages.py&lt;/tt&gt;)'],['../index.html#autotoc_md12',1,'Step 1: Edit &lt;tt&gt;messages.json&lt;/tt&gt;']]],
+  ['tt_20bcnp_5fmessages_20py_20tt_17',['Python Module (&lt;tt&gt;bcnp_messages.py&lt;/tt&gt;)',['../index.html#autotoc_md25',1,'']]],
+  ['tt_20message_5ftypes_20h_20tt_18',['C++ Header (&lt;tt&gt;message_types.h&lt;/tt&gt;)',['../index.html#autotoc_md24',1,'']]],
+  ['tt_20messages_20json_20tt_19',['Step 1: Edit &lt;tt&gt;messages.json&lt;/tt&gt;',['../index.html#autotoc_md12',1,'']]],
+  ['type_20',['Adding a New Message Type',['../index.html#autotoc_md11',1,'']]],
+  ['type_5finfo_21',['TYPE_INFO',['../namespacebcnp__codegen.html#ab97a8fe294e66be9c04563fca5013c6c',1,'bcnp_codegen']]],
+  ['typedpacket_22',['TypedPacket',['../structbcnp_1_1TypedPacket.html',1,'bcnp::TypedPacket&lt; MsgType, Storage &gt;'],['../structbcnp_1_1TypedPacket.html#a54747030abc702774dd6bcdedaa24b5f',1,'bcnp::TypedPacket::TypedPacket()']]],
+  ['typeid_23',['typeId',['../structbcnp_1_1MessageInfo.html#a98935344d03d9198c53ba9876e679105',1,'bcnp::MessageInfo']]],
+  ['types_24',['Types',['..//github/workspace/README.md#autotoc_md32',1,'1. Define Your Message Types'],['../md__2github_2workspace_2protocol.html#autotoc_md71',1,'Defining Custom Message Types'],['../md__2github_2workspace_2protocol.html#autotoc_md68',1,'Message Types'],['../index.html#autotoc_md16',1,'Supported Field Types'],['../md__2github_2workspace_2protocol.html#autotoc_md72',1,'Supported Field Types']]]
+];

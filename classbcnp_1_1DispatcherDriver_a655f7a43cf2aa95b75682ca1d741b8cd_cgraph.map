@@ -1,0 +1,9 @@
+<map id="bcnp::DispatcherDriver::PollOnce" name="bcnp::DispatcherDriver::PollOnce">
+<area shape="rect" id="Node000001" title="Poll transport and feed data to dispatcher." alt="" coords="5,39,157,79"/>
+<area shape="rect" id="Node000002" href="$classbcnp_1_1PacketDispatcher.html#a4363452b902f9182c2a6683a11a4f681" title="Feed raw bytes from transport (thread&#45;safe)" alt="" coords="214,5,372,46"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="157,44,198,38,199,43,158,50"/>
+<area shape="rect" id="Node000004" href="$classbcnp_1_1ByteStream.html#a4ad7e4b491d1bea487fee2200257bb80" title="Receive available bytes from the transport (non&#45;blocking)." alt="" coords="205,71,381,111"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="158,68,190,73,189,78,157,73"/>
+<area shape="rect" id="Node000003" href="$classbcnp_1_1StreamParser.html#aded412907bb5773c63587a3d58c3146a" title="Push raw bytes into the parser for processing." alt="" coords="429,5,564,46"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="373,23,414,23,414,28,373,28"/>
+</map>

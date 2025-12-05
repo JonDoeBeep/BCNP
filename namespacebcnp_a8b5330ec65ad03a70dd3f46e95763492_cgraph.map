@@ -1,0 +1,14 @@
+<map id="bcnp::DecodePacketView" name="bcnp::DecodePacketView">
+<area shape="rect" id="Node000001" title="Decode a packet using the global message type registry." alt="" coords="5,104,175,130"/>
+<area shape="rect" id="Node000002" href="$namespacebcnp.html#abfa84506649424c70b4d70dfc47f5434" title="Decode a packet with explicitly provided message wire size." alt="" coords="223,53,443,79"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="155,101,253,80,254,85,156,106"/>
+<area shape="rect" id="Node000004" href="$namespacebcnp_1_1detail.html#a991470361e8f2953df4cacda42728080" title=" " alt="" coords="491,104,636,130"/>
+<area shape="poly" id="edge6_Node000001_Node000004" title=" " alt="" coords="175,114,476,114,476,120,175,120"/>
+<area shape="rect" id="Node000006" href="$namespacebcnp.html#a2fb3333c8519eab14611fe883377cf23" title=" " alt="" coords="257,155,408,180"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="156,128,254,148,253,154,155,133"/>
+<area shape="rect" id="Node000003" href="$namespacebcnp.html#a9fe5fd2d19a061440fb7ff0bffab5101" title="Compute CRC32 checksum for data integrity verification." alt="" coords="493,5,634,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="398,50,483,32,484,37,399,55"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="395,77,488,98,487,103,394,82"/>
+<area shape="rect" id="Node000005" href="$namespacebcnp_1_1detail.html#a340b9931eb1792e2f6cc8a9cc9bd0e27" title=" " alt="" coords="491,55,636,80"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="444,64,476,64,476,70,444,69"/>
+</map>

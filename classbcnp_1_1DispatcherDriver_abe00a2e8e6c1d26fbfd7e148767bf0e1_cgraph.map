@@ -1,0 +1,13 @@
+<map id="bcnp::DispatcherDriver::SendPacket" name="bcnp::DispatcherDriver::SendPacket">
+<area shape="rect" id="Node000001" title="Send a typed packet." alt="" coords="5,72,157,113"/>
+<area shape="rect" id="Node000002" href="$namespacebcnp.html#a7230ac0a91ddcc20ac446c0699119779" title="Encode a typed packet to a pre&#45;allocated buffer." alt="" coords="210,55,384,80"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="157,81,194,77,194,82,157,87"/>
+<area shape="rect" id="Node000006" href="$classbcnp_1_1ByteWriter.html#a09808d8de18a12712701dbe4d1d0a4c4" title="Send bytes over the transport." alt="" coords="205,104,389,130"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="157,99,189,102,189,107,157,104"/>
+<area shape="rect" id="Node000003" href="$namespacebcnp.html#a9fe5fd2d19a061440fb7ff0bffab5101" title="Compute CRC32 checksum for data integrity verification." alt="" coords="440,5,581,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="355,51,436,32,438,38,356,57"/>
+<area shape="rect" id="Node000004" href="$namespacebcnp_1_1detail.html#a0f11d2df38ea2cb9f5bb35568bd10b50" title=" " alt="" coords="437,55,584,80"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="385,65,422,65,422,70,385,70"/>
+<area shape="rect" id="Node000005" href="$namespacebcnp_1_1detail.html#a8a74ef20767465b361f711c630f7bc3b" title=" " alt="" coords="437,104,584,130"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="356,78,438,97,436,103,355,84"/>
+</map>

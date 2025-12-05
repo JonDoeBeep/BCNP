@@ -1,0 +1,9 @@
+<map id="bcnp::StaticVector::emplace_back" name="bcnp::StaticVector::emplace_back">
+<area shape="rect" id="Node000001" title="Construct element in&#45;place at end." alt="" coords="181,71,308,111"/>
+<area shape="rect" id="Node000002" href="$classbcnp_1_1StaticVector.html#aec927b4bc213ff618262f93c9cb73d0a" title="Move assignment operator." alt="" coords="5,5,133,46"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="173,67,125,49,126,44,175,62"/>
+<area shape="rect" id="Node000003" href="$classbcnp_1_1StaticVector.html#a38200f1e39fd0ad2aadf3e1d826feef0" title="Resize the vector." alt="" coords="5,71,133,111"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="165,94,133,94,133,88,165,88"/>
+<area shape="rect" id="Node000004" href="$classbcnp_1_1StaticVector.html#ace9c00f8e44d324d9e68587456228930" title="Move constructor &#45; moves all elements." alt="" coords="5,136,133,177"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="175,120,126,138,125,133,173,115"/>
+</map>

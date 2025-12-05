@@ -1,0 +1,7 @@
+<map id="bcnp::UdpPosixAdapter::SendHandshake" name="bcnp::UdpPosixAdapter::SendHandshake">
+<area shape="rect" id="Node000001" title="Sends the V3 protocol handshake to the current peer." alt="" coords="5,5,162,46"/>
+<area shape="rect" id="Node000002" href="$namespacebcnp.html#a3f0cc90c3f6a10d31333918c13f24666" title="Encode handshake with default schema hash." alt="" coords="210,13,374,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="162,23,194,23,194,28,162,28"/>
+<area shape="rect" id="Node000003" href="$namespacebcnp_1_1detail.html#a8a74ef20767465b361f711c630f7bc3b" title=" " alt="" coords="422,13,569,38"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="374,23,407,23,407,28,374,28"/>
+</map>

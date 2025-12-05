@@ -1,0 +1,15 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="Node000000" title=" " alt="" coords="5,177,110,202"/>
+<area shape="rect" id="Node000001" href="$structbcnp_1_1detail_1_1has__begin__end.html" title=" " alt="" coords="161,5,352,46"/>
+<area shape="poly" id="edge6_Node000000_Node000001" title=" " alt="" coords="70,162,105,109,129,81,156,57,178,44,181,49,159,61,132,85,109,112,75,165"/>
+<area shape="rect" id="Node000002" href="$structbcnp_1_1detail_1_1has__clear.html" title=" " alt="" coords="175,71,338,111"/>
+<area shape="poly" id="edge7_Node000000_Node000002" title=" " alt="" coords="87,165,119,143,156,122,186,110,188,114,159,127,122,147,90,170"/>
+<area shape="rect" id="Node000003" href="$structbcnp_1_1detail_1_1has__push__back.html" title=" " alt="" coords="158,136,355,177"/>
+<area shape="poly" id="edge8_Node000000_Node000003" title=" " alt="" coords="124,176,157,170,158,176,125,181"/>
+<area shape="rect" id="Node000004" href="$structbcnp_1_1detail_1_1has__reserve.html" title=" " alt="" coords="175,201,338,242"/>
+<area shape="poly" id="edge9_Node000000_Node000004" title=" " alt="" coords="125,198,175,206,174,211,124,203"/>
+<area shape="rect" id="Node000005" href="$structbcnp_1_1detail_1_1has__size.html" title=" " alt="" coords="175,267,338,307"/>
+<area shape="poly" id="edge10_Node000000_Node000005" title=" " alt="" coords="90,209,159,251,188,264,186,269,156,256,87,214"/>
+<area shape="rect" id="Node000006" href="$structbcnp_1_1detail_1_1has__subscript.html" title=" " alt="" coords="170,332,343,373"/>
+<area shape="poly" id="edge11_Node000000_Node000006" title=" " alt="" coords="75,215,109,267,133,294,159,317,181,329,178,334,156,321,129,297,105,270,71,218"/>
+</map>

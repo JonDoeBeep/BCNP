@@ -1,0 +1,5 @@
+<map id="bcnp::SpiStreamAdapter::PushChunk" name="bcnp::SpiStreamAdapter::PushChunk">
+<area shape="rect" id="Node000001" title="Push a data chunk directly to the parser." alt="" coords="5,5,167,46"/>
+<area shape="rect" id="Node000002" href="$classbcnp_1_1StreamParser.html#aded412907bb5773c63587a3d58c3146a" title="Push raw bytes into the parser for processing." alt="" coords="215,5,350,46"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="167,23,199,23,199,28,167,28"/>
+</map>

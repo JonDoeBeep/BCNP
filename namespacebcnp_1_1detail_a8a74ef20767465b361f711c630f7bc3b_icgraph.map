@@ -1,0 +1,24 @@
+<map id="bcnp::detail::StoreU32" name="bcnp::detail::StoreU32">
+<area shape="rect" id="Node000001" title=" " alt="" coords="699,108,847,133"/>
+<area shape="rect" id="Node000002" href="$namespacebcnp.html#a3f0cc90c3f6a10d31333918c13f24666" title="Encode handshake with default schema hash." alt="" coords="458,78,623,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="684,112,623,104,624,99,684,106"/>
+<area shape="rect" id="Node000006" href="$namespacebcnp.html#a583dc6cf97c84c106a05ca36b38913b2" title="Encode handshake with custom schema hash (for testing)" alt="" coords="430,21,651,46"/>
+<area shape="poly" id="edge5_Node000001_Node000006" title=" " alt="" coords="730,103,650,68,593,50,594,45,652,63,733,98"/>
+<area shape="rect" id="Node000007" href="$namespacebcnp.html#a7230ac0a91ddcc20ac446c0699119779" title="Encode a typed packet to a pre&#45;allocated buffer." alt="" coords="454,136,628,161"/>
+<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="684,134,629,140,628,135,684,128"/>
+<area shape="rect" id="Node000011" href="$namespacebcnp_1_1detail.html#aedb4d07afe5f19587db412c2ff534181" title=" " alt="" coords="468,185,614,210"/>
+<area shape="poly" id="edge11_Node000001_Node000011" title=" " alt="" coords="733,143,652,176,614,187,612,182,650,171,731,138"/>
+<area shape="rect" id="Node000003" href="$classbcnp_1_1TcpPosixAdapter.html#a771c39d8f37f40b5854b6ba9aae40230" title="Sends the V3 protocol handshake to the peer." alt="" coords="218,5,372,46"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="474,76,372,49,373,44,476,71"/>
+<area shape="rect" id="Node000005" href="$classbcnp_1_1UdpPosixAdapter.html#aa9eea738990193152acf70b096a2fe55" title="Sends the V3 protocol handshake to the current peer." alt="" coords="217,71,373,111"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="443,94,373,94,373,88,443,88"/>
+<area shape="rect" id="Node000004" href="$classbcnp_1_1TcpPosixAdapter.html#a9f02e95ffe1e0132c3b17395435bb785" title="Receives bytes from the TCP connection." alt="" coords="5,5,160,46"/>
+<area shape="poly" id="edge3_Node000003_Node000004" title=" " alt="" coords="202,28,160,28,160,23,202,23"/>
+<area shape="poly" id="edge6_Node000006_Node000003" title=" " alt="" coords="414,32,372,31,373,26,415,27"/>
+<area shape="rect" id="Node000008" href="$namespacebcnp.html#a4146fa7eded1d9b950f7590c0f3e4f15" title="Encode a typed packet to a dynamically&#45;sized vector." alt="" coords="208,136,382,161"/>
+<area shape="poly" id="edge8_Node000007_Node000008" title=" " alt="" coords="438,151,382,151,382,146,438,146"/>
+<area shape="rect" id="Node000009" href="$classbcnp_1_1DispatcherDriver.html#abe00a2e8e6c1d26fbfd7e148767bf0e1" title="Send a typed packet." alt="" coords="219,185,370,226"/>
+<area shape="poly" id="edge9_Node000007_Node000009" title=" " alt="" coords="462,168,431,175,372,189,370,184,429,170,461,162"/>
+<area shape="rect" id="Node000010" href="$classbcnp_1_1SpiStreamAdapter.html#a329f6b5039478e609fa727560ae8d48f" title="Send a typed packet over SPI." alt="" coords="214,251,376,291"/>
+<area shape="poly" id="edge10_Node000007_Node000010" title=" " alt="" coords="441,169,432,174,416,189,408,205,400,222,384,240,363,252,360,248,380,236,395,219,403,203,412,186,428,170,438,165"/>
+</map>

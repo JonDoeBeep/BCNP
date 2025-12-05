@@ -1,0 +1,9 @@
+<map id="bcnp::EncodeHandshake" name="bcnp::EncodeHandshake">
+<area shape="rect" id="Node000001" title="Encode handshake with default schema hash." alt="" coords="412,46,576,72"/>
+<area shape="rect" id="Node000002" href="$classbcnp_1_1TcpPosixAdapter.html#a771c39d8f37f40b5854b6ba9aae40230" title="Sends the V3 protocol handshake to the peer." alt="" coords="209,5,363,46"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="396,46,363,41,364,35,397,41"/>
+<area shape="rect" id="Node000004" href="$classbcnp_1_1UdpPosixAdapter.html#aa9eea738990193152acf70b096a2fe55" title="Sends the V3 protocol handshake to the current peer." alt="" coords="208,71,364,111"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="397,77,365,82,364,76,396,71"/>
+<area shape="rect" id="Node000003" href="$classbcnp_1_1TcpPosixAdapter.html#a9f02e95ffe1e0132c3b17395435bb785" title="Receives bytes from the TCP connection." alt="" coords="5,5,160,46"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="193,28,160,28,160,23,193,23"/>
+</map>

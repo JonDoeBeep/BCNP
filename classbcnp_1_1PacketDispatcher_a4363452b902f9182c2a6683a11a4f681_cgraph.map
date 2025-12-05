@@ -1,0 +1,5 @@
+<map id="bcnp::PacketDispatcher::PushBytes" name="bcnp::PacketDispatcher::PushBytes">
+<area shape="rect" id="Node000001" title="Feed raw bytes from transport (thread&#45;safe)" alt="" coords="5,5,164,46"/>
+<area shape="rect" id="Node000002" href="$classbcnp_1_1StreamParser.html#aded412907bb5773c63587a3d58c3146a" title="Push raw bytes into the parser for processing." alt="" coords="212,5,347,46"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="164,23,197,23,197,28,164,28"/>
+</map>

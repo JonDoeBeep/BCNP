@@ -1,0 +1,10 @@
+<map id="bcnp::StaticVector::resize" name="bcnp::StaticVector::resize">
+<area shape="rect" id="Node000001" title="Resize with fill value." alt="" coords="5,39,133,79"/>
+<area shape="rect" id="Node000002" href="$classbcnp_1_1StaticVector.html#a416976a9b5b54259ab01d0a88710fb1a" title="Remove last element." alt="" coords="181,5,308,46"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="133,44,165,38,166,43,134,49"/>
+<area shape="rect" id="Node000004" href="$classbcnp_1_1StaticVector.html#a67863868b9be1dd443610d650a5c1b60" title="Add element by copy." alt="" coords="181,71,308,111"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="134,68,166,74,165,79,133,73"/>
+<area shape="rect" id="Node000003" href="$classbcnp_1_1StaticVector.html#aeedf48c4fa3acb31bab79d88421c57c8" title="Get pointer to underlying storage." alt="" coords="356,39,483,79"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="309,35,342,41,341,47,308,40"/>
+<area shape="poly" id="edge4_Node000004_Node000003" title=" " alt="" coords="308,77,340,71,341,76,309,82"/>
+</map>

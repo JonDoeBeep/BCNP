@@ -1,0 +1,5 @@
+<map id="bcnp::PacketDispatcher::RegisterMessageTypes" name="bcnp::PacketDispatcher::RegisterMessageTypes">
+<area shape="rect" id="Node000001" title="Convenience: set wire size lookup from a list of message types." alt="" coords="5,5,169,46"/>
+<area shape="rect" id="Node000002" href="$classbcnp_1_1StreamParser.html#a588c865d691c53dbded46d400e7c7325" title="Set custom wire size lookup (for testing with custom message types)" alt="" coords="217,5,358,46"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="169,23,201,23,201,28,169,28"/>
+</map>

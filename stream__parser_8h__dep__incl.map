@@ -1,0 +1,19 @@
+<map id="bcnp/stream_parser.h" name="bcnp/stream_parser.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="434,5,581,31"/>
+<area shape="rect" id="Node000002" href="$dispatcher_8h.html" title=" " alt="" coords="239,79,362,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="459,39,337,81,335,76,457,34"/>
+<area shape="rect" id="Node000007" href="$spi__adapter_8h.html" title="SPI transport adapter for BCNP (deprecated)." alt="" coords="442,79,573,105"/>
+<area shape="poly" id="edge6_Node000001_Node000007" title=" " alt="" coords="510,46,510,79,505,79,505,46"/>
+<area shape="rect" id="Node000009" href="$stream__parser_8cpp.html" title="Implementation of the BCNP stream parser." alt="" coords="597,79,757,105"/>
+<area shape="poly" id="edge8_Node000001_Node000009" title=" " alt="" coords="551,35,649,76,647,81,549,40"/>
+<area shape="rect" id="Node000003" href="$controller_8h.html" title=" " alt="" coords="5,160,122,186"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="251,113,101,162,99,157,249,108"/>
+<area shape="rect" id="Node000004" href="$dispatcher_8cpp.html" title="Implementation of the BCNP packet dispatcher." alt="" coords="146,160,283,186"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="278,117,229,162,226,158,275,113"/>
+<area shape="rect" id="Node000005" href="$controller__driver_8h.html" title=" " alt="" coords="307,153,468,193"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="327,113,368,150,364,154,323,117"/>
+<area shape="rect" id="Node000006" href="$controller__driver_8cpp.html" title=" " alt="" coords="307,241,468,282"/>
+<area shape="poly" id="edge5_Node000005_Node000006" title=" " alt="" coords="390,209,390,241,385,241,385,209"/>
+<area shape="rect" id="Node000008" href="$spi__adapter_8cpp.html" title="Implementation of the deprecated SPI transport adapter." alt="" coords="493,160,637,186"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="527,116,558,158,554,161,523,119"/>
+</map>

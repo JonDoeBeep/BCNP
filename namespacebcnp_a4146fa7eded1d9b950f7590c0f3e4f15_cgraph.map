@@ -1,0 +1,11 @@
+<map id="bcnp::EncodeTypedPacket" name="bcnp::EncodeTypedPacket">
+<area shape="rect" id="Node000001" title="Encode a typed packet to a dynamically&#45;sized vector." alt="" coords="5,55,180,80"/>
+<area shape="rect" id="Node000002" href="$namespacebcnp.html#a7230ac0a91ddcc20ac446c0699119779" title="Encode a typed packet to a pre&#45;allocated buffer." alt="" coords="228,55,402,80"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="180,65,212,65,212,70,180,70"/>
+<area shape="rect" id="Node000003" href="$namespacebcnp.html#a9fe5fd2d19a061440fb7ff0bffab5101" title="Compute CRC32 checksum for data integrity verification." alt="" coords="453,5,594,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="372,51,451,33,452,38,373,57"/>
+<area shape="rect" id="Node000004" href="$namespacebcnp_1_1detail.html#a0f11d2df38ea2cb9f5bb35568bd10b50" title=" " alt="" coords="450,55,597,80"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="402,65,434,65,434,70,402,70"/>
+<area shape="rect" id="Node000005" href="$namespacebcnp_1_1detail.html#a8a74ef20767465b361f711c630f7bc3b" title=" " alt="" coords="450,104,597,130"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="373,78,452,97,451,102,372,84"/>
+</map>

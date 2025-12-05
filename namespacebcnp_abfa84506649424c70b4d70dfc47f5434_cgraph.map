@@ -1,0 +1,9 @@
+<map id="bcnp::DecodePacketViewWithSize" name="bcnp::DecodePacketViewWithSize">
+<area shape="rect" id="Node000001" title="Decode a packet with explicitly provided message wire size." alt="" coords="5,55,226,80"/>
+<area shape="rect" id="Node000002" href="$namespacebcnp.html#a9fe5fd2d19a061440fb7ff0bffab5101" title="Compute CRC32 checksum for data integrity verification." alt="" coords="276,5,417,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="179,51,267,32,269,37,180,57"/>
+<area shape="rect" id="Node000003" href="$namespacebcnp_1_1detail.html#a991470361e8f2953df4cacda42728080" title=" " alt="" coords="274,55,419,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="226,65,258,65,258,70,226,70"/>
+<area shape="rect" id="Node000004" href="$namespacebcnp_1_1detail.html#a340b9931eb1792e2f6cc8a9cc9bd0e27" title=" " alt="" coords="274,104,419,130"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="180,78,269,98,267,103,179,84"/>
+</map>

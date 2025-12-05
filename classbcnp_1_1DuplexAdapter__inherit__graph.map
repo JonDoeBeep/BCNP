@@ -1,0 +1,11 @@
+<map id="bcnp::DuplexAdapter" name="bcnp::DuplexAdapter">
+<area shape="rect" id="Node000001" title="Combined send/receive interface for bidirectional transports." alt="" coords="102,79,242,105"/>
+<area shape="rect" id="Node000004" href="$classbcnp_1_1TcpPosixAdapter.html" title="TCP transport adapter for BCNP over POSIX sockets." alt="" coords="5,153,160,178"/>
+<area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="147,116,99,154,96,150,143,112"/>
+<area shape="rect" id="Node000005" href="$classbcnp_1_1UdpPosixAdapter.html" title="UDP transport adapter for BCNP over POSIX sockets." alt="" coords="184,153,341,178"/>
+<area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="201,112,249,150,246,154,197,117"/>
+<area shape="rect" id="Node000002" href="$classbcnp_1_1ByteWriter.html" title="Interface for sending raw bytes over a transport." alt="" coords="42,5,158,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="124,40,162,77,158,80,121,44"/>
+<area shape="rect" id="Node000003" href="$classbcnp_1_1ByteStream.html" title="Interface for receiving raw bytes from a transport." alt="" coords="182,5,306,31"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="223,44,186,80,182,77,219,40"/>
+</map>

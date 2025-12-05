@@ -1,0 +1,5 @@
+<map id="bcnp::PacketView" name="bcnp::PacketView">
+<area shape="rect" id="Node000001" title="Zero&#45;copy view into a decoded packet buffer." alt="" coords="12,94,137,120"/>
+<area shape="rect" id="Node000002" href="$structbcnp_1_1PacketHeader.html" title="Parsed packet header structure." alt="" coords="5,5,144,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="77,47,77,94,72,94,72,47"/>
+</map>

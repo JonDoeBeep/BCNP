@@ -1,0 +1,7 @@
+<map id="bcnp::DecodePacketViewWithSize" name="bcnp::DecodePacketViewWithSize">
+<area shape="rect" id="Node000001" title="Decode a packet with explicitly provided message wire size." alt="" coords="239,31,459,56"/>
+<area shape="rect" id="Node000002" href="$namespacebcnp.html#a8b5330ec65ad03a70dd3f46e95763492" title="Decode a packet using the global message type registry." alt="" coords="13,5,183,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="223,33,183,29,183,24,223,28"/>
+<area shape="rect" id="Node000003" href="$namespacebcnp.html#a780ed4fce673d8bb91f37027c0d45ae1" title="Type&#45;safe packet view decode using compile&#45;time message type." alt="" coords="5,55,191,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="223,58,191,61,191,56,223,53"/>
+</map>

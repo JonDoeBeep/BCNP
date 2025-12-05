@@ -1,0 +1,5 @@
+<map id="bcnp::DispatcherDriver::SendBytes" name="bcnp::DispatcherDriver::SendBytes">
+<area shape="rect" id="Node000001" title="Send raw bytes through the adapter." alt="" coords="5,5,157,46"/>
+<area shape="rect" id="Node000002" href="$classbcnp_1_1ByteWriter.html#a09808d8de18a12712701dbe4d1d0a4c4" title="Send bytes over the transport." alt="" coords="205,13,389,38"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="157,23,189,23,189,28,157,28"/>
+</map>

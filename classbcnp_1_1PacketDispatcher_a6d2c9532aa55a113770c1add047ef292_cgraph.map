@@ -1,0 +1,5 @@
+<map id="bcnp::PacketDispatcher::SetWireSizeLookup" name="bcnp::PacketDispatcher::SetWireSizeLookup">
+<area shape="rect" id="Node000001" title="Set wire size lookup for custom message types (for testing)" alt="" coords="5,5,164,46"/>
+<area shape="rect" id="Node000002" href="$classbcnp_1_1StreamParser.html#a588c865d691c53dbded46d400e7c7325" title="Set custom wire size lookup (for testing with custom message types)" alt="" coords="212,5,353,46"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="164,23,197,23,197,28,164,28"/>
+</map>

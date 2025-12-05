@@ -1,0 +1,38 @@
+<map id="bcnp/static_vector.h" name="bcnp/static_vector.h">
+<area shape="rect" id="Node000001" title="Fixed&#45;capacity vector with stack allocation (no heap)." alt="" coords="766,5,904,31"/>
+<area shape="rect" id="Node000002" href="$packet_8h.html" title="BCNP packet structures, encoding, and decoding utilities." alt="" coords="628,153,730,178"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="802,41,749,81,714,119,689,154,684,151,710,116,745,77,799,37"/>
+<area shape="rect" id="Node000013" href="$telemetry__accumulator_8h.html" title=" " alt="" coords="862,234,1056,260"/>
+<area shape="poly" id="edge20_Node000001_Node000013" title=" " alt="" coords="878,36,903,54,925,77,945,119,956,163,962,233,957,233,951,164,940,121,921,81,900,58,875,41"/>
+<area shape="rect" id="Node000016" href="$packet__storage_8h.html" title=" " alt="" coords="759,79,911,105"/>
+<area shape="poly" id="edge17_Node000001_Node000016" title=" " alt="" coords="838,46,838,79,832,79,832,46"/>
+<area shape="rect" id="Node000003" href="$packet_8cpp.html" title="Implementation of BCNP packet encoding and decoding functions." alt="" coords="291,234,408,260"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="613,185,427,229,399,236,398,231,426,224,612,180"/>
+<area shape="rect" id="Node000004" href="$spi__adapter_8h.html" title="SPI transport adapter for BCNP (deprecated)." alt="" coords="156,322,287,348"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="613,181,543,200,472,229,457,238,447,248,422,269,346,302,274,324,273,319,344,297,419,265,444,244,454,234,470,224,542,195,612,176"/>
+<area shape="rect" id="Node000006" href="$stream__parser_8h.html" title=" " alt="" coords="483,234,629,260"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="649,189,576,236,574,231,646,185"/>
+<area shape="rect" id="Node000011" href="$controller__driver_8cpp.html" title=" " alt="" coords="534,492,696,533"/>
+<area shape="poly" id="edge14_Node000002_Node000011" title=" " alt="" coords="682,194,677,305,668,375,652,445,630,493,625,491,647,443,663,374,672,305,677,194"/>
+<area shape="poly" id="edge13_Node000002_Node000013" title=" " alt="" coords="737,180,916,231,915,236,736,186"/>
+<area shape="rect" id="Node000014" href="$tcp__posix_8h.html" title=" " alt="" coords="712,226,838,267"/>
+<area shape="poly" id="edge15_Node000002_Node000014" title=" " alt="" coords="707,186,753,224,749,228,703,190"/>
+<area shape="rect" id="Node000005" href="$spi__adapter_8cpp.html" title="Implementation of the deprecated SPI transport adapter." alt="" coords="5,411,150,437"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="190,359,99,413,96,408,187,354"/>
+<area shape="poly" id="edge11_Node000006_Node000004" title=" " alt="" coords="495,266,269,325,268,319,494,261"/>
+<area shape="rect" id="Node000007" href="$dispatcher_8h.html" title=" " alt="" coords="494,322,618,348"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="559,275,559,322,554,322,554,275"/>
+<area shape="rect" id="Node000012" href="$stream__parser_8cpp.html" title="Implementation of the BCNP stream parser." alt="" coords="311,322,471,348"/>
+<area shape="poly" id="edge12_Node000006_Node000012" title=" " alt="" coords="521,269,415,324,413,320,518,265"/>
+<area shape="rect" id="Node000008" href="$controller_8h.html" title=" " alt="" coords="174,411,290,437"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="496,355,302,406,277,413,275,408,301,401,494,350"/>
+<area shape="rect" id="Node000009" href="$dispatcher_8cpp.html" title="Implementation of the BCNP packet dispatcher." alt="" coords="314,411,452,437"/>
+<area shape="poly" id="edge8_Node000007_Node000009" title=" " alt="" coords="519,358,408,413,406,408,517,353"/>
+<area shape="rect" id="Node000010" href="$controller__driver_8h.html" title=" " alt="" coords="476,404,637,444"/>
+<area shape="poly" id="edge9_Node000007_Node000010" title=" " alt="" coords="559,364,559,404,554,404,554,364"/>
+<area shape="poly" id="edge10_Node000010_Node000011" title=" " alt="" coords="580,456,604,490,599,493,576,459"/>
+<area shape="rect" id="Node000015" href="$tcp__posix_8cpp.html" title="TCP transport adapter implementation for POSIX systems." alt="" coords="712,315,838,356"/>
+<area shape="poly" id="edge16_Node000014_Node000015" title=" " alt="" coords="778,283,778,315,772,315,772,283"/>
+<area shape="poly" id="edge18_Node000016_Node000002" title=" " alt="" coords="796,114,707,154,704,150,793,109"/>
+<area shape="poly" id="edge19_Node000016_Node000013" title=" " alt="" coords="856,115,951,232,947,235,852,118"/>
+</map>

@@ -1,0 +1,12 @@
+<map id="bcnp::detail::LoadU16" name="bcnp::detail::LoadU16">
+<area shape="rect" id="Node000001" title=" " alt="" coords="507,55,652,80"/>
+<area shape="rect" id="Node000002" href="$namespacebcnp.html#a8b5330ec65ad03a70dd3f46e95763492" title="Decode a packet using the global message type registry." alt="" coords="13,5,183,31"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="508,54,459,45,313,30,183,23,183,18,314,25,459,40,509,48"/>
+<area shape="rect" id="Node000003" href="$namespacebcnp.html#abfa84506649424c70b4d70dfc47f5434" title="Decode a packet with explicitly provided message wire size." alt="" coords="239,55,459,80"/>
+<area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="492,70,460,70,460,65,492,65"/>
+<area shape="rect" id="Node000005" href="$namespacebcnp_1_1detail.html#a0aa6aaeeb48bf83d7fe13b81c3138585" title=" " alt="" coords="277,104,421,130"/>
+<area shape="poly" id="edge5_Node000001_Node000005" title=" " alt="" coords="502,87,413,106,412,101,501,82"/>
+<area shape="poly" id="edge3_Node000003_Node000002" title=" " alt="" coords="264,54,167,34,168,29,265,48"/>
+<area shape="rect" id="Node000004" href="$namespacebcnp.html#a780ed4fce673d8bb91f37027c0d45ae1" title="Type&#45;safe packet view decode using compile&#45;time message type." alt="" coords="5,55,191,80"/>
+<area shape="poly" id="edge4_Node000003_Node000004" title=" " alt="" coords="223,70,191,70,191,65,223,65"/>
+</map>

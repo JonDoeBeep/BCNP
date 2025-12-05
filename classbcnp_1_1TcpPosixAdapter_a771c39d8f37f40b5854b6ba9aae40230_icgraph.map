@@ -1,0 +1,5 @@
+<map id="bcnp::TcpPosixAdapter::SendHandshake" name="bcnp::TcpPosixAdapter::SendHandshake">
+<area shape="rect" id="Node000001" title="Sends the V3 protocol handshake to the peer." alt="" coords="208,5,362,46"/>
+<area shape="rect" id="Node000002" href="$classbcnp_1_1TcpPosixAdapter.html#a9f02e95ffe1e0132c3b17395435bb785" title="Receives bytes from the TCP connection." alt="" coords="5,5,160,46"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="192,28,160,28,160,23,192,23"/>
+</map>

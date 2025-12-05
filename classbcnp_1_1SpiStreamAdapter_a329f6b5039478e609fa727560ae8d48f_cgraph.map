@@ -1,0 +1,11 @@
+<map id="bcnp::SpiStreamAdapter::SendPacket" name="bcnp::SpiStreamAdapter::SendPacket">
+<area shape="rect" id="Node000001" title="Send a typed packet over SPI." alt="" coords="5,47,167,88"/>
+<area shape="rect" id="Node000002" href="$namespacebcnp.html#a7230ac0a91ddcc20ac446c0699119779" title="Encode a typed packet to a pre&#45;allocated buffer." alt="" coords="215,55,389,80"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="167,65,199,65,199,70,167,70"/>
+<area shape="rect" id="Node000003" href="$namespacebcnp.html#a9fe5fd2d19a061440fb7ff0bffab5101" title="Compute CRC32 checksum for data integrity verification." alt="" coords="440,5,581,31"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="359,51,438,33,439,38,360,57"/>
+<area shape="rect" id="Node000004" href="$namespacebcnp_1_1detail.html#a0f11d2df38ea2cb9f5bb35568bd10b50" title=" " alt="" coords="437,55,584,80"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="389,65,421,65,421,70,389,70"/>
+<area shape="rect" id="Node000005" href="$namespacebcnp_1_1detail.html#a8a74ef20767465b361f711c630f7bc3b" title=" " alt="" coords="437,104,584,130"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="360,78,439,97,438,102,359,84"/>
+</map>

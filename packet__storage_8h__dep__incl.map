@@ -1,0 +1,34 @@
+<map id="bcnp/packet_storage.h" name="bcnp/packet_storage.h">
+<area shape="rect" id="Node000001" title=" " alt="" coords="643,5,795,31"/>
+<area shape="rect" id="Node000002" href="$packet_8h.html" title="BCNP packet structures, encoding, and decoding utilities." alt="" coords="624,79,726,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="706,46,685,80,680,77,701,43"/>
+<area shape="rect" id="Node000013" href="$telemetry__accumulator_8h.html" title=" " alt="" coords="862,160,1056,186"/>
+<area shape="poly" id="edge17_Node000001_Node000013" title=" " alt="" coords="751,37,942,158,939,162,749,42"/>
+<area shape="rect" id="Node000003" href="$packet_8cpp.html" title="Implementation of BCNP packet encoding and decoding functions." alt="" coords="293,160,409,186"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="610,111,429,155,401,162,399,157,428,150,609,106"/>
+<area shape="rect" id="Node000004" href="$spi__adapter_8h.html" title="SPI transport adapter for BCNP (deprecated)." alt="" coords="176,249,307,274"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="609,108,542,127,474,155,448,175,423,196,352,228,287,251,285,246,350,223,420,191,445,171,471,150,540,122,608,103"/>
+<area shape="rect" id="Node000006" href="$stream__parser_8h.html" title=" " alt="" coords="484,160,631,186"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="646,116,577,162,574,157,643,111"/>
+<area shape="rect" id="Node000011" href="$controller__driver_8cpp.html" title=" " alt="" coords="534,419,696,459"/>
+<area shape="poly" id="edge14_Node000002_Node000011" title=" " alt="" coords="678,120,675,231,667,302,652,371,642,397,630,420,625,417,637,395,647,370,662,301,670,231,673,120"/>
+<area shape="poly" id="edge13_Node000002_Node000013" title=" " alt="" coords="734,107,916,157,914,162,732,112"/>
+<area shape="rect" id="Node000014" href="$tcp__posix_8h.html" title=" " alt="" coords="712,153,838,193"/>
+<area shape="poly" id="edge15_Node000002_Node000014" title=" " alt="" coords="703,112,752,150,749,154,700,116"/>
+<area shape="rect" id="Node000005" href="$spi__adapter_8cpp.html" title="Implementation of the deprecated SPI transport adapter." alt="" coords="5,338,150,363"/>
+<area shape="poly" id="edge4_Node000004_Node000005" title=" " alt="" coords="206,284,102,339,99,335,204,280"/>
+<area shape="poly" id="edge11_Node000006_Node000004" title=" " alt="" coords="499,193,287,251,285,246,498,188"/>
+<area shape="rect" id="Node000007" href="$dispatcher_8h.html" title=" " alt="" coords="330,249,454,274"/>
+<area shape="poly" id="edge6_Node000006_Node000007" title=" " alt="" coords="522,196,417,251,414,246,520,191"/>
+<area shape="rect" id="Node000012" href="$stream__parser_8cpp.html" title="Implementation of the BCNP stream parser." alt="" coords="477,249,638,274"/>
+<area shape="poly" id="edge12_Node000006_Node000012" title=" " alt="" coords="560,202,560,248,555,248,555,202"/>
+<area shape="rect" id="Node000008" href="$controller_8h.html" title=" " alt="" coords="174,338,290,363"/>
+<area shape="poly" id="edge7_Node000007_Node000008" title=" " alt="" coords="358,285,256,339,253,335,355,280"/>
+<area shape="rect" id="Node000009" href="$dispatcher_8cpp.html" title="Implementation of the BCNP packet dispatcher." alt="" coords="314,338,452,363"/>
+<area shape="poly" id="edge8_Node000007_Node000009" title=" " alt="" coords="392,290,387,337,381,337,387,290"/>
+<area shape="rect" id="Node000010" href="$controller__driver_8h.html" title=" " alt="" coords="476,330,637,371"/>
+<area shape="poly" id="edge9_Node000007_Node000010" title=" " alt="" coords="430,280,520,327,518,332,428,285"/>
+<area shape="poly" id="edge10_Node000010_Node000011" title=" " alt="" coords="580,382,604,417,599,420,576,385"/>
+<area shape="rect" id="Node000015" href="$tcp__posix_8cpp.html" title="TCP transport adapter implementation for POSIX systems." alt="" coords="712,241,838,282"/>
+<area shape="poly" id="edge16_Node000014_Node000015" title=" " alt="" coords="778,209,778,241,772,241,772,209"/>
+</map>
