@@ -1,6 +1,6 @@
 # BCNP Core
 
-## **B**atched **C**ommand **N**etwork **P**rotocol: a lightweight, real-time binary protocol for robot control.
+> Batched Command Network Protocol: a lightweight, real-time binary protocol for robot control.
 
 [![Protocol Version](https://img.shields.io/badge/protocol-v3.2-blue)]()
 [![C++ Standard](https://img.shields.io/badge/C%2B%2B-17-blue)]()
