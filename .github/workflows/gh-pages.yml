@@ -3,7 +3,7 @@ name: GitHub Pages
 on:
   push:
     branches:
-      - v3.x-beta      
+      - main    
   pull_request:         
 
 jobs:
@@ -27,7 +27,7 @@ jobs:
           doxyfile-path: ./Doxyfile
 
       - name: Deploy to GitHub Pages
-        if: github.ref == 'refs/heads/v3.x-beta'
+        if: github.ref == 'refs/heads/main'
         uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
