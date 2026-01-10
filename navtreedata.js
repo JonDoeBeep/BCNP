@@ -25,70 +25,32 @@
 var NAVTREE =
 [
   [ "BCNP", "index.html", [
-    [ "BCNP Core", "index.html", "index" ],
-    [ "BCNP Schema & Code Generation", "md_schema.html", [
-      [ "", "md_schema.html#autotoc_md1", null ],
-      [ "Overview", "md_schema.html#autotoc_md2", null ],
-      [ "Files", "md_schema.html#autotoc_md4", null ],
-      [ "Quick Start", "md_schema.html#autotoc_md6", [
-        [ "Define Messages", "md_schema.html#autotoc_md7", null ],
-        [ "Generate Code", "md_schema.html#autotoc_md8", null ],
-        [ "Use Generated Code", "md_schema.html#autotoc_md9", null ]
+    [ "Usage", "index.html#autotoc_md9", null ],
+    [ "Installation", "index.html#autotoc_md10", null ],
+    [ "Requirements", "index.html#autotoc_md11", null ],
+    [ "Documentation", "index.html#autotoc_md12", null ],
+    [ "License", "index.html#autotoc_md13", null ],
+    [ "BCNP Schema", "md_schema.html", [
+      [ "Files", "md_schema.html#autotoc_md1", null ],
+      [ "Usage", "md_schema.html#autotoc_md2", null ],
+      [ "Message Format", "md_schema.html#autotoc_md3", [
+        [ "Field Properties", "md_schema.html#autotoc_md4", null ]
       ] ],
-      [ "Adding a New Message Type", "md_schema.html#autotoc_md11", [
-        [ "Step 1: Edit messages.json", "md_schema.html#autotoc_md12", null ],
-        [ "Step 2: Run Codegen", "md_schema.html#autotoc_md13", null ],
-        [ "Step 3: Rebuild & Update", "md_schema.html#autotoc_md14", null ]
-      ] ],
-      [ "Supported Field Types", "md_schema.html#autotoc_md16", [
-        [ "Float Encoding", "md_schema.html#autotoc_md17", null ]
-      ] ],
-      [ "Message Definition Format", "md_schema.html#autotoc_md19", null ],
-      [ "Schema Hash", "md_schema.html#autotoc_md21", null ],
-      [ "Generated Output", "md_schema.html#autotoc_md23", [
-        [ "C++ Header (message_types.h)", "md_schema.html#autotoc_md24", null ],
-        [ "Python Module (bcnp_messages.py)", "md_schema.html#autotoc_md25", null ]
-      ] ]
+      [ "Field Types", "md_schema.html#autotoc_md5", null ],
+      [ "Generated Output", "md_schema.html#autotoc_md6", null ],
+      [ "Schema Hash", "md_schema.html#autotoc_md7", null ]
     ] ],
-    [ "BCNP: Batched Command Network Protocol", "md__2github_2workspace_2protocol.html", [
-      [ "", "md__2github_2workspace_2protocol.html#autotoc_md49", null ],
-      [ "Table of Contents", "md__2github_2workspace_2protocol.html#autotoc_md50", null ],
-      [ "Overview", "md__2github_2workspace_2protocol.html#autotoc_md52", null ],
-      [ "Version History", "md__2github_2workspace_2protocol.html#autotoc_md54", null ],
-      [ "Key Concepts", "md__2github_2workspace_2protocol.html#autotoc_md56", [
-        [ "Registration-Based Serialization", "md__2github_2workspace_2protocol.html#autotoc_md57", null ],
-        [ "Schema-Driven Development", "md__2github_2workspace_2protocol.html#autotoc_md58", null ],
-        [ "Handshake Requirement", "md__2github_2workspace_2protocol.html#autotoc_md59", null ]
+    [ "BCNP Protocol Specification", "md__2github_2workspace_2protocol.html", [
+      [ "Wire Format", "md__2github_2workspace_2protocol.html#autotoc_md15", [
+        [ "Handshake (8 bytes)", "md__2github_2workspace_2protocol.html#autotoc_md16", null ],
+        [ "Data Packet", "md__2github_2workspace_2protocol.html#autotoc_md17", null ],
+        [ "Header Fields", "md__2github_2workspace_2protocol.html#autotoc_md18", null ]
       ] ],
-      [ "Wire Format", "md__2github_2workspace_2protocol.html#autotoc_md61", [
-        [ "Schema Hash", "md__2github_2workspace_2protocol.html#autotoc_md62", null ],
-        [ "Handshake Packet (8 bytes)", "md__2github_2workspace_2protocol.html#autotoc_md63", null ],
-        [ "Data Packet", "md__2github_2workspace_2protocol.html#autotoc_md64", null ],
-        [ "Header Fields", "md__2github_2workspace_2protocol.html#autotoc_md65", null ],
-        [ "Homogeneous Packets", "md__2github_2workspace_2protocol.html#autotoc_md66", null ]
+      [ "Field Types", "md__2github_2workspace_2protocol.html#autotoc_md19", [
+        [ "Float Encoding", "md__2github_2workspace_2protocol.html#autotoc_md20", null ]
       ] ],
-      [ "Message Types", "md__2github_2workspace_2protocol.html#autotoc_md68", [
-        [ "Default: DriveCmd (ID: 1)", "md__2github_2workspace_2protocol.html#autotoc_md69", null ],
-        [ "Fixed-Point Float Encoding", "md__2github_2workspace_2protocol.html#autotoc_md70", null ],
-        [ "Defining Custom Message Types", "md__2github_2workspace_2protocol.html#autotoc_md71", null ],
-        [ "Supported Field Types", "md__2github_2workspace_2protocol.html#autotoc_md72", null ]
-      ] ],
-      [ "Transport Layer", "md__2github_2workspace_2protocol.html#autotoc_md74", [
-        [ "Handshake Protocol", "md__2github_2workspace_2protocol.html#autotoc_md75", null ],
-        [ "Transport Guidelines", "md__2github_2workspace_2protocol.html#autotoc_md76", null ],
-        [ "Sending Packets", "md__2github_2workspace_2protocol.html#autotoc_md77", null ]
-      ] ],
-      [ "Robot Behavior", "md__2github_2workspace_2protocol.html#autotoc_md79", [
-        [ "Command Execution Model", "md__2github_2workspace_2protocol.html#autotoc_md80", null ],
-        [ "Safety Features", "md__2github_2workspace_2protocol.html#autotoc_md81", null ],
-        [ "SmartDashboard Keys", "md__2github_2workspace_2protocol.html#autotoc_md82", null ]
-      ] ],
-      [ "Code Generation", "md__2github_2workspace_2protocol.html#autotoc_md84", [
-        [ "Running Codegen", "md__2github_2workspace_2protocol.html#autotoc_md85", null ],
-        [ "Generated Files", "md__2github_2workspace_2protocol.html#autotoc_md86", null ],
-        [ "After Schema Changes", "md__2github_2workspace_2protocol.html#autotoc_md87", null ]
-      ] ],
-      [ "Parser Diagnostics", "md__2github_2workspace_2protocol.html#autotoc_md89", null ]
+      [ "Command Execution", "md__2github_2workspace_2protocol.html#autotoc_md21", null ],
+      [ "Error Codes", "md__2github_2workspace_2protocol.html#autotoc_md22", null ]
     ] ],
     [ "Deprecated List", "deprecated.html", null ],
     [ "Topics", "topics.html", "topics" ],
@@ -123,7 +85,7 @@ var NAVTREEINDEX =
 [
 "adapter_8h.html",
 "classbcnp_1_1StreamParser.html#aded412907bb5773c63587a3d58c3146a",
-"namespacebcnp.html#ab9d83a77b2a1ac85b1c902bd414a1771a23cd86e43512932a4bc975552c8d17fd"
+"packet_8cpp.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

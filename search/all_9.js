@@ -1,15 +1,13 @@
 var searchData=
 [
-  ['features_0',['Features',['../index.html#autotoc_md28',1,'Features'],['../md__2github_2workspace_2protocol.html#autotoc_md81',1,'Safety Features']]],
-  ['field_20types_1',['Field Types',['../md_schema.html#autotoc_md16',1,'Supported Field Types'],['../md__2github_2workspace_2protocol.html#autotoc_md72',1,'Supported Field Types']]],
-  ['fields_2',['Header Fields',['../md__2github_2workspace_2protocol.html#autotoc_md65',1,'']]],
-  ['files_3',['Files',['../md_schema.html#autotoc_md4',1,'Files'],['../md__2github_2workspace_2protocol.html#autotoc_md86',1,'Generated Files']]],
-  ['fixed_20point_20float_20encoding_4',['Fixed-Point Float Encoding',['../md__2github_2workspace_2protocol.html#autotoc_md70',1,'']]],
-  ['flags_5',['flags',['../structbcnp_1_1PacketHeader.html#a7aa509a465ca2a6e8b83059c955f8491',1,'bcnp::PacketHeader']]],
-  ['float_20encoding_6',['Float Encoding',['../md__2github_2workspace_2protocol.html#autotoc_md70',1,'Fixed-Point Float Encoding'],['../md_schema.html#autotoc_md17',1,'Float Encoding']]],
-  ['flushintervalticks_7',['flushIntervalTicks',['../structbcnp_1_1TelemetryAccumulatorConfig.html#af801745b61c63f3d2ed50d31c1b65cdd',1,'bcnp::TelemetryAccumulatorConfig']]],
-  ['forceflush_8',['ForceFlush',['../classbcnp_1_1TelemetryAccumulator.html#ab5fdf625a1eb2431f4180f53af2ac4ea',1,'bcnp::TelemetryAccumulator']]],
-  ['format_9',['Format',['../md_schema.html#autotoc_md19',1,'Message Definition Format'],['../md__2github_2workspace_2protocol.html#autotoc_md61',1,'Wire Format']]],
-  ['frc_20gradlerio_10',['Option B: FRC GradleRIO',['../index.html#autotoc_md36',1,'']]],
-  ['front_11',['front',['../classbcnp_1_1StaticVector.html#a228a721607525cf30cfe5106b819f391',1,'bcnp::StaticVector::front() noexcept'],['../classbcnp_1_1StaticVector.html#a1be3fefd5c8fd42f398a6b1019cb839d',1,'bcnp::StaticVector::front() const noexcept']]]
+  ['incrementparseerrors_0',['IncrementParseErrors',['../classbcnp_1_1CommandQueue.html#a6f13ba012b7bb7dded21697bdc95d468',1,'bcnp::CommandQueue']]],
+  ['installation_1',['Installation',['../index.html#autotoc_md10',1,'']]],
+  ['invalidfloat_2',['InvalidFloat',['../namespacebcnp.html#ab9d83a77b2a1ac85b1c902bd414a1771a4f2de65d05fbb307575259851dbf1c55',1,'bcnp']]],
+  ['isconnected_3',['IsConnected',['../classbcnp_1_1PacketDispatcher.html#ae4ab7e0761478845edb390f4d8d31795',1,'bcnp::PacketDispatcher::IsConnected()'],['../classbcnp_1_1MessageQueue.html#a6cf20ee65255cb68080ed5c44315afec',1,'bcnp::MessageQueue::IsConnected()'],['../classbcnp_1_1TcpPosixAdapter.html#a3e0fd1c44626cdab38011a183f0a6a19',1,'bcnp::TcpPosixAdapter::IsConnected() const']]],
+  ['ishandshakecomplete_4',['IsHandshakeComplete',['../classbcnp_1_1TcpPosixAdapter.html#a9e03018b52910daf2b458f011eded2d1',1,'bcnp::TcpPosixAdapter::IsHandshakeComplete()'],['../classbcnp_1_1UdpPosixAdapter.html#aead3b09a85c6c92e24d89fc06809e8d7',1,'bcnp::UdpPosixAdapter::IsHandshakeComplete()']]],
+  ['isvalid_5',['IsValid',['../classbcnp_1_1TcpPosixAdapter.html#a6e0ca1e41e1ab92c1b03c5cc454c0874',1,'bcnp::TcpPosixAdapter::IsValid()'],['../classbcnp_1_1UdpPosixAdapter.html#ac03a1d623dd9212cd9f64b3673509e1c',1,'bcnp::UdpPosixAdapter::IsValid()']]],
+  ['isvalidpacketstorage_6',['IsValidPacketStorage',['../structbcnp_1_1IsValidPacketStorage.html',1,'bcnp']]],
+  ['isvalidpacketstorage_5fv_7',['IsValidPacketStorage_v',['../namespacebcnp.html#a807f20266c305309305a4096c41436f8',1,'bcnp']]],
+  ['iterator_8',['iterator',['../classbcnp_1_1StaticVector.html#a7a4ff8052b8f4bca9d9f86e14b77aa49',1,'bcnp::StaticVector']]],
+  ['iterator_5fcategory_9',['iterator_category',['../classbcnp_1_1MessageIterator.html#ad823cb605ed5aef2129a1fa68307c61f',1,'bcnp::MessageIterator']]]
 ];

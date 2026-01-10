@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.12.0"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>BCNP: BCNP: Batched Command Network Protocol</title>
+<title>BCNP: BCNP Protocol Specification</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -100,354 +100,96 @@ $(function(){initNavTree('md__2github_2workspace_2protocol.html',''); initResiza
 </div>
 
 <div><div class="header">
-  <div class="headertitle"><div class="title">BCNP: Batched Command Network Protocol</div></div>
+  <div class="headertitle"><div class="title">BCNP Protocol Specification</div></div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><p><a class="anchor" id="autotoc_md48"></a></p>
-<blockquote class="doxtable">
-<p>&zwj;<b>Version 3.2.2</b> </p>
-</blockquote>
-<h1><a class="anchor" id="autotoc_md49"></a>
-</h1>
-<h1><a class="anchor" id="autotoc_md50"></a>
-Table of Contents</h1>
-<ul>
-<li>Overview</li>
-<li>Version History</li>
-<li>Key Concepts</li>
-<li>Wire Format</li>
-<li>Message Types</li>
-<li>Transport Layer</li>
-<li>Robot Behavior</li>
-<li>Code Generation</li>
-</ul>
-<hr  />
-<h1><a class="anchor" id="autotoc_md52"></a>
-Overview</h1>
-<p>BCNP is a binary protocol designed for real-time robot control over unreliable networks. It provides:</p>
-<ul>
-<li>Batched commands</li>
-<li>Fixed-point encoding</li>
-<li>Graceful degradation</li>
-<li>And more, meant to make life easier for robotics networking.</li>
-</ul>
-<hr  />
-<h1><a class="anchor" id="autotoc_md54"></a>
-Version History</h1>
-<table class="markdownTable">
-<tr class="markdownTableHead">
-<th class="markdownTableHeadNone">Version   </th><th class="markdownTableHeadNone">Type   </th><th class="markdownTableHeadNone">Changes    </th></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><b>3.2.2</b>   </td><td class="markdownTableBodyNone">Bugfix   </td><td class="markdownTableBodyNone">Fix telemetry behaviour and move into stable!    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><b>3.2.1</b>   </td><td class="markdownTableBodyNone">Bugfix   </td><td class="markdownTableBodyNone">The Commenting and Docs Update!    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><b>3.2.0</b>   </td><td class="markdownTableBodyNone">Minor   </td><td class="markdownTableBodyNone">Full duplex communication (bidirectional telemetry)    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><b>3.1.0</b>   </td><td class="markdownTableBodyNone">Minor   </td><td class="markdownTableBodyNone">Decoupled command queue, genericized message handling, deprecated SPI    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><b>3.0.1</b>   </td><td class="markdownTableBodyNone">Bugfix   </td><td class="markdownTableBodyNone">Minor fixes    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><b>3.0.0</b>   </td><td class="markdownTableBodyNone"><b>Major</b>   </td><td class="markdownTableBodyNone">Registration-based serialization, JSON schema, codegen, handshake. <em>Breaking change from v2.x</em>    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">2.4.1   </td><td class="markdownTableBodyNone">Optimization   </td><td class="markdownTableBodyNone">Zero-copy parsing with <code>PacketView</code>, batch locking    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">2.4.0   </td><td class="markdownTableBodyNone">Minor   </td><td class="markdownTableBodyNone">16-bit command count (65k/packet), dynamic allocation    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">2.3.x   </td><td class="markdownTableBodyNone">Bugfixes   </td><td class="markdownTableBodyNone">CRC32, fixed-point encoding, UDP handshake    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">2.2.x   </td><td class="markdownTableBodyNone">Minor   </td><td class="markdownTableBodyNone">Security fixes, optimization    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">2.1.x   </td><td class="markdownTableBodyNone">Minor   </td><td class="markdownTableBodyNone">TCP optimization    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">2.0.x   </td><td class="markdownTableBodyNone"><b>Major</b>   </td><td class="markdownTableBodyNone">Complete rewrite, standalone library    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">1.x   </td><td class="markdownTableBodyNone">Deprecated   </td><td class="markdownTableBodyNone">Initial release   </td></tr>
-</table>
-<hr  />
-<h1><a class="anchor" id="autotoc_md56"></a>
-Key Concepts</h1>
-<h2><a class="anchor" id="autotoc_md57"></a>
-Registration-Based Serialization</h2>
-<p>BCNP v3 uses a Message Type System:</p>
-<ol type="1">
-<li>Each message type has a unique ID (1–65535)</li>
-<li>Message structures are defined in JSON (<code>schema/messages.json</code>)</li>
-<li>A codegen tool compiles the schema to C++ and Python</li>
-<li>Schema hash ensures both endpoints agree on message definitions</li>
-</ol>
-<h2><a class="anchor" id="autotoc_md58"></a>
-Schema-Driven Development</h2>
-<div class="fragment"><div class="line"># 1. Define messages in schema/messages.json</div>
-<div class="line"># 2. Generate code</div>
-<div class="line">python schema/bcnp_codegen.py schema/messages.json --cpp generated --python examples</div>
-<div class="line"> </div>
-<div class="line"># 3. Include in your code</div>
-<div class="line">#include &lt;bcnp/message_types.h&gt;</div>
-<div class="line"> </div>
-<div class="line"># 4. Use generated types</div>
-<div class="line">bcnp::DriveCmd cmd{.vx = 1.0f, .omega = 0.0f, .durationMs = 100};</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md59"></a>
-Handshake Requirement</h2>
-<p>All connections must complete a schema handshake before streaming packets:</p>
-<ol type="1">
-<li>Both sides send an 8-byte handshake packet on connect</li>
-<li>Schema hashes are compared</li>
-<li>Connection is rejected if hashes don't match</li>
-</ol>
-<p>This prevents silent data corruption from version mismatches.</p>
-<hr  />
-<h1><a class="anchor" id="autotoc_md61"></a>
+<div class="textblock"><p><a class="anchor" id="autotoc_md14"></a></p>
+<p>Version 3.2</p>
+<h1><a class="anchor" id="autotoc_md15"></a>
 Wire Format</h1>
-<blockquote class="doxtable">
-<p>&zwj;<b>All multi-byte integers use big-endian byte order.</b> </p>
-</blockquote>
-<h2><a class="anchor" id="autotoc_md62"></a>
-Schema Hash</h2>
-<p>The schema hash is a CRC32 of the canonical JSON representation:</p>
-<ul>
-<li>Ensures client and server agree on field types and order</li>
-<li>Detects version mismatches before data corruption</li>
-<li>Automatically updated by codegen</li>
-</ul>
-<h2><a class="anchor" id="autotoc_md63"></a>
-Handshake Packet (8 bytes)</h2>
-<div class="fragment"><div class="line">┌──────────────────────────────────────────────────────────────┐</div>
-<div class="line">│  Handshake (8 bytes)                                         │</div>
-<div class="line">├─────────────────────────────┬────────────────────────────────┤</div>
-<div class="line">│  Magic &quot;BCNP&quot; (4B ASCII)    │  Schema Hash (4B big-endian)   │</div>
-<div class="line">└─────────────────────────────┴────────────────────────────────┘</div>
-</div><!-- fragment --><p>Both client and server send this immediately upon connection.</p>
-<h2><a class="anchor" id="autotoc_md64"></a>
+<p>All multi-byte integers are big-endian.</p>
+<h2><a class="anchor" id="autotoc_md16"></a>
+Handshake (8 bytes)</h2>
+<div class="fragment"><div class="line">┌─────────────────────────┬────────────────────────────┐</div>
+<div class="line">│  Magic &quot;BCNP&quot; (4B)      │  Schema Hash (4B)          │</div>
+<div class="line">└─────────────────────────┴────────────────────────────┘</div>
+</div><!-- fragment --><p>Both sides send on connect. Connection rejected if hashes don't match.</p>
+<h2><a class="anchor" id="autotoc_md17"></a>
 Data Packet</h2>
-<div class="fragment"><div class="line">┌──────────────────────────────────────────────────────────────────────────┐</div>
-<div class="line">│  HEADER (7 bytes)                                                        │</div>
-<div class="line">├──────────┬──────────┬──────────┬─────────────────┬───────────────────────┤</div>
-<div class="line">│ Major(1) │ Minor(1) │ Flags(1) │ MsgTypeId(2 BE) │ MsgCount(2 BE)        │</div>
-<div class="line">│    3     │    2     │   0x00   │     0x0001      │      0x000A           │</div>
-<div class="line">└──────────┴──────────┴──────────┴─────────────────┴───────────────────────┘</div>
+<div class="fragment"><div class="line">┌──────────────────────────────────────────────────────────────────┐</div>
+<div class="line">│  HEADER (7 bytes)                                                │</div>
+<div class="line">├──────────┬──────────┬──────────┬───────────────┬─────────────────┤</div>
+<div class="line">│ Major(1) │ Minor(1) │ Flags(1) │ MsgTypeId(2)  │ MsgCount(2)     │</div>
+<div class="line">└──────────┴──────────┴──────────┴───────────────┴─────────────────┘</div>
 <div class="line"> </div>
-<div class="line">┌──────────────────────────────────────────────────────────────────────────┐</div>
-<div class="line">│  PAYLOAD (MsgCount × message wire size)                                  │</div>
-<div class="line">├──────────────────────────────────────────────────────────────────────────┤</div>
-<div class="line">│  Message 0: [field0][field1][field2]...                                  │</div>
-<div class="line">│  Message 1: [field0][field1][field2]...                                  │</div>
-<div class="line">│  ...                                                                     │</div>
-<div class="line">│  Message N: [field0][field1][field2]...                                  │</div>
-<div class="line">└──────────────────────────────────────────────────────────────────────────┘</div>
+<div class="line">┌──────────────────────────────────────────────────────────────────┐</div>
+<div class="line">│  PAYLOAD (MsgCount × message wire size)                          │</div>
+<div class="line">└──────────────────────────────────────────────────────────────────┘</div>
 <div class="line"> </div>
-<div class="line">┌──────────────────────────────────────────────────────────────────────────┐</div>
-<div class="line">│  CRC32 (4 bytes) — IEEE CRC32 of header + payload                        │</div>
-<div class="line">└──────────────────────────────────────────────────────────────────────────┘</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md65"></a>
+<div class="line">┌──────────────────────────────────────────────────────────────────┐</div>
+<div class="line">│  CRC32 (4 bytes)                                                 │</div>
+<div class="line">└──────────────────────────────────────────────────────────────────┘</div>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md18"></a>
 Header Fields</h2>
 <table class="markdownTable">
 <tr class="markdownTableHead">
 <th class="markdownTableHeadNone">Field   </th><th class="markdownTableHeadNone">Size   </th><th class="markdownTableHeadNone">Description    </th></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><b>Major</b>   </td><td class="markdownTableBodyNone">1 byte   </td><td class="markdownTableBodyNone">Protocol major version (<code>3</code>)    </td></tr>
+<td class="markdownTableBodyNone">Major   </td><td class="markdownTableBodyNone">1B   </td><td class="markdownTableBodyNone">Protocol major version (3)    </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><em>Minor</em>   </td><td class="markdownTableBodyNone">1 byte   </td><td class="markdownTableBodyNone">Protocol minor version (<code>2</code>)    </td></tr>
+<td class="markdownTableBodyNone">Minor   </td><td class="markdownTableBodyNone">1B   </td><td class="markdownTableBodyNone">Protocol minor version (2)    </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">Flags   </td><td class="markdownTableBodyNone">1 byte   </td><td class="markdownTableBodyNone">Bit 0: <code>CLEAR_QUEUE</code> — clear queue before adding messages    </td></tr>
+<td class="markdownTableBodyNone">Flags   </td><td class="markdownTableBodyNone">1B   </td><td class="markdownTableBodyNone">Bit 0: <code>CLEAR_QUEUE</code>    </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone">MsgTypeId   </td><td class="markdownTableBodyNone">2 bytes   </td><td class="markdownTableBodyNone">Message type ID (1–65535, big-endian)    </td></tr>
+<td class="markdownTableBodyNone">MsgTypeId   </td><td class="markdownTableBodyNone">2B   </td><td class="markdownTableBodyNone">Message type ID (1-65535)    </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone">MsgCount   </td><td class="markdownTableBodyNone">2 bytes   </td><td class="markdownTableBodyNone">Number of messages (0–65535, big-endian)   </td></tr>
+<td class="markdownTableBodyNone">MsgCount   </td><td class="markdownTableBodyNone">2B   </td><td class="markdownTableBodyNone">Number of messages   </td></tr>
 </table>
-<h2><a class="anchor" id="autotoc_md66"></a>
-Homogeneous Packets</h2>
-<blockquote class="doxtable">
-<p>&zwj;<b>Each packet contains messages of a single type.</b> </p>
-</blockquote>
-<p>The <code>MsgTypeId</code> in the header applies to all messages in that packet.</p>
-<p>To send different message types, use separate packets:</p>
-<div class="fragment"><div class="line">Packet 1: [Header: Type=DriveCmd, Count=10] [DriveCmd×10] [CRC]</div>
-<div class="line">Packet 2: [Header: Type=ArmCmd,   Count=5]  [ArmCmd×5]   [CRC]</div>
-</div><!-- fragment --><p><b>FRC Impact:</b> Negligible overhead (11 bytes per packet type). The dispatcher handles multiple packet types per control loop tick.</p>
-<hr  />
-<h1><a class="anchor" id="autotoc_md68"></a>
-Message Types</h1>
-<h2><a class="anchor" id="autotoc_md69"></a>
-Default: DriveCmd (ID: 1)</h2>
-<p>Differential drive velocity command.</p>
-<table class="markdownTable">
-<tr class="markdownTableHead">
-<th class="markdownTableHeadNone">Field   </th><th class="markdownTableHeadNone">Type   </th><th class="markdownTableHeadNone">Wire Size   </th><th class="markdownTableHeadNone">Encoding   </th><th class="markdownTableHeadNone">Unit    </th></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>vx</code>   </td><td class="markdownTableBodyNone">float32   </td><td class="markdownTableBodyNone">4 bytes   </td><td class="markdownTableBodyNone">int32 × 10000   </td><td class="markdownTableBodyNone">m/s    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>omega</code>   </td><td class="markdownTableBodyNone">float32   </td><td class="markdownTableBodyNone">4 bytes   </td><td class="markdownTableBodyNone">int32 × 10000   </td><td class="markdownTableBodyNone">rad/s    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>durationMs</code>   </td><td class="markdownTableBodyNone">uint16   </td><td class="markdownTableBodyNone">2 bytes   </td><td class="markdownTableBodyNone">raw   </td><td class="markdownTableBodyNone">ms   </td></tr>
-</table>
-<p>Total wire size: 10 bytes</p>
-<h2><a class="anchor" id="autotoc_md70"></a>
-Fixed-Point Float Encoding</h2>
-<p>Floats are encoded as <code>int32</code> with a scale factor (default: 10000):</p>
-<ul>
-<li>4 decimal places of precision</li>
-<li>Platform-independent encoding</li>
-<li>Range: ±214,748.3647 (with scale=10000)</li>
-</ul>
-<p><b>Example:</b> <code>vx = 1.5 m/s</code> → wire value: <code>15000</code></p>
-<h2><a class="anchor" id="autotoc_md71"></a>
-Defining Custom Message Types</h2>
-<p>Edit <code>schema/messages.json</code>:</p>
-<div class="fragment"><div class="line">{</div>
-<div class="line">  &quot;id&quot;: 10,</div>
-<div class="line">  &quot;name&quot;: &quot;SwerveCmd&quot;,</div>
-<div class="line">  &quot;description&quot;: &quot;Swerve drive command&quot;,</div>
-<div class="line">  &quot;fields&quot;: [</div>
-<div class="line">    {&quot;name&quot;: &quot;vx&quot;, &quot;type&quot;: &quot;float32&quot;, &quot;scale&quot;: 10000, &quot;unit&quot;: &quot;m/s&quot;},</div>
-<div class="line">    {&quot;name&quot;: &quot;vy&quot;, &quot;type&quot;: &quot;float32&quot;, &quot;scale&quot;: 10000, &quot;unit&quot;: &quot;m/s&quot;},</div>
-<div class="line">    {&quot;name&quot;: &quot;omega&quot;, &quot;type&quot;: &quot;float32&quot;, &quot;scale&quot;: 10000, &quot;unit&quot;: &quot;rad/s&quot;},</div>
-<div class="line">    {&quot;name&quot;: &quot;durationMs&quot;, &quot;type&quot;: &quot;uint16&quot;, &quot;unit&quot;: &quot;ms&quot;}</div>
-<div class="line">  ]</div>
-<div class="line">}</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md72"></a>
-Supported Field Types</h2>
+<p>Each packet contains messages of a single type.</p>
+<h1><a class="anchor" id="autotoc_md19"></a>
+Field Types</h1>
 <table class="markdownTable">
 <tr class="markdownTableHead">
 <th class="markdownTableHeadNone">Type   </th><th class="markdownTableHeadNone">Size   </th><th class="markdownTableHeadNone">Description    </th></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>int8</code>   </td><td class="markdownTableBodyNone">1 byte   </td><td class="markdownTableBodyNone">Signed 8-bit integer    </td></tr>
+<td class="markdownTableBodyNone"><code>int8</code>   </td><td class="markdownTableBodyNone">1B   </td><td class="markdownTableBodyNone">Signed 8-bit    </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>uint8</code>   </td><td class="markdownTableBodyNone">1 byte   </td><td class="markdownTableBodyNone">Unsigned 8-bit integer    </td></tr>
+<td class="markdownTableBodyNone"><code>uint8</code>   </td><td class="markdownTableBodyNone">1B   </td><td class="markdownTableBodyNone">Unsigned 8-bit    </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>int16</code>   </td><td class="markdownTableBodyNone">2 bytes   </td><td class="markdownTableBodyNone">Signed 16-bit (big-endian)    </td></tr>
+<td class="markdownTableBodyNone"><code>int16</code>   </td><td class="markdownTableBodyNone">2B   </td><td class="markdownTableBodyNone">Signed 16-bit    </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>uint16</code>   </td><td class="markdownTableBodyNone">2 bytes   </td><td class="markdownTableBodyNone">Unsigned 16-bit (big-endian)    </td></tr>
+<td class="markdownTableBodyNone"><code>uint16</code>   </td><td class="markdownTableBodyNone">2B   </td><td class="markdownTableBodyNone">Unsigned 16-bit    </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>int32</code>   </td><td class="markdownTableBodyNone">4 bytes   </td><td class="markdownTableBodyNone">Signed 32-bit (big-endian)    </td></tr>
+<td class="markdownTableBodyNone"><code>int32</code>   </td><td class="markdownTableBodyNone">4B   </td><td class="markdownTableBodyNone">Signed 32-bit    </td></tr>
 <tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>uint32</code>   </td><td class="markdownTableBodyNone">4 bytes   </td><td class="markdownTableBodyNone">Unsigned 32-bit (big-endian)    </td></tr>
+<td class="markdownTableBodyNone"><code>uint32</code>   </td><td class="markdownTableBodyNone">4B   </td><td class="markdownTableBodyNone">Unsigned 32-bit    </td></tr>
 <tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>float32</code>   </td><td class="markdownTableBodyNone">4 bytes   </td><td class="markdownTableBodyNone">Float encoded as int32 with scale   </td></tr>
+<td class="markdownTableBodyNone"><code>float32</code>   </td><td class="markdownTableBodyNone">4B   </td><td class="markdownTableBodyNone">int32 × scale factor   </td></tr>
 </table>
-<hr  />
-<h1><a class="anchor" id="autotoc_md74"></a>
-Transport Layer</h1>
-<h2><a class="anchor" id="autotoc_md75"></a>
-Handshake Protocol</h2>
-<table class="markdownTable">
-<tr class="markdownTableHead">
-<th class="markdownTableHeadNone">Transport   </th><th class="markdownTableHeadNone">Handshake Procedure    </th></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><b>TCP</b>   </td><td class="markdownTableBodyNone">Send handshake after connect. Wait for peer before streaming.    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><em>UDP</em>   </td><td class="markdownTableBodyNone">Send handshake as first datagram. Peer-lock mode requires it.   </td></tr>
-</table>
-<div class="fragment"><div class="line"><span class="comment">// Check handshake status</span></div>
-<div class="line"><span class="keywordflow">if</span> (adapter.IsHandshakeComplete()) {</div>
-<div class="line">    <span class="comment">// Ready to stream packets</span></div>
-<div class="line">}</div>
-<div class="line"> </div>
-<div class="line"><span class="comment">// Diagnostics</span></div>
-<div class="line">uint32_t remoteHash = adapter.GetRemoteSchemaHash();</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md76"></a>
-Transport Guidelines</h2>
-<p>BCNP packets are self-delimiting (header + length + CRC), so transports act as byte pipes:</p>
-<table class="markdownTable">
-<tr class="markdownTableHead">
-<th class="markdownTableHeadNone">Transport   </th><th class="markdownTableHeadNone">Guidance    </th></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><b>TCP</b>   </td><td class="markdownTableBodyNone">Stream bytes directly to <code>StreamParser</code>. Framing handled automatically.    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><em>UDP</em>   </td><td class="markdownTableBodyNone">Forward each datagram to parser. One datagram may contain partial/multiple packets.   </td></tr>
-</table>
-<h2><a class="anchor" id="autotoc_md77"></a>
-Sending Packets</h2>
-<div class="fragment"><div class="line"><span class="comment">// Encode once, send the resulting bytes</span></div>
-<div class="line">std::vector&lt;uint8_t&gt; buffer;</div>
-<div class="line"><a class="code hl_function" href="namespacebcnp.html#a7230ac0a91ddcc20ac446c0699119779">bcnp::EncodeTypedPacket</a>(packet, buffer);</div>
-<div class="line">transport.Send(buffer.data(), buffer.size());</div>
-<div class="ttc" id="anamespacebcnp_html_a7230ac0a91ddcc20ac446c0699119779"><div class="ttname"><a href="namespacebcnp.html#a7230ac0a91ddcc20ac446c0699119779">bcnp::EncodeTypedPacket</a></div><div class="ttdeci">bool EncodeTypedPacket(const TypedPacket&lt; MsgType, Storage &gt; &amp;packet, uint8_t *output, std::size_t capacity, std::size_t &amp;bytesWritten)</div><div class="ttdoc">Encode a typed packet to a pre-allocated buffer.</div><div class="ttdef"><b>Definition</b> <a href="packet_8h_source.html#l00322">packet.h:322</a></div></div>
-</div><!-- fragment --><hr  />
-<h1><a class="anchor" id="autotoc_md79"></a>
-Robot Behavior</h1>
-<h2><a class="anchor" id="autotoc_md80"></a>
-Command Execution Model</h2>
+<h2><a class="anchor" id="autotoc_md20"></a>
+Float Encoding</h2>
+<p>Floats encoded as <code>int32</code> with scale factor (default 10000):</p>
+<div class="fragment"><div class="line">wire_value = (int32_t)(float_value * scale)</div>
+</div><!-- fragment --><p>Range: ±214,748.3647 with scale=10000</p>
+<h1><a class="anchor" id="autotoc_md21"></a>
+Command Execution</h1>
 <ol type="1">
-<li>Queue: Commands are queued in order received</li>
-<li>Sequential: One command executes at a time</li>
-<li>Timed: Each command runs for its <code>durationMs</code></li>
-<li>Timeout: No packets for 200ms → disconnected</li>
-<li>Safety: Disconnection clears queue, robot stops</li>
+<li>Commands queued in order</li>
+<li>One command executes at a time for its <code>durationMs</code></li>
+<li>Disconnection clears queue, robot stops</li>
 </ol>
-<h2><a class="anchor" id="autotoc_md81"></a>
-Safety Features</h2>
-<ul>
-<li>Command limits: Robot can enforce tighter limits than wire spec: <div class="fragment"><div class="line"><a class="code hl_struct" href="structbcnp_1_1MessageQueueConfig.html">bcnp::MessageQueueConfig</a> config;</div>
+<div class="fragment"><div class="line"><a class="code hl_struct" href="structbcnp_1_1MessageQueueConfig.html">bcnp::MessageQueueConfig</a> config;</div>
 <div class="line">config.<a class="code hl_variable" href="structbcnp_1_1MessageQueueConfig.html#ab3bfe6d2d3c1f7a05f7da9e95173c139">maxCommandLag</a> = std::chrono::milliseconds(100);</div>
 <div class="ttc" id="astructbcnp_1_1MessageQueueConfig_html"><div class="ttname"><a href="structbcnp_1_1MessageQueueConfig.html">bcnp::MessageQueueConfig</a></div><div class="ttdoc">Configuration parameters for a message queue.</div><div class="ttdef"><b>Definition</b> <a href="message__queue_8h_source.html#l00028">message_queue.h:28</a></div></div>
 <div class="ttc" id="astructbcnp_1_1MessageQueueConfig_html_ab3bfe6d2d3c1f7a05f7da9e95173c139"><div class="ttname"><a href="structbcnp_1_1MessageQueueConfig.html#ab3bfe6d2d3c1f7a05f7da9e95173c139">bcnp::MessageQueueConfig::maxCommandLag</a></div><div class="ttdeci">std::chrono::milliseconds maxCommandLag</div><div class="ttdoc">Max lag before clamping virtual time.</div><div class="ttdef"><b>Definition</b> <a href="message__queue_8h_source.html#l00031">message_queue.h:31</a></div></div>
-</div><!-- fragment --></li>
-<li>Centralized enforcement: Limits applied before commands enter queue</li>
-<li>Graceful degradation: Stale commands are skipped, not executed late</li>
-</ul>
-<h2><a class="anchor" id="autotoc_md82"></a>
-SmartDashboard Keys</h2>
-<table class="markdownTable">
-<tr class="markdownTableHead">
-<th class="markdownTableHeadNone">Key   </th><th class="markdownTableHeadNone">Type   </th><th class="markdownTableHeadNone">Description    </th></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>Network/Connected</code>   </td><td class="markdownTableBodyNone">bool   </td><td class="markdownTableBodyNone">Receiving commands?    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>Network/QueueSize</code>   </td><td class="markdownTableBodyNone">number   </td><td class="markdownTableBodyNone">Pending commands    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>Network/CmdVx</code>   </td><td class="markdownTableBodyNone">number   </td><td class="markdownTableBodyNone">Current vx (m/s)    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>Network/CmdW</code>   </td><td class="markdownTableBodyNone">number   </td><td class="markdownTableBodyNone">Current omega (rad/s)    </td></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code>Network/SchemaHash</code>   </td><td class="markdownTableBodyNone">string   </td><td class="markdownTableBodyNone">Current hash (hex)    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>Network/ParseErrors</code>   </td><td class="markdownTableBodyNone">number   </td><td class="markdownTableBodyNone">Cumulative errors   </td></tr>
-</table>
-<hr  />
-<h1><a class="anchor" id="autotoc_md84"></a>
-Code Generation</h1>
-<h2><a class="anchor" id="autotoc_md85"></a>
-Running Codegen</h2>
-<div class="fragment"><div class="line"># Generate C++ and Python</div>
-<div class="line">python schema/bcnp_codegen.py schema/messages.json \</div>
-<div class="line">    --cpp src/bcnp/generated \</div>
-<div class="line">    --python examples</div>
-<div class="line"> </div>
-<div class="line"># C++ only</div>
-<div class="line">python schema/bcnp_codegen.py schema/messages.json --cpp generated</div>
-<div class="line"> </div>
-<div class="line"># View schema info (no generation)</div>
-<div class="line">python schema/bcnp_codegen.py schema/messages.json</div>
-</div><!-- fragment --><h2><a class="anchor" id="autotoc_md86"></a>
-Generated Files</h2>
-<table class="markdownTable">
-<tr class="markdownTableHead">
-<th class="markdownTableHeadNone">File   </th><th class="markdownTableHeadNone">Contents    </th></tr>
-<tr class="markdownTableRowOdd">
-<td class="markdownTableBodyNone"><code><a class="el" href="message__types_8h.html">message_types.h</a></code>   </td><td class="markdownTableBodyNone">C++ structs with <code>Encode()</code>/<code>Decode()</code>, constants, registry    </td></tr>
-<tr class="markdownTableRowEven">
-<td class="markdownTableBodyNone"><code>bcnp_messages.py</code>   </td><td class="markdownTableBodyNone">Python dataclasses with serialization   </td></tr>
-</table>
-<h2><a class="anchor" id="autotoc_md87"></a>
-After Schema Changes</h2>
-<ol type="1">
-<li>Run codegen</li>
-<li>Rebuild C++ project</li>
-<li>Update Python clients</li>
-<li><b>Both endpoints must use matching schema hash</b></li>
-</ol>
-<hr  />
-<h1><a class="anchor" id="autotoc_md89"></a>
-Parser Diagnostics</h1>
-<p><code>StreamParser</code> provides detailed error information:</p>
+</div><!-- fragment --><p>Stale commands are skipped, not executed late.</p>
+<h1><a class="anchor" id="autotoc_md22"></a>
+Error Codes</h1>
+<p><code>TooSmall</code>, <code>UnsupportedVersion</code>, <code>TooManyMessages</code>, <code>Truncated</code>, <code>ChecksumMismatch</code>, <code>UnknownMessageType</code>, <code>SchemaMismatch</code></p>
 <div class="fragment"><div class="line">parser.SetErrorCallback([](<span class="keyword">const</span> StreamParser::ErrorInfo&amp; err) {</div>
-<div class="line">    std::cerr &lt;&lt; <span class="stringliteral">&quot;Parse error: &quot;</span> &lt;&lt; int(err.code)</div>
-<div class="line">              &lt;&lt; <span class="stringliteral">&quot; at offset &quot;</span> &lt;&lt; err.offset</div>
-<div class="line">              &lt;&lt; <span class="stringliteral">&quot; (consecutive: &quot;</span> &lt;&lt; err.consecutiveErrors &lt;&lt; <span class="stringliteral">&quot;)\n&quot;</span>;</div>
+<div class="line">    std::cerr &lt;&lt; <span class="stringliteral">&quot;Error: &quot;</span> &lt;&lt; int(err.code) &lt;&lt; <span class="stringliteral">&quot; at &quot;</span> &lt;&lt; err.offset &lt;&lt; <span class="stringliteral">&quot;\n&quot;</span>;</div>
 <div class="line">});</div>
-</div><!-- fragment --><p><b>Error codes:</b> <code>TooSmall</code>, <code>UnsupportedVersion</code>, <code>TooManyMessages</code>, <code>Truncated</code>, <code>ChecksumMismatch</code>, <code>UnknownMessageType</code>, <code>SchemaMismatch</code> </p>
-</div></div><!-- contents -->
+</div><!-- fragment --> </div></div><!-- contents -->
 </div><!-- PageDoc -->
 </div><!-- doc-content -->
 <!-- start footer part -->

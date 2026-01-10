@@ -1,24 +1,12 @@
 var searchData=
 [
-  ['kchecksumsize_0',['kChecksumSize',['../group__ProtocolConstants.html#gac75768df8b774961f9da2eaeeb36e25c',1,'bcnp']]],
-  ['key_20concepts_1',['Key Concepts',['../md__2github_2workspace_2protocol.html#autotoc_md56',1,'']]],
-  ['keys_2',['SmartDashboard Keys',['../md__2github_2workspace_2protocol.html#autotoc_md82',1,'']]],
-  ['kflagclearqueue_3',['kFlagClearQueue',['../group__ProtocolConstants.html#ga4fd9bb886b8be4a00e4cad04c26aa0cf',1,'bcnp']]],
-  ['khandshakemagic_4',['kHandshakeMagic',['../namespacebcnp.html#a7dec2641e29e72d3494c3de078c314c8',1,'bcnp']]],
-  ['khandshakesize_5',['kHandshakeSize',['../namespacebcnp.html#a66ec97ded1b0ec5b196b0e9f95dd123a',1,'bcnp']]],
-  ['kheaderflagsindex_6',['kHeaderFlagsIndex',['../group__HeaderOffsets.html#gab8709b0ca68aee9a5bd509014870ab91',1,'bcnp']]],
-  ['kheadermajorindex_7',['kHeaderMajorIndex',['../group__HeaderOffsets.html#ga7acfb12faf492d186b58396e05ec56bf',1,'bcnp']]],
-  ['kheaderminorindex_8',['kHeaderMinorIndex',['../group__HeaderOffsets.html#gaa9acdba98d0d9b53920714549f63a365',1,'bcnp']]],
-  ['kheadermsgcountindex_9',['kHeaderMsgCountIndex',['../namespacebcnp.html#a21a61df768a5bfe4590c3e550bdad80c',1,'bcnp']]],
-  ['kheadermsgtypeindex_10',['kHeaderMsgTypeIndex',['../namespacebcnp.html#a9de863a79638f81732bbd18e746bc83c',1,'bcnp']]],
-  ['kheadersize_11',['kHeaderSize',['../group__ProtocolConstants.html#gada049fbce27559ff502f692a414b3f8c',1,'bcnp']]],
-  ['kheadersizev3_12',['kHeaderSizeV3',['../namespacebcnp.html#ad3ea649fa45fe3435873573968cdae1f',1,'bcnp']]],
-  ['kmaxmessagesperpacket_13',['kMaxMessagesPerPacket',['../group__ProtocolConstants.html#ga0adadef4c17a482db50521b19919a7f9',1,'bcnp']]],
-  ['kmaxparseiterationsperpush_14',['kMaxParseIterationsPerPush',['../classbcnp_1_1StreamParser.html#a126c5d908d2b586bc9b28d14fb9c728f',1,'bcnp::StreamParser']]],
-  ['kmessageregistry_15',['kMessageRegistry',['../namespacebcnp.html#a5fd3e96eba0f1e8aded38eb64aa38e94',1,'bcnp']]],
-  ['kprotocolmajor_16',['kProtocolMajor',['../group__ProtocolConstants.html#ga53812753ed21560a3ca7bbc36dc70b3f',1,'bcnp']]],
-  ['kprotocolmajorv3_17',['kProtocolMajorV3',['../namespacebcnp.html#ae6f804883e536bd67015b9ff23b7c8dd',1,'bcnp']]],
-  ['kprotocolminor_18',['kProtocolMinor',['../group__ProtocolConstants.html#ga00b363e140cb6e73e0a0324929976901',1,'bcnp']]],
-  ['kprotocolminorv3_19',['kProtocolMinorV3',['../namespacebcnp.html#ab32538d8c5b740d6ef7505b224df83fc',1,'bcnp']]],
-  ['kschemahash_20',['kSchemaHash',['../namespacebcnp.html#a9ca34194c90d0471f44a433dde42ae71',1,'bcnp']]]
+  ['offset_0',['offset',['../structbcnp_1_1StreamParser_1_1ErrorInfo.html#a7f84ace494eedcdc88c07590fb6c8891',1,'bcnp::StreamParser::ErrorInfo']]],
+  ['offsets_1',['Header Byte Offsets',['../group__HeaderOffsets.html',1,'']]],
+  ['operator_21_3d_2',['operator!=',['../classbcnp_1_1MessageIterator.html#ae99f00e7fcd560d1bbfdcb6713b6df14',1,'bcnp::MessageIterator']]],
+  ['operator_2a_3',['operator*',['../classbcnp_1_1MessageIterator.html#aecdcb77fc77067c4257d546c5d7763e5',1,'bcnp::MessageIterator']]],
+  ['operator_2b_2b_4',['operator++',['../classbcnp_1_1MessageIterator.html#a80a307128a66a3fb30d0c62217d6c833',1,'bcnp::MessageIterator::operator++()'],['../classbcnp_1_1MessageIterator.html#aef4784dc42f5546b620dd7638303cb42',1,'bcnp::MessageIterator::operator++(int)']]],
+  ['operator_3d_5',['operator=',['../classbcnp_1_1StaticVector.html#ac79d2524430447864737988439f851a2',1,'bcnp::StaticVector::operator=(const StaticVector &amp;other)'],['../classbcnp_1_1StaticVector.html#aec927b4bc213ff618262f93c9cb73d0a',1,'bcnp::StaticVector::operator=(StaticVector &amp;&amp;other) noexcept(std::is_nothrow_move_constructible_v&lt; T &gt; &amp;&amp;std::is_nothrow_destructible_v&lt; T &gt;)']]],
+  ['operator_3d_3d_6',['operator==',['../classbcnp_1_1MessageIterator.html#a26f30832298e72a37ea927c51d456705',1,'bcnp::MessageIterator']]],
+  ['operator_5b_5d_7',['operator[]',['../classbcnp_1_1StaticVector.html#a3aa0ff61d09bbcf6dafd60fa521f4fee',1,'bcnp::StaticVector::operator[](size_type index) noexcept'],['../classbcnp_1_1StaticVector.html#a0f1be2c85c688f5b3cd37da95281dd33',1,'bcnp::StaticVector::operator[](size_type index) const noexcept']]],
+  ['output_8',['Generated Output',['../md_schema.html#autotoc_md6',1,'']]]
 ];

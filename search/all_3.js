@@ -1,4 +1,29 @@
 var searchData=
 [
-  ['8_20bytes_0',['Handshake Packet (8 bytes)',['../md__2github_2workspace_2protocol.html#autotoc_md63',1,'']]]
+  ['canonical_5fjson_0',['canonical_json',['../namespacebcnp__codegen.html#ab80c965b830102cc8adb068cd83b8f51',1,'bcnp_codegen']]],
+  ['capacity_1',['capacity',['../structbcnp_1_1MessageQueueConfig.html#a9a6afa56182f77f7af92b63d77d9e724',1,'bcnp::MessageQueueConfig::capacity'],['../classbcnp_1_1StaticVector.html#adc212a210fb5c4c8390f28bfb2e3196d',1,'bcnp::StaticVector::capacity() const noexcept']]],
+  ['cbegin_2',['cbegin',['../classbcnp_1_1StaticVector.html#af83e193e308e995b060e7dd8058936a8',1,'bcnp::StaticVector']]],
+  ['cend_3',['cend',['../classbcnp_1_1StaticVector.html#a9a6fd251a13055a840fdffeefe4f4d31',1,'bcnp::StaticVector']]],
+  ['checksummismatch_4',['ChecksumMismatch',['../namespacebcnp.html#ab9d83a77b2a1ac85b1c902bd414a1771a23cd86e43512932a4bc975552c8d17fd',1,'bcnp']]],
+  ['clear_5',['Clear',['../classbcnp_1_1MessageQueue.html#ad181e89bc24c39b6125dffb8c2c8b34f',1,'bcnp::MessageQueue::Clear()'],['../classbcnp_1_1MessageQueue_1_1Transaction.html#a47586543b99f2439f9af79acc6174610',1,'bcnp::MessageQueue::Transaction::Clear()'],['../classbcnp_1_1TelemetryAccumulator.html#a8db67f62ae023f9976f56f9d8869a47b',1,'bcnp::TelemetryAccumulator::Clear()']]],
+  ['clear_6',['clear',['../classbcnp_1_1StaticVector.html#adedac6b87c8326b536f8505843fcb8c6',1,'bcnp::StaticVector']]],
+  ['clock_7',['Clock',['../classbcnp_1_1PacketDispatcher.html#ad8c04eb84f5fe7999acd279fe25a71ee',1,'bcnp::PacketDispatcher::Clock'],['../classbcnp_1_1MessageQueue.html#a29f1baa168384d36553e6b8bd6573e8c',1,'bcnp::MessageQueue::Clock'],['../classbcnp_1_1TelemetryAccumulator.html#a12521794322893dac86fc63a4cfb8d24',1,'bcnp::TelemetryAccumulator::Clock']]],
+  ['code_8',['code',['../structbcnp_1_1StreamParser_1_1ErrorInfo.html#ac1d83b3c2857e21caf6dd24159130141',1,'bcnp::StreamParser::ErrorInfo']]],
+  ['codes_9',['Error Codes',['../md__2github_2workspace_2protocol.html#autotoc_md22',1,'']]],
+  ['command_10',['Command',['../namespacebcnp.html#acc3785a98774f5bcb095eca770503c97',1,'bcnp']]],
+  ['command_20execution_11',['Command Execution',['../md__2github_2workspace_2protocol.html#autotoc_md21',1,'']]],
+  ['command_5fqueue_2eh_12',['command_queue.h',['../command__queue_8h.html',1,'']]],
+  ['commandqueue_13',['CommandQueue',['../classbcnp_1_1CommandQueue.html',1,'bcnp::CommandQueue'],['../classbcnp_1_1CommandQueue.html#a4b959ab84c4f6f8c4fb77ed95d188405',1,'bcnp::CommandQueue::CommandQueue()']]],
+  ['compute_5fcrc32_14',['compute_crc32',['../namespacebcnp__codegen.html#a84d4a9196705830f11f9bd9606f771fa',1,'bcnp_codegen']]],
+  ['compute_5fmessage_5fsize_15',['compute_message_size',['../namespacebcnp__codegen.html#a5569b387445f53139c1894e3d2ee5780',1,'bcnp_codegen']]],
+  ['compute_5fschema_5fhash_16',['compute_schema_hash',['../namespacebcnp__codegen.html#abb056087aa8b13cd55f9c66f889581ea',1,'bcnp_codegen']]],
+  ['computecrc32_17',['ComputeCrc32',['../namespacebcnp.html#a9fe5fd2d19a061440fb7ff0bffab5101',1,'bcnp']]],
+  ['connectiontimeout_18',['connectionTimeout',['../structbcnp_1_1DispatcherConfig.html#a49f73905b7e07d0ff2ed4ab604430738',1,'bcnp::DispatcherConfig::connectionTimeout'],['../structbcnp_1_1MessageQueueConfig.html#a880e52accdda63b7f548e58f13297d52',1,'bcnp::MessageQueueConfig::connectionTimeout']]],
+  ['consecutiveerrors_19',['consecutiveErrors',['../structbcnp_1_1StreamParser_1_1ErrorInfo.html#af68d0901a9192ac2aa047e602b0aa4e7',1,'bcnp::StreamParser::ErrorInfo']]],
+  ['const_5fiterator_20',['const_iterator',['../classbcnp_1_1StaticVector.html#aee160b9bf98ae8bd1a6648de80545689',1,'bcnp::StaticVector']]],
+  ['constants_20v3_21',['Protocol Constants (V3)',['../group__ProtocolConstants.html',1,'']]],
+  ['controller_2eh_22',['controller.h',['../controller_8h.html',1,'']]],
+  ['controller_5fdriver_2ecpp_23',['controller_driver.cpp',['../controller__driver_8cpp.html',1,'']]],
+  ['controller_5fdriver_2eh_24',['controller_driver.h',['../controller__driver_8h.html',1,'']]],
+  ['controllerdriver_25',['ControllerDriver',['../namespacebcnp.html#ad0508809a29db10d4ddb7cc35f48f3d4',1,'bcnp']]]
 ];
