@@ -1,0 +1,76 @@
+plugins {
+    id 'java-library'
+    id 'cpp-library'
+}
+
+group = 'com.bcnp'
+version = '3.6.0'
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
+}
+
+// Java source sets
+sourceSets {
+    main {
+        java {
+            srcDirs = ['src/main/java']
+        }
+    }
+    test {
+        java {
+            srcDirs = ['src/test/java']
+        }
+    }
+}
+
+// Native library configuration
+library {
+    binaries.configureEach {
+        def compileTask = compileTask.get()
+        compileTask.includes.from("${System.getProperty('java.home')}/../include")
+        
+        // Platform-specific JNI includes
+        if (targetMachine.operatingSystemFamily.linux) {
+            compileTask.includes.from("${System.getProperty('java.home')}/../include/linux")
+        } else if (targetMachine.operatingSystemFamily.windows) {
+            compileTask.includes.from("${System.getProperty('java.home')}/../include/win32")
+        }
+        
+        // Include BCNP core headers
+        compileTask.includes.from("${rootProject.projectDir}/src")
+        compileTask.includes.from("${rootProject.projectDir}/libraries/crablib/src")
+    }
+}
+
+// Generate JNI headers from Java sources
+tasks.register('generateJniHeaders', Exec) {
+    dependsOn classes
+    def outputDir = file("${buildDir}/generated/jni")
+    outputs.dir(outputDir)
+    
+    commandLine 'javac', '-h', outputDir.absolutePath,
+        '-d', "${buildDir}/classes/java/main",
+        fileTree(dir: 'src/main/java', include: '**/*.java').files.collect { it.absolutePath }
+}
+
+tasks.named('compileDebugCpp') {
+    dependsOn 'generateJniHeaders'
+}
+
+tasks.named('compileReleaseCpp') {
+    dependsOn 'generateJniHeaders'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.0'
+}
+
+test {
+    useJUnitPlatform()
+}

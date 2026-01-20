@@ -1,5 +1,10 @@
 build/
+build_wsl/
 .vscode/
+.gradle/
+**/build/
+java/src/main/java/com/bcnp/messages/
+__pycache__/
+*.pyc
 old/
 robot/
-build_wsl/
