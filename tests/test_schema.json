@@ -32,7 +32,7 @@
     {
       "id": 10,
       "name": "DrivetrainState",
-      "description": "Drivetrain telemetry - absolute state snapshot",
+      "description": "Drivetrain telemetry: absolute state snapshot",
       "fields": [
         {
           "name": "vxActual",
@@ -71,7 +71,7 @@
     {
       "id": 11,
       "name": "EncoderData",
-      "description": "Generic encoder telemetry - batch multiple in one packet",
+      "description": "Generic encoder telemetry: batch multiple in one packet",
       "fields": [
         {
           "name": "moduleId",
