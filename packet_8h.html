@@ -116,9 +116,9 @@ $(function(){initNavTree('packet_8h.html',''); initResizable(true); });
 <div class="textblock"><code>#include &lt;<a class="el" href="message__types_8h_source.html">bcnp/message_types.h</a>&gt;</code><br />
 <code>#include &quot;<a class="el" href="static__vector_8h_source.html">bcnp/static_vector.h</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="packet__storage_8h_source.html">bcnp/packet_storage.h</a>&quot;</code><br />
+<code>#include &lt;crab/prelude.h&gt;</code><br />
 <code>#include &lt;cstddef&gt;</code><br />
 <code>#include &lt;cstdint&gt;</code><br />
-<code>#include &lt;optional&gt;</code><br />
 <code>#include &lt;vector&gt;</code><br />
 </div><div class="textblock"><div class="dynheader">
 Include dependency graph for packet.h:</div>
@@ -201,14 +201,14 @@ Functions</h2></td></tr>
 <tr class="memitem:a4146fa7eded1d9b950f7590c0f3e4f15"><td class="memTemplItemLeft" align="right" valign="top">bool&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacebcnp.html#a4146fa7eded1d9b950f7590c0f3e4f15">bcnp::EncodeTypedPacket</a> (const <a class="el" href="structbcnp_1_1TypedPacket.html">TypedPacket</a>&lt; MsgType, Storage &gt; &amp;packet, std::vector&lt; uint8_t &gt; &amp;output)</td></tr>
 <tr class="memdesc:a4146fa7eded1d9b950f7590c0f3e4f15"><td class="mdescLeft">&#160;</td><td class="mdescRight">Encode a typed packet to a dynamically-sized vector.  <br /></td></tr>
 <tr class="separator:a4146fa7eded1d9b950f7590c0f3e4f15"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a28c4b09679a2d87ae4f737f694f1a0a7" id="r_a28c4b09679a2d87ae4f737f694f1a0a7"><td class="memTemplParams" colspan="2">template&lt;typename MsgType &gt; </td></tr>
-<tr class="memitem:a28c4b09679a2d87ae4f737f694f1a0a7"><td class="memTemplItemLeft" align="right" valign="top">std::optional&lt; <a class="el" href="structbcnp_1_1TypedPacket.html">TypedPacket</a>&lt; MsgType &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacebcnp.html#a28c4b09679a2d87ae4f737f694f1a0a7">bcnp::DecodeTypedPacket</a> (const <a class="el" href="structbcnp_1_1PacketView.html">PacketView</a> &amp;view)</td></tr>
-<tr class="memdesc:a28c4b09679a2d87ae4f737f694f1a0a7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decode messages from a <a class="el" href="structbcnp_1_1PacketView.html" title="Zero-copy view into a decoded packet buffer.">PacketView</a> into a typed packet.  <br /></td></tr>
-<tr class="separator:a28c4b09679a2d87ae4f737f694f1a0a7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a09b6b64d35dd827250d0e40fe309e8cb" id="r_a09b6b64d35dd827250d0e40fe309e8cb"><td class="memTemplParams" colspan="2">template&lt;typename MsgType , typename Storage &gt; </td></tr>
-<tr class="memitem:a09b6b64d35dd827250d0e40fe309e8cb"><td class="memTemplItemLeft" align="right" valign="top">std::optional&lt; <a class="el" href="structbcnp_1_1TypedPacket.html">TypedPacket</a>&lt; MsgType, Storage &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacebcnp.html#a09b6b64d35dd827250d0e40fe309e8cb">bcnp::DecodeTypedPacketAs</a> (const <a class="el" href="structbcnp_1_1PacketView.html">PacketView</a> &amp;view)</td></tr>
-<tr class="memdesc:a09b6b64d35dd827250d0e40fe309e8cb"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decode messages from a <a class="el" href="structbcnp_1_1PacketView.html" title="Zero-copy view into a decoded packet buffer.">PacketView</a> with custom storage type.  <br /></td></tr>
-<tr class="separator:a09b6b64d35dd827250d0e40fe309e8cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8c712f10cb4a9b7913d9d9ca5e32c397" id="r_a8c712f10cb4a9b7913d9d9ca5e32c397"><td class="memTemplParams" colspan="2">template&lt;typename MsgType &gt; </td></tr>
+<tr class="memitem:a8c712f10cb4a9b7913d9d9ca5e32c397"><td class="memTemplItemLeft" align="right" valign="top">crab::Option&lt; <a class="el" href="structbcnp_1_1TypedPacket.html">TypedPacket</a>&lt; MsgType &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacebcnp.html#a8c712f10cb4a9b7913d9d9ca5e32c397">bcnp::DecodeTypedPacket</a> (const <a class="el" href="structbcnp_1_1PacketView.html">PacketView</a> &amp;view)</td></tr>
+<tr class="memdesc:a8c712f10cb4a9b7913d9d9ca5e32c397"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decode messages from a <a class="el" href="structbcnp_1_1PacketView.html" title="Zero-copy view into a decoded packet buffer.">PacketView</a> into a typed packet.  <br /></td></tr>
+<tr class="separator:a8c712f10cb4a9b7913d9d9ca5e32c397"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acea7aa5356ebef8edfb70d57a8ea3c45" id="r_acea7aa5356ebef8edfb70d57a8ea3c45"><td class="memTemplParams" colspan="2">template&lt;typename MsgType , typename Storage &gt; </td></tr>
+<tr class="memitem:acea7aa5356ebef8edfb70d57a8ea3c45"><td class="memTemplItemLeft" align="right" valign="top">crab::Option&lt; <a class="el" href="structbcnp_1_1TypedPacket.html">TypedPacket</a>&lt; MsgType, Storage &gt; &gt;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="namespacebcnp.html#acea7aa5356ebef8edfb70d57a8ea3c45">bcnp::DecodeTypedPacketAs</a> (const <a class="el" href="structbcnp_1_1PacketView.html">PacketView</a> &amp;view)</td></tr>
+<tr class="memdesc:acea7aa5356ebef8edfb70d57a8ea3c45"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decode messages from a <a class="el" href="structbcnp_1_1PacketView.html" title="Zero-copy view into a decoded packet buffer.">PacketView</a> with custom storage type.  <br /></td></tr>
+<tr class="separator:acea7aa5356ebef8edfb70d57a8ea3c45"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abfa84506649424c70b4d70dfc47f5434" id="r_abfa84506649424c70b4d70dfc47f5434"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structbcnp_1_1DecodeViewResult.html">DecodeViewResult</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacebcnp.html#abfa84506649424c70b4d70dfc47f5434">bcnp::DecodePacketViewWithSize</a> (const uint8_t *data, std::size_t length, std::size_t wireSize)</td></tr>
 <tr class="memdesc:abfa84506649424c70b4d70dfc47f5434"><td class="mdescLeft">&#160;</td><td class="mdescRight">Decode a packet with explicitly provided message wire size.  <br /></td></tr>
 <tr class="separator:abfa84506649424c70b4d70dfc47f5434"><td class="memSeparator" colspan="2">&#160;</td></tr>

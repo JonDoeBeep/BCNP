@@ -5,7 +5,7 @@ var searchData=
   ['receivechunkfn_2',['ReceiveChunkFn',['../classbcnp_1_1SpiStreamAdapter.html#a0db8e6e18c2167923e46f7b5aefec11e',1,'bcnp::SpiStreamAdapter']]],
   ['record_3',['Record',['../classbcnp_1_1TelemetryAccumulator.html#a0051e7e4432f900f0d88193a74f2ce3c',1,'bcnp::TelemetryAccumulator']]],
   ['recordbatch_4',['RecordBatch',['../classbcnp_1_1TelemetryAccumulator.html#a3bcae01a0060ae7e988b8720e2addbfc',1,'bcnp::TelemetryAccumulator']]],
-  ['reference_5',['reference',['../classbcnp_1_1MessageIterator.html#a734855cbefe14a8943ff05a915bb67bf',1,'bcnp::MessageIterator']]],
+  ['reference_5',['reference',['../classbcnp_1_1MessageIterator.html#a734855cbefe14a8943ff05a915bb67bf',1,'bcnp::MessageIterator::reference'],['../classbcnp_1_1StaticVector.html#aff9f64ebf20e787a462f72c1426b20a8',1,'bcnp::StaticVector::reference']]],
   ['registerhandler_6',['RegisterHandler',['../classbcnp_1_1PacketDispatcher.html#a81ad2a18c1172af7887279f92a6889c2',1,'bcnp::PacketDispatcher::RegisterHandler(PacketHandler handler)'],['../classbcnp_1_1PacketDispatcher.html#a7888a50b54127e95d276aa550818da09',1,'bcnp::PacketDispatcher::RegisterHandler(MessageTypeId typeId, PacketHandler handler)']]],
   ['registermessagetypes_7',['RegisterMessageTypes',['../classbcnp_1_1PacketDispatcher.html#af9068ced1276a4ed9b62dde5b959100f',1,'bcnp::PacketDispatcher']]],
   ['requirements_8',['Requirements',['../index.html#autotoc_md11',1,'']]],

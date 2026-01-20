@@ -31,7 +31,7 @@
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="namespacebcnp.html#a09b6b64d35dd827250d0e40fe309e8cb" target="_top" xlink:title="Decode messages from a PacketView with custom storage type.">
+<g id="a_Node000002"><a xlink:href="namespacebcnp.html#acea7aa5356ebef8edfb70d57a8ea3c45" target="_top" xlink:title="Decode messages from a PacketView with custom storage type.">
 <polygon fill="white" stroke="#666666" points="143.5,-19.25 0,-19.25 0,0 143.5,0 143.5,-19.25"/>
 <text text-anchor="middle" x="71.75" y="-5.75" font-family="Helvetica,sans-Serif" font-size="10.00">bcnp::DecodeTypedPacketAs</text>
 </a>

@@ -1,10 +1,10 @@
 <map id="bcnp::StaticVector::push_back" name="bcnp::StaticVector::push_back">
-<area shape="rect" id="Node000001" title="Add element by copy." alt="" coords="181,104,308,145"/>
-<area shape="rect" id="Node000002" href="$classbcnp_1_1StaticVector.html#ac79d2524430447864737988439f851a2" title="Copy assignment operator." alt="" coords="5,5,133,46"/>
+<area shape="rect" id="Node000001" title="Add element by copy (throws if full)." alt="" coords="181,104,308,145"/>
+<area shape="rect" id="Node000002" href="$classbcnp_1_1StaticVector.html#ac79d2524430447864737988439f851a2" title="Copy assignment." alt="" coords="5,5,133,46"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="194,98,131,61,109,49,111,44,134,57,197,93"/>
-<area shape="rect" id="Node000003" href="$classbcnp_1_1StaticVector.html#a7555a468e5702dcac1542f8221a9dd2e" title="Resize with fill value." alt="" coords="5,71,133,111"/>
+<area shape="rect" id="Node000003" href="$classbcnp_1_1StaticVector.html#a7555a468e5702dcac1542f8221a9dd2e" title=" " alt="" coords="5,71,133,111"/>
 <area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="165,112,132,106,133,100,166,107"/>
-<area shape="rect" id="Node000004" href="$classbcnp_1_1StaticVector.html#a0a5205e50e2f8071401b68a387cc8c19" title="Copy constructor &#45; deep copies all elements." alt="" coords="5,136,133,177"/>
+<area shape="rect" id="Node000004" href="$classbcnp_1_1StaticVector.html#a0a5205e50e2f8071401b68a387cc8c19" title="Copy constructor." alt="" coords="5,136,133,177"/>
 <area shape="poly" id="edge3_Node000001_Node000004" title=" " alt="" coords="166,141,133,147,132,142,165,136"/>
 <area shape="rect" id="Node000005" href="$classbcnp_1_1StaticVector.html#ab642fd9db328decc270e49471e8f264f" title="Construct from initializer list." alt="" coords="5,201,133,242"/>
 <area shape="poly" id="edge4_Node000001_Node000005" title=" " alt="" coords="196,155,134,191,111,203,109,198,131,186,194,150"/>

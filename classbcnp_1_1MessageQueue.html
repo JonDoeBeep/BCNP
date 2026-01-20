@@ -144,9 +144,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3c0007ccbc4819c15d0dcd625eb3bc72" id="r_a3c0007ccbc4819c15d0dcd625eb3bc72"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a3c0007ccbc4819c15d0dcd625eb3bc72">Update</a> (Clock::time_point now)</td></tr>
 <tr class="memdesc:a3c0007ccbc4819c15d0dcd625eb3bc72"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update queue state - call once per control loop iteration.  <br /></td></tr>
 <tr class="separator:a3c0007ccbc4819c15d0dcd625eb3bc72"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9ae24ed58a604c005898cb79a663d876" id="r_a9ae24ed58a604c005898cb79a663d876"><td class="memItemLeft" align="right" valign="top">std::optional&lt; MsgType &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a9ae24ed58a604c005898cb79a663d876">ActiveMessage</a> () const</td></tr>
-<tr class="memdesc:a9ae24ed58a604c005898cb79a663d876"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the currently executing message.  <br /></td></tr>
-<tr class="separator:a9ae24ed58a604c005898cb79a663d876"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abc87f42c6d697460785dd90a2df3e804" id="r_abc87f42c6d697460785dd90a2df3e804"><td class="memItemLeft" align="right" valign="top">crab::Option&lt; MsgType &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#abc87f42c6d697460785dd90a2df3e804">ActiveMessage</a> () const</td></tr>
+<tr class="memdesc:abc87f42c6d697460785dd90a2df3e804"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the currently executing message.  <br /></td></tr>
+<tr class="separator:abc87f42c6d697460785dd90a2df3e804"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6cf20ee65255cb68080ed5c44315afec" id="r_a6cf20ee65255cb68080ed5c44315afec"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6cf20ee65255cb68080ed5c44315afec">IsConnected</a> (Clock::time_point now) const</td></tr>
 <tr class="memdesc:a6cf20ee65255cb68080ed5c44315afec"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if the connection is still active.  <br /></td></tr>
 <tr class="separator:a6cf20ee65255cb68080ed5c44315afec"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -183,16 +183,16 @@ class bcnp::MessageQueue&lt; MsgType &gt;</div><p>Generic timed message queue fo
 <div class="line"> </div>
 <div class="line"><span class="comment">// In periodic loop:</span></div>
 <div class="line">driveQueue.<a class="code hl_function" href="#a3c0007ccbc4819c15d0dcd625eb3bc72">Update</a>(now);</div>
-<div class="line"><span class="keywordflow">if</span> (<span class="keyword">auto</span> cmd = driveQueue.<a class="code hl_function" href="#a9ae24ed58a604c005898cb79a663d876">ActiveMessage</a>()) {</div>
+<div class="line"><span class="keywordflow">if</span> (<span class="keyword">auto</span> cmd = driveQueue.<a class="code hl_function" href="#abc87f42c6d697460785dd90a2df3e804">ActiveMessage</a>()) {</div>
 <div class="line">    drivetrain.execute(*cmd);</div>
 <div class="line">}</div>
-<div class="ttc" id="aclassbcnp_1_1MessageQueue_html"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html">bcnp::MessageQueue</a></div><div class="ttdoc">Generic timed message queue for any message type with durationMs field.</div><div class="ttdef"><b>Definition</b> <a href="message__queue_8h_source.html#l00084">message_queue.h:84</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a3c0007ccbc4819c15d0dcd625eb3bc72"><div class="ttname"><a href="#a3c0007ccbc4819c15d0dcd625eb3bc72">bcnp::MessageQueue::Update</a></div><div class="ttdeci">void Update(Clock::time_point now)</div><div class="ttdoc">Update queue state - call once per control loop iteration.</div><div class="ttdef"><b>Definition</b> <a href="message__queue_8h_source.html#l00160">message_queue.h:160</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a9ae24ed58a604c005898cb79a663d876"><div class="ttname"><a href="#a9ae24ed58a604c005898cb79a663d876">bcnp::MessageQueue::ActiveMessage</a></div><div class="ttdeci">std::optional&lt; MsgType &gt; ActiveMessage() const</div><div class="ttdoc">Get the currently executing message.</div><div class="ttdef"><b>Definition</b> <a href="message__queue_8h_source.html#l00200">message_queue.h:200</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_aa5eeeb2dc4b14d8505a7a7ea23a36cad"><div class="ttname"><a href="#aa5eeeb2dc4b14d8505a7a7ea23a36cad">bcnp::MessageQueue::Push</a></div><div class="ttdeci">bool Push(const MsgType &amp;message)</div><div class="ttdoc">Add a message to the back of the queue.</div><div class="ttdef"><b>Definition</b> <a href="message__queue_8h_source.html#l00116">message_queue.h:116</a></div></div>
-<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_ab653c5c6dbe4974467e2009cdabbe98c"><div class="ttname"><a href="#ab653c5c6dbe4974467e2009cdabbe98c">bcnp::MessageQueue::NotifyReceived</a></div><div class="ttdeci">void NotifyReceived(Clock::time_point now)</div><div class="ttdoc">Notify that messages were received from the network.</div><div class="ttdef"><b>Definition</b> <a href="message__queue_8h_source.html#l00144">message_queue.h:144</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_html"><div class="ttname"><a href="classbcnp_1_1MessageQueue.html">bcnp::MessageQueue</a></div><div class="ttdoc">Generic timed message queue for any message type with durationMs field.</div><div class="ttdef"><b>Definition</b> <a href="message__queue_8h_source.html#l00085">message_queue.h:85</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_a3c0007ccbc4819c15d0dcd625eb3bc72"><div class="ttname"><a href="#a3c0007ccbc4819c15d0dcd625eb3bc72">bcnp::MessageQueue::Update</a></div><div class="ttdeci">void Update(Clock::time_point now)</div><div class="ttdoc">Update queue state - call once per control loop iteration.</div><div class="ttdef"><b>Definition</b> <a href="message__queue_8h_source.html#l00161">message_queue.h:161</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_aa5eeeb2dc4b14d8505a7a7ea23a36cad"><div class="ttname"><a href="#aa5eeeb2dc4b14d8505a7a7ea23a36cad">bcnp::MessageQueue::Push</a></div><div class="ttdeci">bool Push(const MsgType &amp;message)</div><div class="ttdoc">Add a message to the back of the queue.</div><div class="ttdef"><b>Definition</b> <a href="message__queue_8h_source.html#l00117">message_queue.h:117</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_ab653c5c6dbe4974467e2009cdabbe98c"><div class="ttname"><a href="#ab653c5c6dbe4974467e2009cdabbe98c">bcnp::MessageQueue::NotifyReceived</a></div><div class="ttdeci">void NotifyReceived(Clock::time_point now)</div><div class="ttdoc">Notify that messages were received from the network.</div><div class="ttdef"><b>Definition</b> <a href="message__queue_8h_source.html#l00145">message_queue.h:145</a></div></div>
+<div class="ttc" id="aclassbcnp_1_1MessageQueue_html_abc87f42c6d697460785dd90a2df3e804"><div class="ttname"><a href="#abc87f42c6d697460785dd90a2df3e804">bcnp::MessageQueue::ActiveMessage</a></div><div class="ttdeci">crab::Option&lt; MsgType &gt; ActiveMessage() const</div><div class="ttdoc">Get the currently executing message.</div><div class="ttdef"><b>Definition</b> <a href="message__queue_8h_source.html#l00202">message_queue.h:202</a></div></div>
 </div><!-- fragment --> 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00084">84</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00085">85</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 </div><h2 class="groupheader">Member Typedef Documentation</h2>
 <a id="a29f1baa168384d36553e6b8bd6573e8c" name="a29f1baa168384d36553e6b8bd6573e8c"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a29f1baa168384d36553e6b8bd6573e8c">&#9670;&#160;</a></span>Clock</h2>
@@ -208,7 +208,7 @@ template&lt;typename MsgType &gt; </div>
       </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00089">89</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00090">90</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>
@@ -238,13 +238,13 @@ template&lt;typename MsgType &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00091">91</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00092">92</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a9ae24ed58a604c005898cb79a663d876" name="a9ae24ed58a604c005898cb79a663d876"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9ae24ed58a604c005898cb79a663d876">&#9670;&#160;</a></span>ActiveMessage()</h2>
+<a id="abc87f42c6d697460785dd90a2df3e804" name="abc87f42c6d697460785dd90a2df3e804"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abc87f42c6d697460785dd90a2df3e804">&#9670;&#160;</a></span>ActiveMessage()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -255,7 +255,7 @@ template&lt;typename MsgType &gt; </div>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::optional&lt; MsgType &gt; <a class="el" href="classbcnp_1_1MessageQueue.html">bcnp::MessageQueue</a>&lt; MsgType &gt;::ActiveMessage </td>
+          <td class="memname">crab::Option&lt; MsgType &gt; <a class="el" href="classbcnp_1_1MessageQueue.html">bcnp::MessageQueue</a>&lt; MsgType &gt;::ActiveMessage </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
           <td> const</td>
@@ -269,10 +269,10 @@ template&lt;typename MsgType &gt; </div>
 </div><div class="memdoc">
 
 <p>Get the currently executing message. </p>
-<p>Returns the message whose duration is currently being executed. Blocks briefly if mutex is held by network thread (typically &lt;5µs).</p>
-<dl class="section return"><dt>Returns</dt><dd>The active message, or nullopt if none active </dd></dl>
+<p>Returns the message whose duration is currently being executed. Blocks briefly if mutex is held by network thread (typically &lt;5us).</p>
+<dl class="section return"><dt>Returns</dt><dd>The active message, or None if none active </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00200">200</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00202">202</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>
@@ -301,7 +301,7 @@ template&lt;typename MsgType &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00297">297</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00299">299</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>
@@ -333,7 +333,7 @@ template&lt;typename MsgType &gt; </div>
 <p>Remove all messages from the queue. </p>
 <p>Also clears the active message and resets virtual cursor. Thread-safe. </p>
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00103">103</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00104">104</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>
@@ -362,7 +362,7 @@ template&lt;typename MsgType &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00253">253</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00255">255</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>
@@ -394,7 +394,7 @@ template&lt;typename MsgType &gt; </div>
 <p>Get current queue metrics. </p>
 <dl class="section return"><dt>Returns</dt><dd>Snapshot of queue statistics </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00223">223</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00225">225</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>
@@ -432,7 +432,7 @@ template&lt;typename MsgType &gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>true if packets received within connectionTimeout, false otherwise </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00214">214</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00216">216</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>
@@ -470,7 +470,7 @@ template&lt;typename MsgType &gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00144">144</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00145">145</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>
@@ -509,7 +509,7 @@ template&lt;typename MsgType &gt; </div>
 <dl class="section return"><dt>Returns</dt><dd>true if successfully added, false if queue was full</dd></dl>
 <dl class="section note"><dt>Note</dt><dd>Increments queueOverflows metric on failure. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00116">116</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00117">117</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>
@@ -540,7 +540,7 @@ template&lt;typename MsgType &gt; </div>
 
 <p>Reset all metrics to zero. </p>
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00231">231</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00233">233</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>
@@ -578,7 +578,7 @@ template&lt;typename MsgType &gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00243">243</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00245">245</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>
@@ -610,7 +610,7 @@ template&lt;typename MsgType &gt; </div>
 <p>Get the current number of queued messages. </p>
 <dl class="section return"><dt>Returns</dt><dd>Number of messages waiting (excludes active message) </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00130">130</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00131">131</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>
@@ -648,7 +648,7 @@ template&lt;typename MsgType &gt; </div>
   </dd>
 </dl>
 
-<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00160">160</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="message__queue_8h_source.html#l00161">161</a> of file <a class="el" href="message__queue_8h_source.html">message_queue.h</a>.</p>
 
 </div>
 </div>

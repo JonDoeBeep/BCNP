@@ -1,7 +1,7 @@
 <map id="bcnp::StaticVector::pop_back" name="bcnp::StaticVector::pop_back">
-<area shape="rect" id="Node000001" title="Remove last element." alt="" coords="181,39,308,79"/>
-<area shape="rect" id="Node000002" href="$classbcnp_1_1StaticVector.html#a38200f1e39fd0ad2aadf3e1d826feef0" title="Resize the vector." alt="" coords="5,5,133,46"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="181,39,308,79"/>
+<area shape="rect" id="Node000002" href="$classbcnp_1_1StaticVector.html#a38200f1e39fd0ad2aadf3e1d826feef0" title=" " alt="" coords="5,5,133,46"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="165,47,132,40,133,35,166,41"/>
-<area shape="rect" id="Node000003" href="$classbcnp_1_1StaticVector.html#a7555a468e5702dcac1542f8221a9dd2e" title="Resize with fill value." alt="" coords="5,71,133,111"/>
+<area shape="rect" id="Node000003" href="$classbcnp_1_1StaticVector.html#a7555a468e5702dcac1542f8221a9dd2e" title=" " alt="" coords="5,71,133,111"/>
 <area shape="poly" id="edge2_Node000001_Node000003" title=" " alt="" coords="166,76,133,82,132,77,165,71"/>
 </map>

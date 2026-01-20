@@ -1,5 +1,5 @@
 <map id="bcnp::ReserveIfPossible" name="bcnp::ReserveIfPossible">
 <area shape="rect" id="Node000001" title="Helper to reserve capacity (no&#45;op for static storage)." alt="" coords="245,5,406,31"/>
-<area shape="rect" id="Node000002" href="$namespacebcnp.html#a09b6b64d35dd827250d0e40fe309e8cb" title="Decode messages from a PacketView with custom storage type." alt="" coords="5,5,197,31"/>
+<area shape="rect" id="Node000002" href="$namespacebcnp.html#acea7aa5356ebef8edfb70d57a8ea3c45" title="Decode messages from a PacketView with custom storage type." alt="" coords="5,5,197,31"/>
 <area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="230,21,197,21,197,16,230,16"/>
 </map>

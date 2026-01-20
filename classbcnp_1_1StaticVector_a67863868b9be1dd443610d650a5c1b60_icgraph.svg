@@ -22,7 +22,7 @@
 <!-- Node1 -->
 <g id="Node000001" class="node">
 <title>Node1</title>
-<g id="a_Node000001"><a xlink:title="Add element by copy.">
+<g id="a_Node000001"><a xlink:title="Add element by copy (throws if full).">
 <polygon fill="#999999" stroke="#666666" points="227,-103.5 131.5,-103.5 131.5,-73 227,-73 227,-103.5"/>
 <text text-anchor="start" x="139.5" y="-90" font-family="Helvetica,sans-Serif" font-size="10.00">bcnp::StaticVector</text>
 <text text-anchor="middle" x="179.25" y="-78.75" font-family="Helvetica,sans-Serif" font-size="10.00">::push_back</text>
@@ -32,7 +32,7 @@
 <!-- Node2 -->
 <g id="Node000002" class="node">
 <title>Node2</title>
-<g id="a_Node000002"><a xlink:href="classbcnp_1_1StaticVector.html#ac79d2524430447864737988439f851a2" target="_top" xlink:title="Copy assignment operator.">
+<g id="a_Node000002"><a xlink:href="classbcnp_1_1StaticVector.html#ac79d2524430447864737988439f851a2" target="_top" xlink:title="Copy assignment.">
 <polygon fill="white" stroke="#666666" points="95.5,-177.5 0,-177.5 0,-147 95.5,-147 95.5,-177.5"/>
 <text text-anchor="start" x="8" y="-164" font-family="Helvetica,sans-Serif" font-size="10.00">bcnp::StaticVector</text>
 <text text-anchor="middle" x="47.75" y="-152.75" font-family="Helvetica,sans-Serif" font-size="10.00">::operator=</text>
@@ -51,7 +51,7 @@
 <!-- Node3 -->
 <g id="Node000003" class="node">
 <title>Node3</title>
-<g id="a_Node000003"><a xlink:href="classbcnp_1_1StaticVector.html#a7555a468e5702dcac1542f8221a9dd2e" target="_top" xlink:title="Resize with fill value.">
+<g id="a_Node000003"><a xlink:href="classbcnp_1_1StaticVector.html#a7555a468e5702dcac1542f8221a9dd2e" target="_top" xlink:title=" ">
 <polygon fill="white" stroke="#666666" points="95.5,-128.5 0,-128.5 0,-98 95.5,-98 95.5,-128.5"/>
 <text text-anchor="start" x="8" y="-115" font-family="Helvetica,sans-Serif" font-size="10.00">bcnp::StaticVector</text>
 <text text-anchor="middle" x="47.75" y="-103.75" font-family="Helvetica,sans-Serif" font-size="10.00">::resize</text>
@@ -70,7 +70,7 @@
 <!-- Node4 -->
 <g id="Node000004" class="node">
 <title>Node4</title>
-<g id="a_Node000004"><a xlink:href="classbcnp_1_1StaticVector.html#a0a5205e50e2f8071401b68a387cc8c19" target="_top" xlink:title="Copy constructor &#45; deep copies all elements.">
+<g id="a_Node000004"><a xlink:href="classbcnp_1_1StaticVector.html#a0a5205e50e2f8071401b68a387cc8c19" target="_top" xlink:title="Copy constructor.">
 <polygon fill="white" stroke="#666666" points="95.5,-79.5 0,-79.5 0,-49 95.5,-49 95.5,-79.5"/>
 <text text-anchor="start" x="8" y="-66" font-family="Helvetica,sans-Serif" font-size="10.00">bcnp::StaticVector</text>
 <text text-anchor="middle" x="47.75" y="-54.75" font-family="Helvetica,sans-Serif" font-size="10.00">::StaticVector</text>

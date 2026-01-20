@@ -5,6 +5,7 @@ var structbcnp_1_1PacketView =
     [ "GetMessageType", "structbcnp_1_1PacketView.html#aa03917676408d08875f394c06a704c8c", null ],
     [ "GetPayload", "structbcnp_1_1PacketView.html#a5084f27f14d8ca793292d4e1792516a4", null ],
     [ "GetPayloadSize", "structbcnp_1_1PacketView.html#a690138420e05b8d298b1bf96d629b998", null ],
+    [ "GetPayloadSlice", "structbcnp_1_1PacketView.html#a73c542f7dd5deb1cfb3793ba5d185ac7", null ],
     [ "header", "structbcnp_1_1PacketView.html#a5b1c9be8b4b2bc54ccc365350ef94a38", null ],
-    [ "payloadStart", "structbcnp_1_1PacketView.html#a69cd87ec1736caf121a7862b4b1c4249", null ]
+    [ "payload", "structbcnp_1_1PacketView.html#a8f250455e09b84e09bfee9f06d570bab", null ]
 ];

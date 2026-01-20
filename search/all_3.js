@@ -21,9 +21,11 @@ var searchData=
   ['connectiontimeout_18',['connectionTimeout',['../structbcnp_1_1DispatcherConfig.html#a49f73905b7e07d0ff2ed4ab604430738',1,'bcnp::DispatcherConfig::connectionTimeout'],['../structbcnp_1_1MessageQueueConfig.html#a880e52accdda63b7f548e58f13297d52',1,'bcnp::MessageQueueConfig::connectionTimeout']]],
   ['consecutiveerrors_19',['consecutiveErrors',['../structbcnp_1_1StreamParser_1_1ErrorInfo.html#af68d0901a9192ac2aa047e602b0aa4e7',1,'bcnp::StreamParser::ErrorInfo']]],
   ['const_5fiterator_20',['const_iterator',['../classbcnp_1_1StaticVector.html#aee160b9bf98ae8bd1a6648de80545689',1,'bcnp::StaticVector']]],
-  ['constants_20v3_21',['Protocol Constants (V3)',['../group__ProtocolConstants.html',1,'']]],
-  ['controller_2eh_22',['controller.h',['../controller_8h.html',1,'']]],
-  ['controller_5fdriver_2ecpp_23',['controller_driver.cpp',['../controller__driver_8cpp.html',1,'']]],
-  ['controller_5fdriver_2eh_24',['controller_driver.h',['../controller__driver_8h.html',1,'']]],
-  ['controllerdriver_25',['ControllerDriver',['../namespacebcnp.html#ad0508809a29db10d4ddb7cc35f48f3d4',1,'bcnp']]]
+  ['const_5fpointer_21',['const_pointer',['../classbcnp_1_1StaticVector.html#abe8aedf2abe84ecae60dc4c48e4f0cdc',1,'bcnp::StaticVector']]],
+  ['const_5freference_22',['const_reference',['../classbcnp_1_1StaticVector.html#ac473466687e47cdc930dff51b8bd8928',1,'bcnp::StaticVector']]],
+  ['constants_20v3_23',['Protocol Constants (V3)',['../group__ProtocolConstants.html',1,'']]],
+  ['controller_2eh_24',['controller.h',['../controller_8h.html',1,'']]],
+  ['controller_5fdriver_2ecpp_25',['controller_driver.cpp',['../controller__driver_8cpp.html',1,'']]],
+  ['controller_5fdriver_2eh_26',['controller_driver.h',['../controller__driver_8h.html',1,'']]],
+  ['controllerdriver_27',['ControllerDriver',['../namespacebcnp.html#ad0508809a29db10d4ddb7cc35f48f3d4',1,'bcnp']]]
 ];

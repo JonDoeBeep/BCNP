@@ -1,5 +1,0 @@
-<map id="bcnp::StaticVector::at" name="bcnp::StaticVector::at">
-<area shape="rect" id="Node000001" title="Access element with bounds checking." alt="" coords="5,13,150,38"/>
-<area shape="rect" id="Node000002" href="$classbcnp_1_1StaticVector.html#aeedf48c4fa3acb31bab79d88421c57c8" title="Get pointer to underlying storage." alt="" coords="198,5,325,46"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="150,23,182,23,182,28,150,28"/>
-</map>

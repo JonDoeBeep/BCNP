@@ -132,8 +132,11 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a0fe50d3f30f0a2c9e7abf9c401958c97"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get end iterator for type-safe message iteration.  <br /></td></tr>
 <tr class="separator:a0fe50d3f30f0a2c9e7abf9c401958c97"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5084f27f14d8ca793292d4e1792516a4" id="r_a5084f27f14d8ca793292d4e1792516a4"><td class="memItemLeft" align="right" valign="top">const uint8_t *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5084f27f14d8ca793292d4e1792516a4">GetPayload</a> () const</td></tr>
-<tr class="memdesc:a5084f27f14d8ca793292d4e1792516a4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get raw pointer to payload for manual parsing.  <br /></td></tr>
+<tr class="memdesc:a5084f27f14d8ca793292d4e1792516a4"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get raw pointer to payload (for legacy compatibility).  <br /></td></tr>
 <tr class="separator:a5084f27f14d8ca793292d4e1792516a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a73c542f7dd5deb1cfb3793ba5d185ac7" id="r_a73c542f7dd5deb1cfb3793ba5d185ac7"><td class="memItemLeft" align="right" valign="top">crab::Slice&lt; const uint8_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a73c542f7dd5deb1cfb3793ba5d185ac7">GetPayloadSlice</a> () const</td></tr>
+<tr class="memdesc:a73c542f7dd5deb1cfb3793ba5d185ac7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get bounds-checked payload slice.  <br /></td></tr>
+<tr class="separator:a73c542f7dd5deb1cfb3793ba5d185ac7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a690138420e05b8d298b1bf96d629b998" id="r_a690138420e05b8d298b1bf96d629b998"><td class="memItemLeft" align="right" valign="top">std::size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a690138420e05b8d298b1bf96d629b998">GetPayloadSize</a> () const</td></tr>
 <tr class="memdesc:a690138420e05b8d298b1bf96d629b998"><td class="mdescLeft">&#160;</td><td class="mdescRight">Calculate total payload size in bytes.  <br /></td></tr>
 <tr class="separator:a690138420e05b8d298b1bf96d629b998"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -143,16 +146,16 @@ Public Attributes</h2></td></tr>
 <tr class="memitem:a5b1c9be8b4b2bc54ccc365350ef94a38" id="r_a5b1c9be8b4b2bc54ccc365350ef94a38"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structbcnp_1_1PacketHeader.html">PacketHeader</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5b1c9be8b4b2bc54ccc365350ef94a38">header</a> {}</td></tr>
 <tr class="memdesc:a5b1c9be8b4b2bc54ccc365350ef94a38"><td class="mdescLeft">&#160;</td><td class="mdescRight">Parsed header information.  <br /></td></tr>
 <tr class="separator:a5b1c9be8b4b2bc54ccc365350ef94a38"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a69cd87ec1736caf121a7862b4b1c4249" id="r_a69cd87ec1736caf121a7862b4b1c4249"><td class="memItemLeft" align="right" valign="top">const uint8_t *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a69cd87ec1736caf121a7862b4b1c4249">payloadStart</a> {nullptr}</td></tr>
-<tr class="memdesc:a69cd87ec1736caf121a7862b4b1c4249"><td class="mdescLeft">&#160;</td><td class="mdescRight">Pointer to first message in buffer.  <br /></td></tr>
-<tr class="separator:a69cd87ec1736caf121a7862b4b1c4249"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8f250455e09b84e09bfee9f06d570bab" id="r_a8f250455e09b84e09bfee9f06d570bab"><td class="memItemLeft" align="right" valign="top">crab::Slice&lt; const uint8_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a8f250455e09b84e09bfee9f06d570bab">payload</a> {}</td></tr>
+<tr class="memdesc:a8f250455e09b84e09bfee9f06d570bab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Bounds-checked payload view.  <br /></td></tr>
+<tr class="separator:a8f250455e09b84e09bfee9f06d570bab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Zero-copy view into a decoded packet buffer. </p>
-<p><a class="el" href="structbcnp_1_1PacketView.html" title="Zero-copy view into a decoded packet buffer.">PacketView</a> provides read-only access to a validated packet without copying the message data. Use begin_as&lt;T&gt;/end_as&lt;T&gt; to iterate over messages with type checking, or <a class="el" href="#a5084f27f14d8ca793292d4e1792516a4" title="Get raw pointer to payload for manual parsing.">GetPayload()</a> for raw access.</p>
+<p><a class="el" href="structbcnp_1_1PacketView.html" title="Zero-copy view into a decoded packet buffer.">PacketView</a> provides read-only access to a validated packet without copying the message data. Use begin_as&lt;T&gt;/end_as&lt;T&gt; to iterate over messages with type checking, or <a class="el" href="#a5084f27f14d8ca793292d4e1792516a4" title="Get raw pointer to payload (for legacy compatibility).">GetPayload()</a> for raw access.</p>
 <dl class="section note"><dt>Note</dt><dd>The view is only valid while the underlying buffer exists. Do not store views beyond the lifetime of the source buffer. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="packet_8h_source.html#l00170">170</a> of file <a class="el" href="packet_8h_source.html">packet.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="packet_8h_source.html#l00171">171</a> of file <a class="el" href="packet_8h_source.html">packet.h</a>.</p>
 </div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="aa9b1f6181063b15c47c25ee5d16cfb18" name="aa9b1f6181063b15c47c25ee5d16cfb18"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aa9b1f6181063b15c47c25ee5d16cfb18">&#9670;&#160;</a></span>begin_as()</h2>
@@ -189,7 +192,7 @@ template&lt;typename MsgType &gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Iterator to first message, or end iterator on type mismatch </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="packet_8h_source.html#l00190">190</a> of file <a class="el" href="packet_8h_source.html">packet.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="packet_8h_source.html#l00191">191</a> of file <a class="el" href="packet_8h_source.html">packet.h</a>.</p>
 
 </div>
 </div>
@@ -227,7 +230,7 @@ template&lt;typename MsgType &gt; </div>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>End sentinel iterator </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="packet_8h_source.html#l00203">203</a> of file <a class="el" href="packet_8h_source.html">packet.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="packet_8h_source.html#l00204">204</a> of file <a class="el" href="packet_8h_source.html">packet.h</a>.</p>
 
 </div>
 </div>
@@ -257,7 +260,7 @@ template&lt;typename MsgType &gt; </div>
 <p>Get the message type ID for this packet. </p>
 <dl class="section return"><dt>Returns</dt><dd>The MessageTypeId from the header </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="packet_8h_source.html#l00178">178</a> of file <a class="el" href="packet_8h_source.html">packet.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="packet_8h_source.html#l00179">179</a> of file <a class="el" href="packet_8h_source.html">packet.h</a>.</p>
 
 </div>
 </div>
@@ -284,10 +287,11 @@ template&lt;typename MsgType &gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Get raw pointer to payload for manual parsing. </p>
+<p>Get raw pointer to payload (for legacy compatibility). </p>
 <dl class="section return"><dt>Returns</dt><dd>Pointer to first byte after header </dd></dl>
+<dl class="deprecated"><dt><b><a class="el" href="deprecated.html#_deprecated000001">Deprecated</a></b></dt><dd>Use <a class="el" href="#a73c542f7dd5deb1cfb3793ba5d185ac7" title="Get bounds-checked payload slice.">GetPayloadSlice()</a> for bounds safety. </dd></dl>
 
-<p class="definition">Definition at line <a class="el" href="packet_8h_source.html#l00211">211</a> of file <a class="el" href="packet_8h_source.html">packet.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="packet_8h_source.html#l00214">214</a> of file <a class="el" href="packet_8h_source.html">packet.h</a>.</p>
 
 </div>
 </div>
@@ -318,6 +322,36 @@ Here is the call graph for this function:</div>
 
 </div>
 </div>
+<a id="a73c542f7dd5deb1cfb3793ba5d185ac7" name="a73c542f7dd5deb1cfb3793ba5d185ac7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a73c542f7dd5deb1cfb3793ba5d185ac7">&#9670;&#160;</a></span>GetPayloadSlice()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">crab::Slice&lt; const uint8_t &gt; bcnp::PacketView::GetPayloadSlice </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Get bounds-checked payload slice. </p>
+<dl class="section return"><dt>Returns</dt><dd>Slice view of payload bytes </dd></dl>
+
+<p class="definition">Definition at line <a class="el" href="packet_8h_source.html#l00220">220</a> of file <a class="el" href="packet_8h_source.html">packet.h</a>.</p>
+
+</div>
+</div>
 <h2 class="groupheader">Member Data Documentation</h2>
 <a id="a5b1c9be8b4b2bc54ccc365350ef94a38" name="a5b1c9be8b4b2bc54ccc365350ef94a38"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a5b1c9be8b4b2bc54ccc365350ef94a38">&#9670;&#160;</a></span>header</h2>
@@ -333,25 +367,25 @@ Here is the call graph for this function:</div>
 
 <p>Parsed header information. </p>
 
-<p class="definition">Definition at line <a class="el" href="packet_8h_source.html#l00171">171</a> of file <a class="el" href="packet_8h_source.html">packet.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="packet_8h_source.html#l00172">172</a> of file <a class="el" href="packet_8h_source.html">packet.h</a>.</p>
 
 </div>
 </div>
-<a id="a69cd87ec1736caf121a7862b4b1c4249" name="a69cd87ec1736caf121a7862b4b1c4249"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a69cd87ec1736caf121a7862b4b1c4249">&#9670;&#160;</a></span>payloadStart</h2>
+<a id="a8f250455e09b84e09bfee9f06d570bab" name="a8f250455e09b84e09bfee9f06d570bab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8f250455e09b84e09bfee9f06d570bab">&#9670;&#160;</a></span>payload</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">const uint8_t* bcnp::PacketView::payloadStart {nullptr}</td>
+          <td class="memname">crab::Slice&lt;const uint8_t&gt; bcnp::PacketView::payload {}</td>
         </tr>
       </table>
 </div><div class="memdoc">
 
-<p>Pointer to first message in buffer. </p>
+<p>Bounds-checked payload view. </p>
 
-<p class="definition">Definition at line <a class="el" href="packet_8h_source.html#l00172">172</a> of file <a class="el" href="packet_8h_source.html">packet.h</a>.</p>
+<p class="definition">Definition at line <a class="el" href="packet_8h_source.html#l00173">173</a> of file <a class="el" href="packet_8h_source.html">packet.h</a>.</p>
 
 </div>
 </div>

@@ -128,8 +128,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a4b959ab84c4f6f8c4fb77ed95d188405"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a363f1cf94907708289b39f67c3696f8c" id="r_a363f1cf94907708289b39f67c3696f8c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a363f1cf94907708289b39f67c3696f8c">NotifyPacketReceived</a> (Clock::time_point now)</td></tr>
 <tr class="separator:a363f1cf94907708289b39f67c3696f8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:add8234bd079163a8b659dedfd75c92fc" id="r_add8234bd079163a8b659dedfd75c92fc"><td class="memItemLeft" align="right" valign="top">std::optional&lt; DriveCmd &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#add8234bd079163a8b659dedfd75c92fc">ActiveCommand</a> () const</td></tr>
-<tr class="separator:add8234bd079163a8b659dedfd75c92fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ac97a283dfafdeaa98d0ae7b780dcec72" id="r_ac97a283dfafdeaa98d0ae7b780dcec72"><td class="memItemLeft" align="right" valign="top">crab::Option&lt; DriveCmd &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac97a283dfafdeaa98d0ae7b780dcec72">ActiveCommand</a> () const</td></tr>
+<tr class="separator:ac97a283dfafdeaa98d0ae7b780dcec72"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6f13ba012b7bb7dded21697bdc95d468" id="r_a6f13ba012b7bb7dded21697bdc95d468"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a6f13ba012b7bb7dded21697bdc95d468">IncrementParseErrors</a> ()</td></tr>
 <tr class="separator:a6f13ba012b7bb7dded21697bdc95d468"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classbcnp_1_1MessageQueue"><td colspan="2" onclick="javascript:dynsection.toggleInherit('pub_methods_classbcnp_1_1MessageQueue')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classbcnp_1_1MessageQueue.html">bcnp::MessageQueue&lt; DriveCmd &gt;</a></td></tr>
@@ -150,9 +150,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a3c0007ccbc4819c15d0dcd625eb3bc72 inherit pub_methods_classbcnp_1_1MessageQueue" id="r_a3c0007ccbc4819c15d0dcd625eb3bc72"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classbcnp_1_1MessageQueue.html#a3c0007ccbc4819c15d0dcd625eb3bc72">Update</a> (Clock::time_point now)</td></tr>
 <tr class="memdesc:a3c0007ccbc4819c15d0dcd625eb3bc72 inherit pub_methods_classbcnp_1_1MessageQueue"><td class="mdescLeft">&#160;</td><td class="mdescRight">Update queue state - call once per control loop iteration.  <br /></td></tr>
 <tr class="separator:a3c0007ccbc4819c15d0dcd625eb3bc72 inherit pub_methods_classbcnp_1_1MessageQueue"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9ae24ed58a604c005898cb79a663d876 inherit pub_methods_classbcnp_1_1MessageQueue" id="r_a9ae24ed58a604c005898cb79a663d876"><td class="memItemLeft" align="right" valign="top">std::optional&lt; DriveCmd &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classbcnp_1_1MessageQueue.html#a9ae24ed58a604c005898cb79a663d876">ActiveMessage</a> () const</td></tr>
-<tr class="memdesc:a9ae24ed58a604c005898cb79a663d876 inherit pub_methods_classbcnp_1_1MessageQueue"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the currently executing message.  <br /></td></tr>
-<tr class="separator:a9ae24ed58a604c005898cb79a663d876 inherit pub_methods_classbcnp_1_1MessageQueue"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abc87f42c6d697460785dd90a2df3e804 inherit pub_methods_classbcnp_1_1MessageQueue" id="r_abc87f42c6d697460785dd90a2df3e804"><td class="memItemLeft" align="right" valign="top">crab::Option&lt; DriveCmd &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classbcnp_1_1MessageQueue.html#abc87f42c6d697460785dd90a2df3e804">ActiveMessage</a> () const</td></tr>
+<tr class="memdesc:abc87f42c6d697460785dd90a2df3e804 inherit pub_methods_classbcnp_1_1MessageQueue"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the currently executing message.  <br /></td></tr>
+<tr class="separator:abc87f42c6d697460785dd90a2df3e804 inherit pub_methods_classbcnp_1_1MessageQueue"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6cf20ee65255cb68080ed5c44315afec inherit pub_methods_classbcnp_1_1MessageQueue" id="r_a6cf20ee65255cb68080ed5c44315afec"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classbcnp_1_1MessageQueue.html#a6cf20ee65255cb68080ed5c44315afec">IsConnected</a> (Clock::time_point now) const</td></tr>
 <tr class="memdesc:a6cf20ee65255cb68080ed5c44315afec inherit pub_methods_classbcnp_1_1MessageQueue"><td class="mdescLeft">&#160;</td><td class="mdescRight">Check if the connection is still active.  <br /></td></tr>
 <tr class="separator:a6cf20ee65255cb68080ed5c44315afec inherit pub_methods_classbcnp_1_1MessageQueue"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -209,8 +209,8 @@ Additional Inherited Members</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="add8234bd079163a8b659dedfd75c92fc" name="add8234bd079163a8b659dedfd75c92fc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#add8234bd079163a8b659dedfd75c92fc">&#9670;&#160;</a></span>ActiveCommand()</h2>
+<a id="ac97a283dfafdeaa98d0ae7b780dcec72" name="ac97a283dfafdeaa98d0ae7b780dcec72"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac97a283dfafdeaa98d0ae7b780dcec72">&#9670;&#160;</a></span>ActiveCommand()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -219,7 +219,7 @@ Additional Inherited Members</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">std::optional&lt; DriveCmd &gt; bcnp::CommandQueue::ActiveCommand </td>
+          <td class="memname">crab::Option&lt; DriveCmd &gt; bcnp::CommandQueue::ActiveCommand </td>
           <td>(</td>
           <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
           <td> const</td>
@@ -236,7 +236,7 @@ Additional Inherited Members</h2></td></tr>
 <div class="dynheader">
 Here is the call graph for this function:</div>
 <div class="dyncontent">
-<div class="center"><iframe scrolling="no" frameborder="0" src="classbcnp_1_1CommandQueue_add8234bd079163a8b659dedfd75c92fc_cgraph.svg" width="408" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+<div class="center"><iframe scrolling="no" frameborder="0" src="classbcnp_1_1CommandQueue_ac97a283dfafdeaa98d0ae7b780dcec72_cgraph.svg" width="408" height="52"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
 </div>
 
 </div>

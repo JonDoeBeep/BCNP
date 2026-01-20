@@ -1,21 +1,18 @@
 <map id="bcnp/packet_storage.h" name="bcnp/packet_storage.h">
-<area shape="rect" id="Node000001" title=" " alt="" coords="256,5,408,31"/>
-<area shape="rect" id="Node000002" href="$static__vector_8h.html" title="Fixed&#45;capacity vector with stack allocation (no heap)." alt="" coords="210,79,348,105"/>
-<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="325,33,299,68,295,65,321,30"/>
-<area shape="rect" id="Node000003" title=" " alt="" coords="5,153,70,178"/>
-<area shape="poly" id="edge8_Node000001_Node000003" title=" " alt="" coords="304,34,199,81,73,147,71,142,196,77,302,29"/>
-<area shape="rect" id="Node000007" title=" " alt="" coords="460,153,541,178"/>
-<area shape="poly" id="edge9_Node000001_Node000007" title=" " alt="" coords="344,30,374,64,414,103,469,142,465,146,410,107,370,67,340,33"/>
-<area shape="rect" id="Node000009" title=" " alt="" coords="424,79,481,105"/>
-<area shape="poly" id="edge10_Node000001_Node000009" title=" " alt="" coords="354,29,420,68,417,73,351,34"/>
-<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="239,108,85,153,84,148,237,103"/>
-<area shape="rect" id="Node000004" title=" " alt="" coords="94,153,189,178"/>
-<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="257,108,180,147,177,143,254,103"/>
-<area shape="rect" id="Node000005" title=" " alt="" coords="214,153,259,178"/>
-<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="274,106,253,141,249,138,270,104"/>
-<area shape="rect" id="Node000006" title=" " alt="" coords="283,153,360,178"/>
-<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="288,104,309,138,304,141,284,106"/>
-<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="317,103,449,145,447,150,316,108"/>
-<area shape="rect" id="Node000008" title=" " alt="" coords="384,153,435,178"/>
-<area shape="poly" id="edge7_Node000002_Node000008" title=" " alt="" coords="302,103,376,143,373,147,300,108"/>
+<area shape="rect" id="Node000001" title=" " alt="" coords="152,5,304,31"/>
+<area shape="rect" id="Node000002" href="$static__vector_8h.html" title="Fixed&#45;capacity vector with stack allocation (no heap)." alt="" coords="92,79,231,105"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="219,33,185,69,181,66,215,29"/>
+<area shape="rect" id="Node000004" title=" " alt="" coords="5,153,70,178"/>
+<area shape="poly" id="edge6_Node000001_Node000004" title=" " alt="" coords="173,34,126,52,103,65,82,81,61,109,48,139,43,136,56,106,78,77,100,61,123,47,171,29"/>
+<area shape="rect" id="Node000007" title=" " alt="" coords="254,79,336,105"/>
+<area shape="poly" id="edge7_Node000001_Node000007" title=" " alt="" coords="241,29,275,66,271,69,237,33"/>
+<area shape="rect" id="Node000008" title=" " alt="" coords="360,79,417,105"/>
+<area shape="poly" id="edge8_Node000001_Node000008" title=" " alt="" coords="256,29,348,70,346,75,254,34"/>
+<area shape="rect" id="Node000003" title=" " alt="" coords="94,153,229,178"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="164,105,164,137,159,137,159,105"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="142,108,73,147,70,142,139,103"/>
+<area shape="rect" id="Node000005" title=" " alt="" coords="254,153,349,178"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="186,103,265,143,263,148,184,108"/>
+<area shape="rect" id="Node000006" title=" " alt="" coords="374,153,451,178"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="205,103,360,147,358,152,203,108"/>
 </map>

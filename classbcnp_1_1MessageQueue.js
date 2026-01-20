@@ -3,7 +3,7 @@ var classbcnp_1_1MessageQueue =
     [ "Transaction", "classbcnp_1_1MessageQueue_1_1Transaction.html", "classbcnp_1_1MessageQueue_1_1Transaction" ],
     [ "Clock", "classbcnp_1_1MessageQueue.html#a29f1baa168384d36553e6b8bd6573e8c", null ],
     [ "MessageQueue", "classbcnp_1_1MessageQueue.html#a1feda5500b46eafed6258163623eab1b", null ],
-    [ "ActiveMessage", "classbcnp_1_1MessageQueue.html#a9ae24ed58a604c005898cb79a663d876", null ],
+    [ "ActiveMessage", "classbcnp_1_1MessageQueue.html#abc87f42c6d697460785dd90a2df3e804", null ],
     [ "BeginTransaction", "classbcnp_1_1MessageQueue.html#a45bd245a9368d35090b0f84217670150", null ],
     [ "Clear", "classbcnp_1_1MessageQueue.html#ad181e89bc24c39b6125dffb8c2c8b34f", null ],
     [ "GetConfig", "classbcnp_1_1MessageQueue.html#a740516762a32e07caa5463823defb755", null ],
