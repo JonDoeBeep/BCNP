@@ -56,16 +56,16 @@ TEST_CASE("Packet: Encode and decode round-trip") {
     REQUIRE(encoded);
 
     const auto decode = bcnp::DecodePacketViewAs<bcnp::TestCmd>(buffer.data(), buffer.size());
-    REQUIRE(decode.view.has_value());
+    REQUIRE(decode.view.is_some());
     
-    auto typedPacket = bcnp::DecodeTypedPacket<bcnp::TestCmd>(*decode.view);
-    REQUIRE(typedPacket.has_value());
-    CHECK(typedPacket->messages.size() == 2);
-    CHECK(typedPacket->messages[0].value1 == 0.5f);
-    CHECK(typedPacket->messages[0].value2 == -1.0f);
-    CHECK(typedPacket->messages[0].durationMs == 1500);
-    CHECK(typedPacket->messages[1].value1 == -0.25f);
-    CHECK(typedPacket->messages[1].value2 == 0.25f);
+    auto typedPacket = bcnp::DecodeTypedPacket<bcnp::TestCmd>(decode.view.unwrap());
+    REQUIRE(typedPacket.is_some());
+    CHECK(typedPacket.unwrap().messages.size() == 2);
+    CHECK(typedPacket.unwrap().messages[0].value1 == 0.5f);
+    CHECK(typedPacket.unwrap().messages[0].value2 == -1.0f);
+    CHECK(typedPacket.unwrap().messages[0].durationMs == 1500);
+    CHECK(typedPacket.unwrap().messages[1].value1 == -0.25f);
+    CHECK(typedPacket.unwrap().messages[1].value2 == 0.25f);
 }
 
 TEST_CASE("Packet: CRC detects payload corruption") {
@@ -80,7 +80,7 @@ TEST_CASE("Packet: CRC detects payload corruption") {
     bytes[bcnp::kHeaderSize] ^= 0xFF;
 
     auto result = bcnp::DecodePacketViewAs<bcnp::TestCmd>(bytes.data(), bytes.size());
-    CHECK(!result.view.has_value());
+    CHECK(!result.view.is_some());
     CHECK(result.error == bcnp::PacketError::ChecksumMismatch);
 }
 
@@ -95,7 +95,7 @@ TEST_CASE("Packet: Reject unsupported version") {
 
     // Use type-aware decode to avoid registry lookup issues
     auto result = bcnp::DecodePacketViewAs<bcnp::TestCmd>(buffer.data(), buffer.size());
-    CHECK(!result.view.has_value());
+    CHECK(!result.view.is_some());
     CHECK(result.error == bcnp::PacketError::UnsupportedVersion);
 }
 
@@ -116,26 +116,26 @@ TEST_CASE("MessageQueue: Basic message execution timing") {
     queue.Update(now);
     
     auto msg = queue.ActiveMessage();
-    REQUIRE(msg.has_value());
-    CHECK(msg->value1 == 1.0f);
+    REQUIRE(msg.is_some());
+    CHECK(msg.unwrap().value1 == 1.0f);
     
     // Update at t=50ms (mid-message1)
     now += 50ms;
     queue.Update(now);
-    CHECK(queue.ActiveMessage()->value1 == 1.0f);
+    CHECK(queue.ActiveMessage().unwrap().value1 == 1.0f);
     
     // Update at t=100ms (message1 should end, message2 starts)
     now += 50ms;
     queue.Update(now);
     msg = queue.ActiveMessage();
-    REQUIRE(msg.has_value());
-    CHECK(msg->value1 == 2.0f);
+    REQUIRE(msg.is_some());
+    CHECK(msg.unwrap().value1 == 2.0f);
     
     // Update at t=150ms (mid-message2, which ends at t=150 since it started at t=100)
     now += 50ms;
     queue.Update(now);
     msg = queue.ActiveMessage();
-    CHECK(!msg.has_value());
+    CHECK(!msg.is_some());
 }
 
 TEST_CASE("MessageQueue: Disconnect clears active message immediately") {
@@ -148,11 +148,11 @@ TEST_CASE("MessageQueue: Disconnect clears active message immediately") {
     queue.Push({0.0f, 0.0f, 60000}); // 60 second message
     queue.Update(now);
     
-    REQUIRE(queue.ActiveMessage().has_value());
+    REQUIRE(queue.ActiveMessage().is_some());
     
     // Exceed timeout - message should be cleared for safety
     queue.Update(now + config.connectionTimeout + 1ms);
-    CHECK(!queue.ActiveMessage().has_value());
+    CHECK(!queue.ActiveMessage().is_some());
     CHECK(queue.Size() == 0);
 }
 
@@ -170,7 +170,7 @@ TEST_CASE("MessageQueue: Lag protection prevents fast-forwarding") {
     }
     
     queue.Update(now);
-    CHECK(queue.ActiveMessage()->value1 == 0.0f);
+    CHECK(queue.ActiveMessage().unwrap().value1 == 0.0f);
     
     // Simulate 500ms lag spike (OS pause, GC, etc.)
     now += 500ms;
@@ -178,7 +178,7 @@ TEST_CASE("MessageQueue: Lag protection prevents fast-forwarding") {
     queue.Update(now);
     
     // Key test: queue should not be completely empty from fast-forward
-    int remaining = queue.Size() + (queue.ActiveMessage().has_value() ? 1 : 0);
+    int remaining = queue.Size() + (queue.ActiveMessage().is_some() ? 1 : 0);
     CHECK(remaining >= 1); // At least some messages preserved
 }
 
@@ -196,17 +196,17 @@ TEST_CASE("MessageQueue: Virtual time prevents drift") {
     // First update at 95ms (slightly early)
     now += 95ms;
     queue.Update(now);
-    CHECK(queue.ActiveMessage()->value1 == 1.0f); // Still first message
+    CHECK(queue.ActiveMessage().unwrap().value1 == 1.0f); // Still first message
     
     // Second update at 105ms (message should transition - 5ms into message 2)
     now += 10ms;
     queue.Update(now);
-    CHECK(queue.ActiveMessage()->value1 == 2.0f);
+    CHECK(queue.ActiveMessage().unwrap().value1 == 2.0f);
     
     // Third update at 210ms (both 100ms messages complete)
     now += 105ms;
     queue.Update(now);
-    CHECK(!queue.ActiveMessage().has_value()); // Both complete
+    CHECK(!queue.ActiveMessage().is_some()); // Both complete
 }
 
 TEST_CASE("MessageQueue: Sub-tick granularity handles short messages") {
@@ -221,14 +221,14 @@ TEST_CASE("MessageQueue: Sub-tick granularity handles short messages") {
 
     queue.Update(now);
     // First message should be active
-    CHECK(queue.ActiveMessage().has_value());
+    CHECK(queue.ActiveMessage().is_some());
 
     // Advance time by 20ms (enough to finish all 10ms of messages)
     now += 20ms;
     queue.Update(now);
 
     // Should be finished with all messages
-    CHECK(!queue.ActiveMessage().has_value());
+    CHECK(!queue.ActiveMessage().is_some());
     CHECK(queue.Size() == 0);
 }
 
@@ -324,7 +324,7 @@ TEST_CASE("StreamParser: Skip bad headers and recover") {
     bcnp::StreamParser parser(
         [&](const bcnp::PacketView& parsed) { 
             auto p = bcnp::DecodeTypedPacket<bcnp::TestCmd>(parsed);
-            if (p) seen.push_back(*p); 
+            if (p.is_some()) seen.push_back(p.unwrap());
         },
         [&](const bcnp::StreamParser::ErrorInfo&) { ++errorCount; });
     parser.SetWireSizeLookup(TestWireSizeLookup);
@@ -419,10 +419,10 @@ TEST_CASE("PacketDispatcher: Routes packets to handlers") {
     queue.Update(now);
     auto msg = queue.ActiveMessage();
     
-    REQUIRE(msg.has_value());
-    CHECK(msg->value1 == 1.0f);
-    CHECK(msg->value2 == -2.0f);
-    CHECK(msg->durationMs == 6000);
+    REQUIRE(msg.is_some());
+    CHECK(msg.unwrap().value1 == 1.0f);
+    CHECK(msg.unwrap().value2 == -2.0f);
+    CHECK(msg.unwrap().durationMs == 6000);
 }
 
 // ============================================================================
@@ -631,14 +631,14 @@ TEST_CASE("Packet Storage: StaticTypedPacket encode/decode round-trip") {
     REQUIRE(bcnp::EncodeTypedPacket(packet, buffer));
     
     auto result = bcnp::DecodePacketViewAs<bcnp::DrivetrainState>(buffer.data(), buffer.size());
-    REQUIRE(result.view.has_value());
+    REQUIRE(result.view.is_some());
     
     // Decode into std::vector (dynamic)
-    auto decoded = bcnp::DecodeTypedPacket<bcnp::DrivetrainState>(*result.view);
-    REQUIRE(decoded.has_value());
-    CHECK(decoded->messages.size() == 2);
-    CHECK(decoded->messages[0].vxActual == doctest::Approx(0.5f).epsilon(0.0001));
-    CHECK(decoded->messages[1].timestampMs == 12346);
+    auto decoded = bcnp::DecodeTypedPacket<bcnp::DrivetrainState>(result.view.unwrap());
+    REQUIRE(decoded.is_some());
+    CHECK(decoded.unwrap().messages.size() == 2);
+    CHECK(decoded.unwrap().messages[0].vxActual == doctest::Approx(0.5f).epsilon(0.0001));
+    CHECK(decoded.unwrap().messages[1].timestampMs == 12346);
 }
 
 TEST_CASE("Packet Storage: StaticVector encode with many messages") {
@@ -656,8 +656,8 @@ TEST_CASE("Packet Storage: StaticVector encode with many messages") {
     CHECK(buffer.size() == 7 + 32 * 9 + 4);
     
     auto result = bcnp::DecodePacketViewAs<bcnp::EncoderData>(buffer.data(), buffer.size());
-    REQUIRE(result.view.has_value());
-    CHECK(result.view->header.messageCount == 32);
+    REQUIRE(result.view.is_some());
+    CHECK(result.view.unwrap().header.messageCount == 32);
 }
 
 TEST_CASE("Packet Storage: Mixed storage types interoperability") {
@@ -671,13 +671,13 @@ TEST_CASE("Packet Storage: Mixed storage types interoperability") {
     
     // Decode into std::vector
     auto result = bcnp::DecodePacketViewAs<bcnp::ProximityAlert>(wire.data(), wire.size());
-    REQUIRE(result.view.has_value());
+    REQUIRE(result.view.is_some());
     
-    auto dynamicPacket = bcnp::DecodeTypedPacket<bcnp::ProximityAlert>(*result.view);
-    REQUIRE(dynamicPacket.has_value());
-    CHECK(dynamicPacket->messages.size() == 2);
-    CHECK(dynamicPacket->messages[0].sensorId == 1);
-    CHECK(dynamicPacket->messages[1].triggered == 1);
+    auto dynamicPacket = bcnp::DecodeTypedPacket<bcnp::ProximityAlert>(result.view.unwrap());
+    REQUIRE(dynamicPacket.is_some());
+    CHECK(dynamicPacket.unwrap().messages.size() == 2);
+    CHECK(dynamicPacket.unwrap().messages[0].sensorId == 1);
+    CHECK(dynamicPacket.unwrap().messages[1].triggered == 1);
 }
 
 // ============================================================================
@@ -794,13 +794,13 @@ TEST_CASE("TelemetryAccumulator: Verify encoded packet is decodable") {
     auto result = bcnp::DecodePacketViewAs<bcnp::DrivetrainState>(
         adapter.sentBytes.data(), adapter.sentBytes.size()
     );
-    REQUIRE(result.view.has_value());
+    REQUIRE(result.view.is_some());
     
-    auto packet = bcnp::DecodeTypedPacket<bcnp::DrivetrainState>(*result.view);
-    REQUIRE(packet.has_value());
-    CHECK(packet->messages.size() == 2);
-    CHECK(packet->messages[0].vxActual == doctest::Approx(0.75f).epsilon(0.0001));
-    CHECK(packet->messages[1].timestampMs == 1000);
+    auto packet = bcnp::DecodeTypedPacket<bcnp::DrivetrainState>(result.view.unwrap());
+    REQUIRE(packet.is_some());
+    CHECK(packet.unwrap().messages.size() == 2);
+    CHECK(packet.unwrap().messages[0].vxActual == doctest::Approx(0.75f).epsilon(0.0001));
+    CHECK(packet.unwrap().messages[1].timestampMs == 1000);
 }
 
 // ============================================================================

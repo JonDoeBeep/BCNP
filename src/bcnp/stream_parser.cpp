@@ -235,7 +235,7 @@ void StreamParser::ParseBuffer(std::size_t& iterationBudget) {
             continue;
         }
 
-        EmitPacket(*result.view);
+        EmitPacket(result.view.unwrap());
         m_consecutiveErrors = 0;
         Discard(result.bytesConsumed);
     }

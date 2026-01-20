@@ -45,13 +45,13 @@ TEST_CASE("Packet: Encode and decode round-trip") {
     REQUIRE(encoded);
 
     const auto decode = bcnp::DecodePacketViewAs<bcnp::TestCmd>(buffer.data(), buffer.size());
-    REQUIRE(decode.view.has_value());
+    REQUIRE(decode.view.is_some());
     
-    auto typedPacket = bcnp::DecodeTypedPacket<bcnp::TestCmd>(*decode.view);
-    REQUIRE(typedPacket.has_value());
-    CHECK(typedPacket->messages.size() == 2);
-    CHECK(typedPacket->messages[0].value1 == 0.5f);
-    CHECK(typedPacket->messages[1].value2 == 0.25f);
+    auto typedPacket = bcnp::DecodeTypedPacket<bcnp::TestCmd>(decode.view.unwrap());
+    REQUIRE(typedPacket.is_some());
+    CHECK(typedPacket.unwrap().messages.size() == 2);
+    CHECK(typedPacket.unwrap().messages[0].value1 == 0.5f);
+    CHECK(typedPacket.unwrap().messages[1].value2 == 0.25f);
 }
 
 TEST_CASE("Packet: Detects checksum mismatch") {
@@ -64,7 +64,7 @@ TEST_CASE("Packet: Detects checksum mismatch") {
     bytes.back() ^= 0xFF; // Corrupt CRC without touching payload
 
     const auto decode = bcnp::DecodePacketViewAs<bcnp::TestCmd>(bytes.data(), bytes.size());
-    CHECK(!decode.view.has_value());
+    CHECK(!decode.view.is_some());
     CHECK(decode.error == bcnp::PacketError::ChecksumMismatch);
 }
 
@@ -81,17 +81,17 @@ TEST_CASE("MessageQueue: Basic message execution timing") {
     queue.NotifyReceived(start);
     queue.Update(start);
     auto msg = queue.ActiveMessage();
-    REQUIRE(msg.has_value());
-    CHECK(msg->value1 == 1.0f);
+    REQUIRE(msg.is_some());
+    CHECK(msg.unwrap().value1 == 1.0f);
 
     queue.Update(start + 110ms);
     msg = queue.ActiveMessage();
-    REQUIRE(msg.has_value());
-    CHECK(msg->value1 == 2.0f);
+    REQUIRE(msg.is_some());
+    CHECK(msg.unwrap().value1 == 2.0f);
 
     queue.Update(start + 200ms);
     msg = queue.ActiveMessage();
-    CHECK(!msg.has_value());
+    CHECK(!msg.is_some());
 }
 
 // ============================================================================
@@ -189,7 +189,7 @@ TEST_CASE("StreamParser: Skip bad headers and recover") {
     bcnp::StreamParser parser(
         [&](const bcnp::PacketView& parsed) {
             auto p = bcnp::DecodeTypedPacket<bcnp::TestCmd>(parsed);
-            if (p) seen.push_back(*p);
+            if (p.is_some()) seen.push_back(p.unwrap());
         },
         [&](const bcnp::StreamParser::ErrorInfo&) { ++errorCount; });
     parser.SetWireSizeLookup(TestWireSizeLookup);
@@ -282,10 +282,10 @@ TEST_CASE("PacketDispatcher: Routes to registered handlers") {
     queue.Update(now);
     
     auto msg = queue.ActiveMessage();
-    REQUIRE(msg.has_value());
-    CHECK(msg->value1 == 1.0f);
-    CHECK(msg->value2 == -2.0f);
-    CHECK(msg->durationMs == 6000);
+    REQUIRE(msg.is_some());
+    CHECK(msg.unwrap().value1 == 1.0f);
+    CHECK(msg.unwrap().value2 == -2.0f);
+    CHECK(msg.unwrap().durationMs == 6000);
 }
 
 TEST_CASE("MessageQueue: Disconnect clears active message immediately") {
@@ -297,11 +297,11 @@ TEST_CASE("MessageQueue: Disconnect clears active message immediately") {
     queue.NotifyReceived(now);
     queue.Push({0.0f, 0.0f, 60000});
     queue.Update(now);
-    REQUIRE(queue.ActiveMessage().has_value());
+    REQUIRE(queue.ActiveMessage().is_some());
 
     const auto later = now + config.connectionTimeout + 1ms;
     queue.Update(later);
-    CHECK(!queue.ActiveMessage().has_value());
+    CHECK(!queue.ActiveMessage().is_some());
     CHECK(queue.Size() == 0);
 }
 
@@ -371,7 +371,7 @@ TEST_CASE("MessageQueue: Concurrent Push and ActiveMessage") {
         while (running) {
             queue.Update(bcnp::MessageQueue<bcnp::TestCmd>::Clock::now());
             auto msg = queue.ActiveMessage();
-            if (msg.has_value()) {
+            if (msg.is_some()) {
                 ++readCount;
             }
             std::this_thread::sleep_for(std::chrono::microseconds(50));

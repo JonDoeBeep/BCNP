@@ -121,9 +121,11 @@ DecodeViewResult DecodePacketViewWithSize(const uint8_t* data, std::size_t lengt
 
     PacketView view;
     view.header = header;
-    view.payloadStart = data + kHeaderSizeV3;
+    // Calculate payload size: messageCount * wireSize
+    const std::size_t payloadBytes = header.messageCount * wireSize;
+    view.payload = crab::Slice<const uint8_t>(data + kHeaderSizeV3, payloadBytes);
     
-    result.view = view;
+    result.view = crab::Some(view);
     result.error = PacketError::None;
     result.bytesConsumed = expectedSize;
     return result;

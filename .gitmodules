@@ -1,0 +1,3 @@
+[submodule "libraries/crablib"]
+	path = libraries/crablib
+	url = https://github.com/JonDoeBeep/crablib.git

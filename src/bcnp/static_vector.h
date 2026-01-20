@@ -4,43 +4,39 @@
  * @file static_vector.h
  * @brief Fixed-capacity vector with stack allocation (no heap).
  * 
- * Provides a std::vector-like interface with compile-time fixed capacity.
- * Ideal for real-time systems where heap allocation is undesirable.
+ * BCNP v3.6.0: Migrated to CrabLib foundation.
  */
+
+#include <crab/static_vector.h>
 
 #include <cstddef>
 #include <initializer_list>
-#include <new>
 #include <stdexcept>
-#include <type_traits>
-#include <utility>
 
 namespace bcnp {
 
 /**
  * @brief Fixed-capacity vector with no heap allocation.
  * 
- * Stores elements in-place using aligned storage.
- * 
  * @tparam T Element type
  * @tparam Capacity Maximum number of elements
  */
-template <typename T, std::size_t Capacity>
+template<typename T, std::size_t Capacity>
 class StaticVector {
 public:
-    using value_type = T;              ///< Element type
-    using size_type = std::size_t;      ///< Size/index type
-    using iterator = T*;                ///< Mutable iterator type
-    using const_iterator = const T*;   ///< Const iterator type
+    using value_type = T;
+    using size_type = std::size_t;
+    using reference = T&;
+    using const_reference = const T&;
+    using pointer = T*;
+    using const_pointer = const T*;
+    using iterator = T*;
+    using const_iterator = const T*;
 
-    /** @brief Default constructor - creates empty vector. */
+    /// @brief Default constructor - creates empty vector.
     StaticVector() noexcept = default;
 
-    /**
-     * @brief Construct from initializer list.
-     * @param init Elements to copy into the vector
-     * @throws std::out_of_range if init.size() > Capacity
-     */
+    /// @brief Construct from initializer list.
     StaticVector(std::initializer_list<T> init) {
         if (init.size() > Capacity) {
             throw std::out_of_range("StaticVector initializer list too large");
@@ -50,254 +46,173 @@ public:
         }
     }
 
-    /**
-     * @brief Copy constructor - deep copies all elements.
-     * @param other Vector to copy from
-     */
-    StaticVector(const StaticVector& other) : m_size(0) {
-        for (size_type i = 0; i < other.m_size; ++i) {
+    /// @brief Copy constructor.
+    StaticVector(const StaticVector& other) {
+        for (size_type i = 0; i < other.size(); ++i) {
             push_back(other[i]);
         }
     }
 
-    /**
-     * @brief Move constructor - moves all elements.
-     * @param other Vector to move from (left empty after move)
-     */
-    StaticVector(StaticVector&& other) noexcept(std::is_nothrow_move_constructible_v<T>) 
-        : m_size(0) {
-        for (size_type i = 0; i < other.m_size; ++i) {
-            emplace_back(std::move(other[i]));
+    /// @brief Move constructor.
+    StaticVector(StaticVector&& other) noexcept(std::is_nothrow_move_constructible_v<T>) {
+        for (size_type i = 0; i < other.size(); ++i) {
+            // Size already verified via other.size(), safe to ignore Result
+            (void)m_inner.try_push_back(std::move(other.m_inner[i]));
         }
         other.clear();
     }
 
-    /**
-     * @brief Copy assignment operator.
-     * @param other Vector to copy from
-     * @return Reference to this
-     */
+    /// @brief Copy assignment.
     StaticVector& operator=(const StaticVector& other) {
         if (this != &other) {
             clear();
-            for (size_type i = 0; i < other.m_size; ++i) {
+            for (size_type i = 0; i < other.size(); ++i) {
                 push_back(other[i]);
             }
         }
         return *this;
     }
 
-    /**
-     * @brief Move assignment operator.
-     * @param other Vector to move from (left empty after move)
-     * @return Reference to this
-     */
+    /// @brief Move assignment.
     StaticVector& operator=(StaticVector&& other) noexcept(
         std::is_nothrow_move_constructible_v<T> && std::is_nothrow_destructible_v<T>) {
         if (this != &other) {
             clear();
-            for (size_type i = 0; i < other.m_size; ++i) {
-                emplace_back(std::move(other[i]));
+            for (size_type i = 0; i < other.size(); ++i) {
+                // Size already verified via other.size(), safe to ignore Result
+                (void)m_inner.try_push_back(std::move(other.m_inner[i]));
             }
             other.clear();
         }
         return *this;
     }
 
-    /** @brief Destructor - properly destroys all elements. */
-    ~StaticVector() { clear(); }
+    ~StaticVector() = default;
 
-    /** @brief Get current number of elements. */
-    size_type size() const noexcept { return m_size; }
+    // ========================================================================
+    // Capacity
+    // ========================================================================
     
-    /** @brief Get maximum capacity (compile-time constant). */
-    constexpr size_type capacity() const noexcept { return Capacity; }
+    [[nodiscard]] size_type size() const noexcept { return m_inner.size(); }
+    [[nodiscard]] constexpr size_type capacity() const noexcept { return Capacity; }
+    [[nodiscard]] bool empty() const noexcept { return m_inner.empty(); }
+    [[nodiscard]] bool is_full() const noexcept { return m_inner.is_full(); }
+
+    // ========================================================================
+    // Iterators
+    // ========================================================================
     
-    /** @brief Check if vector is empty. */
-    bool empty() const noexcept { return m_size == 0; }
+    iterator begin() noexcept { return m_inner.begin(); }
+    iterator end() noexcept { return m_inner.end(); }
+    const_iterator begin() const noexcept { return m_inner.begin(); }
+    const_iterator end() const noexcept { return m_inner.end(); }
+    const_iterator cbegin() const noexcept { return m_inner.cbegin(); }
+    const_iterator cend() const noexcept { return m_inner.cend(); }
 
-    /** @name Iterators
-     * @{ */
-    iterator begin() noexcept { return data(); }
-    iterator end() noexcept { return data() + m_size; }
-    const_iterator begin() const noexcept { return data(); }
-    const_iterator end() const noexcept { return data() + m_size; }
-    const_iterator cbegin() const noexcept { return data(); }
-    const_iterator cend() const noexcept { return data() + m_size; }
-    /** @} */
-
-    /**
-     * @brief Access element by index (no bounds checking).
-     * @param index Element index
-     * @return Reference to element
-     */
-    T& operator[](size_type index) noexcept { return data()[index]; }
+    // ========================================================================
+    // Element Access
+    // ========================================================================
     
-    /** @copydoc operator[]() */
-    const T& operator[](size_type index) const noexcept { return data()[index]; }
-
-    /**
-     * @brief Access element with bounds checking.
-     * @param index Element index
-     * @return Reference to element
-     * @throws std::out_of_range if index >= size()
-     */
-    T& at(size_type index) {
-        if (index >= m_size) {
+    /// @brief Bounds-checked access (throws on out-of-range).
+    reference at(size_type index) {
+        if (index >= size()) {
             throw std::out_of_range("StaticVector index out of range");
         }
-        return data()[index];
+        return m_inner.unchecked(index);
     }
 
-    /** @copydoc at() */
-    const T& at(size_type index) const {
-        if (index >= m_size) {
+    const_reference at(size_type index) const {
+        if (index >= size()) {
             throw std::out_of_range("StaticVector index out of range");
         }
-        return data()[index];
+        return m_inner.unchecked(index);
     }
 
-    /** @brief Access first element (undefined if empty). */
-    T& front() noexcept { return data()[0]; }
-    /** @copydoc front() */
-    const T& front() const noexcept { return data()[0]; }
-
-    /** @brief Access last element (undefined if empty). */
-    T& back() noexcept { return data()[m_size - 1]; }
-    /** @copydoc back() */
-    const T& back() const noexcept { return data()[m_size - 1]; }
-
-    /** @brief Get pointer to underlying storage. */
-    T* data() noexcept { return std::launder(reinterpret_cast<T*>(m_storage)); }
-    /** @copydoc data() */
-    const T* data() const noexcept { return std::launder(reinterpret_cast<const T*>(m_storage)); }
-
-    /**
-     * @brief Remove all elements.
-     * 
-     * Destroys elements in reverse order for proper cleanup of
-     * interdependent objects.
-     */
-    void clear() noexcept {
-        T* storage = data();
-        for (size_type i = m_size; i > 0; --i) {
-            storage[i - 1].~T();
-        }
-        m_size = 0;
+    /// @brief Unchecked access (no bounds checking).
+    [[nodiscard]] reference operator[](size_type index) noexcept {
+        return m_inner[index];
     }
 
-    /**
-     * @brief Add element by copy.
-     * @param value Element to copy
-     * @throws std::out_of_range if size() >= Capacity
-     */
+    [[nodiscard]] const_reference operator[](size_type index) const noexcept {
+        return m_inner[index];
+    }
+
+    pointer data() noexcept { return m_inner.data(); }
+    const_pointer data() const noexcept { return m_inner.data(); }
+
+    reference front() noexcept { return m_inner.front(); }
+    const_reference front() const noexcept { return m_inner.front(); }
+    reference back() noexcept { return m_inner.back(); }
+    const_reference back() const noexcept { return m_inner.back(); }
+
+    // ========================================================================
+    // Modifiers
+    // ========================================================================
+    
+    void clear() noexcept { m_inner.clear(); }
+
+    /// @brief Add element by copy (throws if full).
     void push_back(const T& value) {
-        if (m_size >= Capacity) {
+        auto result = m_inner.try_push_back(value);
+        if (result.is_err()) {
             throw std::out_of_range("StaticVector capacity exceeded");
         }
-        new (data() + m_size) T(value);
-        ++m_size;
     }
 
-    /**
-     * @brief Add element by move.
-     * @param value Element to move from
-     * @throws std::out_of_range if size() >= Capacity
-     */
+    /// @brief Add element by move (throws if full).
     void push_back(T&& value) {
-        if (m_size >= Capacity) {
+        auto result = m_inner.try_push_back(std::move(value));
+        if (result.is_err()) {
             throw std::out_of_range("StaticVector capacity exceeded");
         }
-        new (data() + m_size) T(std::move(value));
-        ++m_size;
     }
 
-    /**
-     * @brief Construct element in-place at end.
-     * @tparam Args Constructor argument types
-     * @param args Arguments forwarded to T's constructor
-     * @return Reference to newly constructed element
-     * @throws std::out_of_range if size() >= Capacity
-     */
-    template <typename... Args>
-    T& emplace_back(Args&&... args) {
-        if (m_size >= Capacity) {
+    /// @brief Emplace element (throws if full).
+    template<typename... Args>
+    reference emplace_back(Args&&... args) {
+        auto result = m_inner.try_emplace_back(std::forward<Args>(args)...);
+        if (result.is_err()) {
             throw std::out_of_range("StaticVector capacity exceeded");
         }
-        T* slot = new (data() + m_size) T(std::forward<Args>(args)...);
-        ++m_size;
-        return *slot;
+        return back();
     }
 
-    /**
-     * @brief Remove last element.
-     * 
-     * Does nothing if vector is empty.
-     */
-    void pop_back() noexcept {
-        if (m_size > 0) {
-            --m_size;
-            data()[m_size].~T();
-        }
-    }
+    void pop_back() noexcept { (void)m_inner.pop_back(); }
 
-    /**
-     * @brief Resize the vector.
-     * 
-     * Shrinking destroys excess elements. Growing default-constructs new ones.
-     * 
-     * @param new_size Target size
-     * @throws std::out_of_range if new_size > Capacity
-     */
     void resize(size_type new_size) {
         if (new_size > Capacity) {
             throw std::out_of_range("StaticVector resize exceeds capacity");
         }
-        while (m_size > new_size) {
+        while (size() > new_size) {
             pop_back();
         }
-        while (m_size < new_size) {
-            emplace_back();
+        while (size() < new_size) {
+            auto result = m_inner.try_emplace_back();
+            if (result.is_err()) break;
         }
     }
 
-    /**
-     * @brief Resize with fill value.
-     * @param new_size Target size
-     * @param value Value to copy when growing
-     * @throws std::out_of_range if new_size > Capacity
-     */
     void resize(size_type new_size, const T& value) {
         if (new_size > Capacity) {
             throw std::out_of_range("StaticVector resize exceeds capacity");
         }
-        while (m_size > new_size) {
+        while (size() > new_size) {
             pop_back();
         }
-        while (m_size < new_size) {
+        while (size() < new_size) {
             push_back(value);
         }
     }
 
-    /**
-     * @brief Reserve capacity (no-op for StaticVector).
-     * 
-     * Provided for API compatibility with std::vector in generic code.
-     * Throws if requested capacity exceeds compile-time Capacity.
-     * 
-     * @param requested Requested capacity
-     * @throws std::out_of_range if requested > Capacity
-     */
+    /// @brief Reserve (no-op, for API compatibility).
     void reserve(size_type requested) {
         if (requested > Capacity) {
             throw std::out_of_range("StaticVector reserve exceeds capacity");
         }
-        // No-op: storage is always pre-allocated
     }
 
 private:
-    alignas(T) unsigned char m_storage[sizeof(T) * Capacity]{};  ///< Raw aligned storage
-    size_type m_size{0};  ///< Current element count
+    crab::StaticVector<T, Capacity> m_inner;
 };
 
 } // namespace bcnp

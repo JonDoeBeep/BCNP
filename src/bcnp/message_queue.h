@@ -17,8 +17,9 @@
 #include <cstddef>
 #include <cstdint>
 #include <mutex>
-#include <optional>
 #include <vector>
+
+#include <crab/option.h>
 
 namespace bcnp {
 
@@ -166,23 +167,24 @@ public:
         }
 
         while (true) {
-            if (m_active) {
-                const auto elapsed = now - m_active->start;
-                const auto duration = std::chrono::milliseconds(m_active->message.durationMs);
+            if (m_active.is_some()) {
+                const auto& active = m_active.unwrap();
+                const auto elapsed = now - active.start;
+                const auto duration = std::chrono::milliseconds(active.message.durationMs);
                 
                 if (elapsed < duration) {
                     break;
                 }
 
-                const auto endTime = m_active->start + duration;
-                m_active.reset();
+                const auto endTime = active.start + duration;
+                m_active = crab::None;
                 m_virtualCursor = endTime;
                 m_hasVirtualCursor = true;
             }
 
-            if (!m_active) {
+            if (m_active.is_none()) {
                 PromoteNext(now);
-                if (!m_active) {
+                if (m_active.is_none()) {
                     break;
                 }
             }
@@ -193,16 +195,16 @@ public:
      * @brief Get the currently executing message.
      * 
      * Returns the message whose duration is currently being executed.
-     * Blocks briefly if mutex is held by network thread (typically <5µs).
+     * Blocks briefly if mutex is held by network thread (typically <5us).
      * 
-     * @return The active message, or nullopt if none active
+     * @return The active message, or None if none active
      */
-    std::optional<MsgType> ActiveMessage() const {
+    crab::Option<MsgType> ActiveMessage() const {
         std::lock_guard<std::mutex> lock(m_mutex);
-        if (m_active) {
-            return m_active->message;
+        if (m_active.is_some()) {
+            return crab::Some(m_active.unwrap().message);
         }
-        return std::nullopt;
+        return crab::None;
     }
 
     /**
@@ -332,7 +334,7 @@ private:
                 projectedStart = lagFloor;
             }
 
-            m_active = ActiveSlot{next, projectedStart};
+            m_active = crab::Some(ActiveSlot{next, projectedStart});
             PopUnlocked();
             m_virtualCursor = projectedStart + duration;
             return;
@@ -343,7 +345,7 @@ private:
         m_head = 0;
         m_tail = 0;
         m_count = 0;
-        m_active.reset();
+        m_active = crab::None;
         m_virtualCursor = Clock::time_point::min();
         m_hasVirtualCursor = false;
     }
@@ -393,7 +395,7 @@ private:
     std::size_t m_head{0};
     std::size_t m_tail{0};
     std::size_t m_count{0};
-    std::optional<ActiveSlot> m_active;
+    crab::Option<ActiveSlot> m_active{crab::None};
     Clock::time_point m_virtualCursor{Clock::time_point::min()};
     bool m_hasVirtualCursor{false};
     Clock::time_point m_lastRx{Clock::time_point::min()};

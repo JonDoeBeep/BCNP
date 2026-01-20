@@ -20,7 +20,7 @@ public:
     
     // Legacy API methods
     void NotifyPacketReceived(Clock::time_point now) { NotifyReceived(now); }
-    std::optional<DriveCmd> ActiveCommand() const { return ActiveMessage(); }
+    crab::Option<DriveCmd> ActiveCommand() const { return ActiveMessage(); }
     void IncrementParseErrors() {} // No-op, handled by dispatcher now
 };
 

@@ -14,9 +14,10 @@
 #include "bcnp/static_vector.h"
 #include "bcnp/packet_storage.h"
 
+#include <crab/prelude.h>
+
 #include <cstddef>
 #include <cstdint>
-#include <optional>
 #include <vector>
 
 namespace bcnp {
@@ -168,8 +169,8 @@ private:
  *       Do not store views beyond the lifetime of the source buffer.
  */
 struct PacketView {
-    PacketHeader header{};              ///< Parsed header information
-    const uint8_t* payloadStart{nullptr}; ///< Pointer to first message in buffer
+    PacketHeader header{};                    ///< Parsed header information
+    crab::Slice<const uint8_t> payload{};     ///< Bounds-checked payload view
     
     /**
      * @brief Get the message type ID for this packet.
@@ -191,7 +192,7 @@ struct PacketView {
         if (MsgType::kTypeId != header.messageType) {
             return MessageIterator<MsgType>(nullptr, 0);
         }
-        return MessageIterator<MsgType>(payloadStart, header.messageCount);
+        return MessageIterator<MsgType>(payload.data(), header.messageCount);
     }
     
     /**
@@ -205,10 +206,18 @@ struct PacketView {
     }
     
     /**
-     * @brief Get raw pointer to payload for manual parsing.
+     * @brief Get raw pointer to payload (for legacy compatibility).
      * @return Pointer to first byte after header
+     * @deprecated Use GetPayloadSlice() for bounds safety.
      */
-    const uint8_t* GetPayload() const { return payloadStart; }
+    [[deprecated("Use GetPayloadSlice()")]]
+    const uint8_t* GetPayload() const { return payload.data(); }
+    
+    /**
+     * @brief Get bounds-checked payload slice.
+     * @return Slice view of payload bytes
+     */
+    crab::Slice<const uint8_t> GetPayloadSlice() const { return payload; }
     
     /**
      * @brief Calculate total payload size in bytes.
@@ -287,9 +296,9 @@ enum class PacketError {
  * how many bytes were processed (useful for stream parsing).
  */
 struct DecodeViewResult {
-    std::optional<PacketView> view;     ///< Decoded view (valid if error == None)
-    PacketError error{PacketError::None}; ///< Error code if decode failed
-    std::size_t bytesConsumed{0};        ///< Bytes consumed from input buffer
+    crab::Option<PacketView> view{crab::None};  ///< Decoded view (valid if error == None)
+    PacketError error{PacketError::None};        ///< Error code if decode failed
+    std::size_t bytesConsumed{0};                ///< Bytes consumed from input buffer
 };
 
 /**
@@ -387,33 +396,33 @@ bool EncodeTypedPacket(const TypedPacket<MsgType, Storage>& packet, std::vector<
  * @brief Decode messages from a PacketView into a typed packet.
  * 
  * Converts a validated PacketView into a TypedPacket with heap-allocated
- * storage. Returns nullopt if the view's message type doesn't match MsgType.
+ * storage. Returns None if the view's message type doesn't match MsgType.
  * 
  * @tparam MsgType Expected message type
  * @param view Validated packet view to decode from
- * @return TypedPacket containing decoded messages, or nullopt on type mismatch
+ * @return TypedPacket containing decoded messages, or None on type mismatch
  */
 template<typename MsgType>
-std::optional<TypedPacket<MsgType>> DecodeTypedPacket(const PacketView& view) {
+crab::Option<TypedPacket<MsgType>> DecodeTypedPacket(const PacketView& view) {
     if (view.header.messageType != MsgType::kTypeId) {
-        return std::nullopt;
+        return crab::None;
     }
     
     TypedPacket<MsgType> packet;
     packet.header = view.header;
     packet.messages.reserve(view.header.messageCount);
     
-    const uint8_t* ptr = view.payloadStart;
+    const uint8_t* ptr = view.payload.data();
     for (std::size_t i = 0; i < view.header.messageCount; ++i) {
         auto msg = MsgType::Decode(ptr, MsgType::kWireSize);
         if (!msg) {
-            return std::nullopt;
+            return crab::None;
         }
         packet.messages.push_back(*msg);
         ptr += MsgType::kWireSize;
     }
     
-    return packet;
+    return crab::Some(std::move(packet));
 }
 
 /**
@@ -425,29 +434,29 @@ std::optional<TypedPacket<MsgType>> DecodeTypedPacket(const PacketView& view) {
  * @tparam MsgType Expected message type
  * @tparam Storage Container type (e.g., StaticVector<MsgType, 64>)
  * @param view Validated packet view to decode from
- * @return TypedPacket with specified storage, or nullopt on type mismatch/decode failure
+ * @return TypedPacket with specified storage, or None on type mismatch/decode failure
  */
 template<typename MsgType, typename Storage>
-std::optional<TypedPacket<MsgType, Storage>> DecodeTypedPacketAs(const PacketView& view) {
+crab::Option<TypedPacket<MsgType, Storage>> DecodeTypedPacketAs(const PacketView& view) {
     if (view.header.messageType != MsgType::kTypeId) {
-        return std::nullopt;
+        return crab::None;
     }
     
     TypedPacket<MsgType, Storage> packet;
     packet.header = view.header;
     ReserveIfPossible(packet.messages, view.header.messageCount);
     
-    const uint8_t* ptr = view.payloadStart;
+    const uint8_t* ptr = view.payload.data();
     for (std::size_t i = 0; i < view.header.messageCount; ++i) {
         auto msg = MsgType::Decode(ptr, MsgType::kWireSize);
         if (!msg) {
-            return std::nullopt;
+            return crab::None;
         }
         packet.messages.push_back(*msg);
         ptr += MsgType::kWireSize;
     }
     
-    return packet;
+    return crab::Some(std::move(packet));
 }
 
 /**

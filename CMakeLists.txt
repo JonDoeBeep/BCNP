@@ -58,7 +58,11 @@ endif()
 add_library(bcnp_core ${BCNP_CORE_SOURCES})
 add_dependencies(bcnp_core bcnp_codegen)
 
+# CrabLib integration - memory safety primitives
+add_subdirectory(libraries/crablib)
+
 target_include_directories(bcnp_core PUBLIC src "${BCNP_GENERATED_DIR}")
+target_link_libraries(bcnp_core PUBLIC crab::crab)
 
 target_compile_features(bcnp_core PUBLIC cxx_std_17)
 
